@@ -1,0 +1,22 @@
+.track {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+
+.itemImage {
+  border-radius: 18px;
+  height: 150px;
+  width: 220px;
+  object-fit: cover;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

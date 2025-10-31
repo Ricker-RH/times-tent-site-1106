@@ -1,0 +1,37 @@
+{
+  "name": "times-tent-clone",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "i18n:check": "tsx scripts/check-i18n.ts",
+    "i18n:cases": "tsx scripts/check-cases-i18n.ts",
+    "i18n:cases:fix": "tsx scripts/fix-cases-i18n.ts",
+    "i18n:cases:retranslate": "tsx scripts/retranslate-cases.ts",
+    "i18n:cases:inspect": "tsx scripts/inspect-cases.ts"
+  },
+  "dependencies": {
+    "autoprefixer": "^10.4.19",
+    "next": "14.2.4",
+    "bcryptjs": "^2.4.3",
+    "pg": "^8.16.3",
+    "jose": "^5.2.0",
+    "postcss": "^8.4.47",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tailwindcss": "^3.4.14"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.30",
+    "@types/pg": "^8.15.5",
+    "@types/react": "18.2.77",
+    "@types/react-dom": "18.2.24",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.4",
+    "tsx": "^3.14.0",
+    "typescript": "5.4.5"
+  }
+}
