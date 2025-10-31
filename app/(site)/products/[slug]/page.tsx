@@ -67,6 +67,14 @@ const hasLocalizedContent = (value: unknown): boolean => {
   return false;
 };
 
+const getLegacyField = (
+  product: Awaited<ReturnType<typeof getProductCenterConfig>>["products"][number],
+  key: "summaryEn" | "taglineEn",
+): unknown => {
+  if (!hasOwn(product, key)) return undefined;
+  return (product as unknown as Record<string, unknown>)[key];
+};
+
 export async function generateStaticParams() {
   const config = await getProductCenterConfig();
   return config.products.map((item) => ({ slug: item.slug }));
@@ -94,17 +102,19 @@ export async function generateMetadata({ params }: ProductPageProps) {
   }
   const productTitle = typeof product.name === "string" ? product.name : t(product.name) || params.slug;
   const summaryHasOwn = hasOwn(product, "summary") || hasOwn(product, "summaryEn");
-  const summaryHasContent = hasLocalizedContent(product.summary) || hasLocalizedContent((product as Record<string, unknown>).summaryEn);
+  const summaryLegacy = getLegacyField(product, "summaryEn");
+  const summaryHasContent = hasLocalizedContent(product.summary) || hasLocalizedContent(summaryLegacy);
   let description = resolveLocalizedText(product.summary);
   if (summaryHasOwn && !summaryHasContent) {
     description = "";
   } else if (!summaryHasOwn && !description) {
-    description = resolveLocalizedText((product as Record<string, unknown>).summaryEn);
+    description = resolveLocalizedText(summaryLegacy);
   }
   if (!summaryHasOwn && !description) {
+    const taglineLegacy = getLegacyField(product, "taglineEn");
     description = resolveLocalizedText(product.tagline);
     if (!description) {
-      description = resolveLocalizedText((product as Record<string, unknown>).taglineEn);
+      description = resolveLocalizedText(taglineLegacy);
     }
   }
   return {
