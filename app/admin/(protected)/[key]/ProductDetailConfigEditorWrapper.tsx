@@ -27,9 +27,11 @@ export async function ProductDetailConfigEditorWrapper({ configKey, initialConfi
         target !== null && typeof target === "object" && Object.prototype.hasOwnProperty.call(target, key);
       const summaryHasOwn = hasOwn(product, "summary") || hasOwn(product, "summaryEn");
       const summaryText = resolve(product.summary);
-      const summaryEn = resolve((product as Record<string, unknown>).summaryEn);
+      const summaryLegacy = hasOwn(product, "summaryEn")
+        ? resolve((product as unknown as Record<string, unknown>).summaryEn)
+        : "";
       const taglineText = resolve(product.tagline);
-      let summary = summaryText || summaryEn;
+      let summary = summaryText || summaryLegacy;
       if (summaryHasOwn && summary.trim().length === 0) {
         summary = "";
       }
