@@ -72,7 +72,11 @@ const getLegacyField = (
   key: "summaryEn" | "taglineEn",
 ): unknown => {
   if (!hasOwn(product, key)) return undefined;
-  return (product as unknown as Record<string, unknown>)[key];
+  if (product && typeof product === "object") {
+    const record = product as { [k: string]: unknown };
+    return record[key];
+  }
+  return undefined;
 };
 
 export async function generateStaticParams() {
