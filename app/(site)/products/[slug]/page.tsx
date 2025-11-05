@@ -107,7 +107,8 @@ export async function generateMetadata({ params }: ProductPageProps) {
   const productTitle = typeof product.name === "string" ? product.name : t(product.name) || params.slug;
   const summaryHasOwn = hasOwn(product, "summary") || hasOwn(product, "summaryEn");
   const summaryLegacy = getLegacyField(product, "summaryEn");
-  const summaryHasContent = hasLocalizedContent(product.summary) || hasLocalizedContent(summaryLegacy);
+  const summarySource: unknown = product.summary;
+  const summaryHasContent = hasLocalizedContent(summarySource) || hasLocalizedContent(summaryLegacy);
   let description = resolveLocalizedText(product.summary);
   if (summaryHasOwn && !summaryHasContent) {
     description = "";
