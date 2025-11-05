@@ -8,7 +8,7 @@ import { useFormState, useFormStatus } from "react-dom";
 
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
-import { LocalizedTextField } from "./LocalizedTextField";
+import { LocalizedTextField, type LocalizedValue } from "./LocalizedTextField";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
 import { useToast } from "@/providers/ToastProvider";
@@ -24,33 +24,38 @@ interface CaseStudyMetric {
   value: string;
 }
 
+interface CaseStudyMetricI18n {
+  label: LocalizedValue;
+  value: LocalizedValue;
+}
+
 interface CaseStudyConfig {
   slug: string;
-  title: LocalizedValue | string;
+  title: LocalizedValue;
   year: string;
-  location: LocalizedValue | string;
-  summary: LocalizedValue | string;
-  background: LocalizedValue | string;
+  location: LocalizedValue;
+  summary: LocalizedValue;
+  background: LocalizedValue;
   deliverables: string[];
   metrics: CaseStudyMetric[];
   image: string;
   gallery: string[];
-  highlightsI18n?: Array<string | LocalizedValue>;
-  deliverablesI18n?: Array<string | LocalizedValue>;
-  metricsI18n?: Array<{ label: string | LocalizedValue; value: string | LocalizedValue }>;
+  highlightsI18n?: LocalizedValue[];
+  deliverablesI18n?: LocalizedValue[];
+  metricsI18n?: CaseStudyMetricI18n[];
 }
 
 interface CaseCategoryConfig {
   slug: string;
-  name: LocalizedValue | string;
-  intro: LocalizedValue | string;
+  name: LocalizedValue;
+  intro: LocalizedValue;
   studies: CaseStudyConfig[];
 }
 
 interface HeroConfig {
-  eyebrow: LocalizedValue | string;
-  title: LocalizedValue | string;
-  description: LocalizedValue | string;
+  eyebrow: LocalizedValue;
+  title: LocalizedValue;
+  description: LocalizedValue;
   image: string;
 }
 
@@ -69,11 +74,11 @@ interface RecommendationsConfig {
 
 // 新增：案例详情页底部咨询配置
 interface ConsultationConfig {
-  title: LocalizedValue | string;
-  description: LocalizedValue | string;
-  primaryLabel: LocalizedValue | string;
+  title: LocalizedValue;
+  description: LocalizedValue;
+  primaryLabel: LocalizedValue;
   primaryHref: string;
-  phoneLabel: LocalizedValue | string;
+  phoneLabel: LocalizedValue;
   phoneNumber: string;
 }
 
@@ -110,8 +115,6 @@ type StudyScope =
 
 const DEFAULT_HERO_IMAGE = "https://images.unsplash.com/photo-1542626991-cbc4e32524cc?auto=format&w=2000&q=80";
 const DEFAULT_STUDY_IMAGE = "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80";
-
-type LocalizedValue = Record<LocaleKey, string>;
 
 function ensureLocalized(value: unknown, fallback: string): LocalizedValue {
   return ensureLocalizedNoFallback(value) as LocalizedValue;
@@ -166,21 +169,21 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
         "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80",
       ],
       highlightsI18n: [
-        "专业团队现场执行",
-        "供电与网络保障",
-        "安全风控与秩序维护",
+        ensureLocalized("专业团队现场执行", ""),
+        ensureLocalized("供电与网络保障", ""),
+        ensureLocalized("安全风控与秩序维护", ""),
       ],
       deliverablesI18n: [
-        "方案设计文档",
-        "项目实施计划",
-        "设备采购清单",
-        "现场安装与调试",
-        "验收与培训",
+        ensureLocalized("方案设计文档", ""),
+        ensureLocalized("项目实施计划", ""),
+        ensureLocalized("设备采购清单", ""),
+        ensureLocalized("现场安装与调试", ""),
+        ensureLocalized("验收与培训", ""),
       ],
       metricsI18n: [
-        { label: "覆盖面积", value: "10,000㎡+" },
-        { label: "参与人数", value: "5,000+" },
-        { label: "设备数量", value: "100+" },
+        { label: ensureLocalized("覆盖面积", ""), value: ensureLocalized("10,000㎡+", "") },
+        { label: ensureLocalized("参与人数", ""), value: ensureLocalized("5,000+", "") },
+        { label: ensureLocalized("设备数量", ""), value: ensureLocalized("100+", "") },
       ],
     };
   }
@@ -198,25 +201,27 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
     gallery: asStringArray(record.gallery),
     highlightsI18n: Array.isArray((record as any).highlightsI18n)
       ? ((record as any).highlightsI18n as Array<unknown>)
-          .map((item) => (typeof item === "string" ? item.trim() : ensureLocalized(item, "")))
-          .filter((v) => (typeof v === "string" ? v.length > 0 : Object.keys(v).length > 0))
+          .map((item) => ensureLocalized(item, ""))
+          .filter((v) => Object.keys(v).length > 0)
       : undefined,
     deliverablesI18n: Array.isArray((record as any).deliverablesI18n)
       ? ((record as any).deliverablesI18n as Array<unknown>)
-          .map((item) => (typeof item === "string" ? item.trim() : ensureLocalized(item, "")))
-          .filter((v) => (typeof v === "string" ? v.length > 0 : Object.keys(v).length > 0))
+          .map((item) => ensureLocalized(item, ""))
+          .filter((v) => Object.keys(v).length > 0)
       : undefined,
     metricsI18n: Array.isArray((record as any).metricsI18n)
       ? ((record as any).metricsI18n as Array<unknown>)
           .map((item) => {
             if (!item || typeof item !== "object" || Array.isArray(item)) return null;
             const rec = item as Record<string, unknown>;
-            const label = typeof rec.label === "string" ? rec.label.trim() : ensureLocalized(rec.label, "");
-            const value = typeof rec.value === "string" ? rec.value.trim() : ensureLocalized(rec.value, "");
-            if (typeof label === "string" && typeof value === "string" && !label && !value) return null;
-            return { label, value };
+            const label = ensureLocalized(rec.label, "");
+            const value = ensureLocalized(rec.value, "");
+            if (Object.values(label).every((entry) => !entry.trim()) && Object.values(value).every((entry) => !entry.trim())) {
+              return null;
+            }
+            return { label, value } satisfies CaseStudyMetricI18n;
           })
-          .filter(Boolean) as Array<{ label: string | LocalizedValue; value: string | LocalizedValue }>
+          .filter((metric): metric is CaseStudyMetricI18n => Boolean(metric))
       : undefined,
   } satisfies CaseStudyConfig;
 }
@@ -338,27 +343,26 @@ function serializeStudy(study: CaseStudyConfig): Record<string, unknown> {
 
   if (Array.isArray(study.highlightsI18n)) {
     const highlightsI18n = study.highlightsI18n
-      .map((item) => (typeof item === "string" ? item.trim() : cleanLocalized(item)))
-      .filter((v) => (typeof v === "string" ? v.length > 0 : Object.keys(v).length > 0));
+      .map((item) => cleanLocalized(item))
+      .filter((v) => Object.keys(v).length > 0);
     if (highlightsI18n.length) result.highlightsI18n = highlightsI18n;
   }
   if (Array.isArray(study.deliverablesI18n)) {
     const deliverablesI18n = study.deliverablesI18n
-      .map((item) => (typeof item === "string" ? item.trim() : cleanLocalized(item)))
-      .filter((v) => (typeof v === "string" ? v.length > 0 : Object.keys(v).length > 0));
+      .map((item) => cleanLocalized(item))
+      .filter((v) => Object.keys(v).length > 0);
     if (deliverablesI18n.length) result.deliverablesI18n = deliverablesI18n;
   }
   if (Array.isArray(study.metricsI18n)) {
     const metricsI18n = study.metricsI18n
       .map((item) => {
-        const label = typeof item.label === "string" ? item.label.trim() : cleanLocalized(item.label);
-        const value = typeof item.value === "string" ? item.value.trim() : cleanLocalized(item.value);
-        if (typeof label === "string" && typeof value === "string" && !label && !value) return null;
-        if (typeof label !== "string" && Object.keys(label).length === 0 && typeof value !== "string" && Object.keys(value).length === 0) return null;
-        return { label, value };
+        const label = cleanLocalized(item.label);
+        const value = cleanLocalized(item.value);
+        if (Object.keys(label).length === 0 && Object.keys(value).length === 0) return null;
+        return { label, value } as CaseStudyMetricI18n;
       })
-      .filter(Boolean);
-    if (metricsI18n.length) result.metricsI18n = metricsI18n as Array<{ label: string | LocalizedValue; value: string | LocalizedValue }>;
+      .filter((metric): metric is CaseStudyMetricI18n => Boolean(metric));
+    if (metricsI18n.length) result.metricsI18n = metricsI18n;
   }
 
   return result;
@@ -1907,7 +1911,9 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
   // i18n arrays: highlightsI18n & deliverablesI18n
   const handleI18nArrayChange = (key: "highlightsI18n" | "deliverablesI18n", index: number, nextValue: LocalizedValue) => {
     setDraft((prev) => {
-      const existing = Array.isArray((prev as any)[key]) ? ([...(prev as any)[key]] as Array<string | LocalizedValue>) : [];
+      const existing: LocalizedValue[] = Array.isArray((prev as any)[key])
+        ? ([...(prev as any)[key]] as LocalizedValue[])
+        : [];
       existing[index] = nextValue;
       return { ...prev, [key]: existing } as CaseStudyConfig;
     });
@@ -1915,7 +1921,9 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
 
   const handleI18nArrayAdd = (key: "highlightsI18n" | "deliverablesI18n") => {
     setDraft((prev) => {
-      const existing = Array.isArray((prev as any)[key]) ? ([...(prev as any)[key]] as Array<string | LocalizedValue>) : [];
+      const existing: LocalizedValue[] = Array.isArray((prev as any)[key])
+        ? ([...(prev as any)[key]] as LocalizedValue[])
+        : [];
       existing.push(ensureLocalized(undefined, ""));
       return { ...prev, [key]: existing } as CaseStudyConfig;
     });
@@ -1923,7 +1931,9 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
 
   const handleI18nArrayRemove = (key: "highlightsI18n" | "deliverablesI18n", index: number) => {
     setDraft((prev) => {
-      const existing = Array.isArray((prev as any)[key]) ? ([...(prev as any)[key]] as Array<string | LocalizedValue>) : [];
+      const existing: LocalizedValue[] = Array.isArray((prev as any)[key])
+        ? ([...(prev as any)[key]] as LocalizedValue[])
+        : [];
       const next = existing.filter((_, idx) => idx !== index);
       return { ...prev, [key]: next.length ? next : undefined } as CaseStudyConfig;
     });
@@ -1932,7 +1942,9 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
   // i18n metrics: metricsI18n label & value
   const handleMetricI18nChange = (index: number, field: "label" | "value", nextValue: LocalizedValue) => {
     setDraft((prev) => {
-      const list = Array.isArray(prev.metricsI18n) ? prev.metricsI18n.map((m) => ({ label: m.label, value: m.value })) : [];
+      const list: CaseStudyMetricI18n[] = Array.isArray(prev.metricsI18n)
+        ? prev.metricsI18n.map((m) => ({ label: m.label, value: m.value }))
+        : [];
       const current = list[index] ?? { label: ensureLocalized(undefined, ""), value: ensureLocalized(undefined, "") };
       current[field] = nextValue;
       list[index] = current;
@@ -2249,7 +2261,7 @@ function GalleryEditor({ title, values, onChange, onAdd, onRemove }: ArrayEditor
 
 interface LocalizedArrayEditorProps {
   title: string;
-  values?: Array<string | LocalizedValue>;
+  values?: LocalizedValue[];
   placeholder?: string;
   onChange: (index: number, next: LocalizedValue) => void;
   onAdd: () => void;

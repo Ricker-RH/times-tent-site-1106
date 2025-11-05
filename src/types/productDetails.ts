@@ -120,6 +120,7 @@ export interface DetailCtaConfig {
 }
 
 export interface ProductDetailConfig {
+  slug?: string;
   title: string;
   hero: DetailHeroConfig;
   breadcrumb: string[];
@@ -138,6 +139,7 @@ export interface ProductDetailSeed {
 
 function cloneDetail(detail: ProductDetailConfig): ProductDetailConfig {
   return {
+    slug: detail.slug,
     title: detail.title,
     hero: { ...detail.hero },
     breadcrumb: [...detail.breadcrumb],

@@ -47,6 +47,7 @@ export interface ProductCenterProduct {
   summary?: string | LocalizedField;
   summaryEn?: string;
   tagline?: string | LocalizedField;
+  taglineEn?: string;
   specs?: Array<{ label: string; value: string }>;
   specsEn?: Array<{ label: string; value: string }>;
   gallery?: string[];
