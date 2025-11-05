@@ -70,13 +70,9 @@ const hasLocalizedContent = (value: unknown): boolean => {
 const getLegacyField = (
   product: Awaited<ReturnType<typeof getProductCenterConfig>>["products"][number],
   key: "summaryEn" | "taglineEn",
-): unknown => {
-  if (!hasOwn(product, key)) return undefined;
-  if (product && typeof product === "object") {
-    const record = product as { [k: string]: unknown };
-    return record[key];
-  }
-  return undefined;
+): string | undefined => {
+  const value = product?.[key];
+  return typeof value === "string" ? value : undefined;
 };
 
 export async function generateStaticParams() {
@@ -105,11 +101,11 @@ export async function generateMetadata({ params }: ProductPageProps) {
     return { title: "产品详情" };
   }
   const productTitle = typeof product.name === "string" ? product.name : t(product.name) || params.slug;
-  const summaryHasOwn = hasOwn(product, "summary") || hasOwn(product, "summaryEn");
-  const summaryLegacy = getLegacyField(product, "summaryEn");
   const summarySource: unknown = product.summary;
+  const summaryLegacy = getLegacyField(product, "summaryEn");
+  const summaryHasOwn = typeof summarySource !== "undefined" || typeof summaryLegacy !== "undefined";
   const summaryHasContent = hasLocalizedContent(summarySource) || hasLocalizedContent(summaryLegacy);
-  let description = resolveLocalizedText(product.summary);
+  let description = resolveLocalizedText(summarySource);
   if (summaryHasOwn && !summaryHasContent) {
     description = "";
   } else if (!summaryHasOwn && !description) {
