@@ -20,8 +20,10 @@ import {
   getLocaleText,
   mergeMeta,
 } from "./editorUtils";
+import { LocalizedTextField as SharedLocalizedTextField } from "./LocalizedTextField";
 import type { LocaleKey } from "@/i18n/locales";
 import { sanitizeImageSrc } from "@/utils/image";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
 type LocalizedValue = Record<LocaleKey, string>;
 
@@ -71,19 +73,6 @@ function isSectionEditingTarget(
   return target.type === "section" && typeof target.index === "number";
 }
 
-const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((code) => {
-  switch (code) {
-    case "zh-CN":
-      return { code, label: "中文" } as const;
-    case "zh-TW":
-      return { code, label: "繁體" } as const;
-    case "en":
-      return { code, label: "English" } as const;
-    default:
-      return { code, label: code } as const;
-  }
-});
-
 function createEmptyLocalizedValue(defaultValue = ""): LocalizedValue {
   const result = {} as LocalizedValue;
   SUPPORTED_LOCALES.forEach((code) => {
@@ -103,10 +92,6 @@ function normalizeLocalizedValue(value: unknown, fallback: string): LocalizedVal
     completed[locale] = typeof raw === "string" && raw.trim() ? raw : base;
   });
   return completed as LocalizedValue;
-}
-
-function updateLocalizedValue(value: LocalizedValue, locale: LocaleKey, nextValue: string): LocalizedValue {
-  return { ...value, [locale]: nextValue } as LocalizedValue;
 }
 
 function ensureLocalized(value: unknown, fallback?: string): LocalizedValue {
@@ -258,57 +243,28 @@ function LocalizedTextField({
   onChange,
   multiline = false,
   rows = 3,
+  placeholder,
+  translationContext,
 }: {
   label: string;
   value: LocalizedValue;
   onChange: (next: LocalizedValue) => void;
   multiline?: boolean;
   rows?: number;
+  placeholder?: string;
+  translationContext?: string;
 }) {
-  const [activeLocale, setActiveLocale] = useState<LocaleKey>(DEFAULT_LOCALE);
-  const currentValue = value[activeLocale] ?? "";
-
-  const handleChange = (locale: LocaleKey, nextValue: string) => {
-    onChange(updateLocalizedValue(value, locale, nextValue));
-  };
-
+  const normalized = ensureLocalizedNoFallback(value);
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">{label}</span>
-        <div className="flex items-center gap-1">
-          {LOCALE_OPTIONS.map(({ code, label: localeLabel }) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => setActiveLocale(code as LocaleKey)}
-              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                activeLocale === code
-                  ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]"
-                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-              }`}
-            >
-              {localeLabel}
-            </button>
-          ))}
-        </div>
-      </div>
-      {multiline ? (
-        <textarea
-          value={currentValue}
-          onChange={(event) => handleChange(activeLocale, event.target.value)}
-          rows={rows}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      ) : (
-        <input
-          value={currentValue}
-          onChange={(event) => handleChange(activeLocale, event.target.value)}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      )}
-
-    </div>
+    <SharedLocalizedTextField
+      label={label}
+      value={normalized}
+      multiline={multiline}
+      rows={rows}
+      placeholder={placeholder}
+      translationContext={translationContext}
+      onChange={(next) => onChange(ensureLocalizedNoFallback(next))}
+    />
   );
 }
 
@@ -611,9 +567,26 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
       <div className="space-y-6 text-sm">
         {showBasic ? (
           <div className="space-y-6">
-            <LocalizedTextField label="眉头" value={draft.eyebrow} onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: next }))} />
-            <LocalizedTextField label="主标题" value={draft.title} onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))} />
-            <LocalizedTextField label="描述" value={draft.description} onChange={(next) => setDraft((prev) => ({ ...prev, description: next }))} multiline rows={4} />
+            <LocalizedTextField
+              label="眉头"
+              value={draft.eyebrow}
+              translationContext="库存英雄眉头"
+              onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: next }))}
+            />
+            <LocalizedTextField
+              label="主标题"
+              value={draft.title}
+              translationContext="库存英雄标题"
+              onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))}
+            />
+            <LocalizedTextField
+              label="描述"
+              value={draft.description}
+              translationContext="库存英雄描述"
+              onChange={(next) => setDraft((prev) => ({ ...prev, description: next }))}
+              multiline
+              rows={4}
+            />
           </div>
         ) : null}
 
@@ -655,6 +628,7 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
                   <LocalizedTextField
                     label="徽章文案"
                     value={badge.label}
+                    translationContext={`库存英雄徽章 ${index + 1}`}
                     onChange={(next) => {
                       const badges = [...draft.badges];
                       badges[index] = { label: next };
@@ -969,6 +943,7 @@ function InventoryPreview({ config, onEdit, onAddSection }: { config: InventoryC
 
 export function InventoryConfigEditor({ configKey, initialConfig }: { configKey: string; initialConfig: Record<string, unknown> }) {
   const [config, setConfig] = useState<InventoryConfigState>(() => normalizeConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baseline, setBaseline] = useState<InventoryConfigState>(() => normalizeConfig(initialConfig));
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [formState, dispatch] = useFormState<UpdateSiteConfigActionState, FormData>(updateSiteConfigAction, { status: "idle" });

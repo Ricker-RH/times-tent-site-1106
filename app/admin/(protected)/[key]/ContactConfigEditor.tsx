@@ -16,6 +16,7 @@ import { updateSiteConfigAction } from "../actions";
 import { useToast } from "@/providers/ToastProvider";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
+import { LocalizedTextField } from "./LocalizedTextField";
 import {
   DEFAULT_LOCALE,
   ensureArray,
@@ -26,6 +27,7 @@ import {
   ensureLocalizedNoFallback,
   serializeLocalizedAllowEmpty,
 } from "./editorUtils";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
 interface LocalizedValue extends Record<string, string> {}
 
@@ -387,75 +389,6 @@ function SubmitButton({ disabled, highlight }: { disabled: boolean; highlight?: 
   );
 }
 
-function LocalizedTextField({
-  label,
-  value,
-  onChange,
-  multiline = false,
-  rows = 3,
-}: {
-  label: string;
-  value: LocalizedValue;
-  onChange: (next: LocalizedValue) => void;
-  multiline?: boolean;
-  rows?: number;
-}) {
-  const [activeLocale, setActiveLocale] = useState<string>(DEFAULT_LOCALE);
-  const record = ensureLocalizedRecord(value);
-  const currentValue = record[activeLocale] ?? "";
-
-  const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((code) => {
-    switch (code) {
-      case "zh-CN":
-        return { code, label: "中文" } as const;
-      case "zh-TW":
-        return { code, label: "繁體" } as const;
-      case "en":
-        return { code, label: "English" } as const;
-      default:
-        return { code, label: code } as const;
-    }
-  });
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">{label}</span>
-        <div className="flex gap-2">
-          {LOCALE_OPTIONS.map((opt) => (
-            <button
-              key={opt.code}
-              type="button"
-              onClick={() => setActiveLocale(opt.code)}
-              className={`rounded-full border px-3 py-1 text-xs ${
-                activeLocale === opt.code
-                  ? "border-[var(--color-brand-primary)] text-[var(--color-brand-primary)]"
-                  : "border-[var(--color-border)] text-[var(--color-text-secondary)]"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      {multiline ? (
-        <textarea
-          value={currentValue}
-          onChange={(event) => onChange({ ...record, [activeLocale]: event.target.value })}
-          rows={rows}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      ) : (
-        <input
-          value={currentValue}
-          onChange={(event) => onChange({ ...record, [activeLocale]: event.target.value })}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      )}
-    </div>
-  );
-}
-
 function TextField({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (next: string) => void; placeholder?: string }) {
   return (
     <label className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">
@@ -629,12 +562,23 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
       <div className="space-y-6 text-sm">
         {showBasic ? (
           <div className="space-y-6">
-            <LocalizedTextField label="眉头" value={draft.eyebrow} onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: next }))} />
-            <LocalizedTextField label="标题" value={draft.title} onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))} />
+        <LocalizedTextField
+          label="眉头"
+          value={draft.eyebrow}
+          translationContext="联系我们英雄眉头"
+          onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: ensureLocalizedNoFallback(next) }))}
+        />
+        <LocalizedTextField
+          label="标题"
+          value={draft.title}
+          translationContext="联系我们英雄标题"
+          onChange={(next) => setDraft((prev) => ({ ...prev, title: ensureLocalizedNoFallback(next) }))}
+        />
             <LocalizedTextField
               label="描述"
               value={draft.description}
-              onChange={(next) => setDraft((prev) => ({ ...prev, description: next }))}
+              translationContext="联系我们英雄描述"
+              onChange={(next) => setDraft((prev) => ({ ...prev, description: ensureLocalizedNoFallback(next) }))}
               multiline
               rows={4}
             />
@@ -694,10 +638,15 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
                   <LocalizedTextField
                     label="标签"
                     value={metric.label}
+                    translationContext={`联系我们指标标签 ${index + 1}`}
                     onChange={(next) =>
                       setDraft((prev) => ({
                         ...prev,
-                        metrics: prev.metrics.map((item, idx) => (idx === index ? { ...item, label: next } : item)),
+                        metrics: prev.metrics.map((item, idx) =>
+                          idx === index
+                            ? { ...item, label: ensureLocalizedNoFallback(next) }
+                            : item,
+                        ),
                       }))
                     }
                   />
@@ -758,17 +707,44 @@ function ContactSectionDialog({
             <LocalizedTextField
               label="眉头"
               value={draft.sectionHeading.eyebrow}
-              onChange={(next) => setDraft((prev) => ({ ...prev, sectionHeading: { ...prev.sectionHeading, eyebrow: next } }))}
+              translationContext="联系我们-联系方式-眉头"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  sectionHeading: {
+                    ...prev.sectionHeading,
+                    eyebrow: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
             />
             <LocalizedTextField
               label="标题"
               value={draft.sectionHeading.title}
-              onChange={(next) => setDraft((prev) => ({ ...prev, sectionHeading: { ...prev.sectionHeading, title: next } }))}
+              translationContext="联系我们-联系方式-标题"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  sectionHeading: {
+                    ...prev.sectionHeading,
+                    title: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
             />
             <LocalizedTextField
               label="描述"
               value={draft.sectionHeading.description}
-              onChange={(next) => setDraft((prev) => ({ ...prev, sectionHeading: { ...prev.sectionHeading, description: next } }))}
+              translationContext="联系我们-联系方式-描述"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  sectionHeading: {
+                    ...prev.sectionHeading,
+                    description: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
               multiline
               rows={4}
             />
@@ -833,30 +809,39 @@ function ContactSectionDialog({
                   <LocalizedTextField
                     label="主标题"
                     value={card.title}
+                    translationContext={`联系我们-联系方式卡片标题 ${index + 1}`}
                     onChange={(next) =>
                       setDraft((prev) => ({
                         ...prev,
-                        cards: prev.cards.map((item, idx) => (idx === index ? { ...item, title: next } : item)),
+                        cards: prev.cards.map((item, idx) =>
+                          idx === index ? { ...item, title: ensureLocalizedNoFallback(next) } : item,
+                        ),
                       }))
                     }
                   />
                   <LocalizedTextField
                     label="显示内容"
                     value={card.value}
+                    translationContext={`联系我们-联系方式卡片内容 ${index + 1}`}
                     onChange={(next) =>
                       setDraft((prev) => ({
                         ...prev,
-                        cards: prev.cards.map((item, idx) => (idx === index ? { ...item, value: next } : item)),
+                        cards: prev.cards.map((item, idx) =>
+                          idx === index ? { ...item, value: ensureLocalizedNoFallback(next) } : item,
+                        ),
                       }))
                     }
                   />
                   <LocalizedTextField
                     label="辅助说明"
                     value={card.helper}
+                    translationContext={`联系我们-联系方式卡片说明 ${index + 1}`}
                     onChange={(next) =>
                       setDraft((prev) => ({
                         ...prev,
-                        cards: prev.cards.map((item, idx) => (idx === index ? { ...item, helper: next } : item)),
+                        cards: prev.cards.map((item, idx) =>
+                          idx === index ? { ...item, helper: ensureLocalizedNoFallback(next) } : item,
+                        ),
                       }))
                     }
                   />
@@ -893,12 +878,24 @@ function ContactSectionDialog({
             <LocalizedTextField
               label="焦点眉头"
               value={draft.spotlight.eyebrow}
-              onChange={(next) => setDraft((prev) => ({ ...prev, spotlight: { ...prev.spotlight, eyebrow: next } }))}
+              translationContext="联系我们-焦点眉头"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  spotlight: { ...prev.spotlight, eyebrow: ensureLocalizedNoFallback(next) },
+                }))
+              }
             />
             <LocalizedTextField
               label="焦点标题"
               value={draft.spotlight.title}
-              onChange={(next) => setDraft((prev) => ({ ...prev, spotlight: { ...prev.spotlight, title: next } }))}
+              translationContext="联系我们-焦点标题"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  spotlight: { ...prev.spotlight, title: ensureLocalizedNoFallback(next) },
+                }))
+              }
             />
           </div>
         ) : null}
@@ -953,17 +950,44 @@ function ConnectSectionDialog({
             <LocalizedTextField
               label="眉头"
               value={draft.sectionHeading.eyebrow}
-              onChange={(next) => setDraft((prev) => ({ ...prev, sectionHeading: { ...prev.sectionHeading, eyebrow: next } }))}
+              translationContext="联系我们-沟通-眉头"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  sectionHeading: {
+                    ...prev.sectionHeading,
+                    eyebrow: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
             />
             <LocalizedTextField
               label="标题"
               value={draft.sectionHeading.title}
-              onChange={(next) => setDraft((prev) => ({ ...prev, sectionHeading: { ...prev.sectionHeading, title: next } }))}
+              translationContext="联系我们-沟通-标题"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  sectionHeading: {
+                    ...prev.sectionHeading,
+                    title: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
             />
             <LocalizedTextField
               label="描述"
               value={draft.sectionHeading.description}
-              onChange={(next) => setDraft((prev) => ({ ...prev, sectionHeading: { ...prev.sectionHeading, description: next } }))}
+              translationContext="联系我们-沟通-描述"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  sectionHeading: {
+                    ...prev.sectionHeading,
+                    description: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
               multiline
               rows={4}
             />
@@ -1011,23 +1035,29 @@ function ConnectSectionDialog({
                       删除
                     </button>
                   </div>
-                  <LocalizedTextField
-                    label="标题"
-                    value={highlight.title}
+                 <LocalizedTextField
+                   label="标题"
+                   value={highlight.title}
+                    translationContext={`联系我们-服务亮点标题 ${index + 1}`}
                     onChange={(next) =>
                       setDraft((prev) => ({
                         ...prev,
-                        highlights: prev.highlights.map((item, idx) => (idx === index ? { ...item, title: next } : item)),
+                        highlights: prev.highlights.map((item, idx) =>
+                          idx === index ? { ...item, title: ensureLocalizedNoFallback(next) } : item,
+                        ),
                       }))
                     }
                   />
                   <LocalizedTextField
                     label="描述"
                     value={highlight.description}
+                    translationContext={`联系我们-服务亮点描述 ${index + 1}`}
                     onChange={(next) =>
                       setDraft((prev) => ({
                         ...prev,
-                        highlights: prev.highlights.map((item, idx) => (idx === index ? { ...item, description: next } : item)),
+                        highlights: prev.highlights.map((item, idx) =>
+                          idx === index ? { ...item, description: ensureLocalizedNoFallback(next) } : item,
+                        ),
                       }))
                     }
                     multiline
@@ -1046,15 +1076,33 @@ function ConnectSectionDialog({
 
         {showNetwork ? (
           <div className="space-y-4">
-            <LocalizedTextField
-              label="服务网络眉头"
-              value={draft.serviceNetworkCopy.eyebrow}
-              onChange={(next) => setDraft((prev) => ({ ...prev, serviceNetworkCopy: { ...prev.serviceNetworkCopy, eyebrow: next } }))}
+           <LocalizedTextField
+             label="服务网络眉头"
+             value={draft.serviceNetworkCopy.eyebrow}
+              translationContext="联系我们-服务网络-眉头"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  serviceNetworkCopy: {
+                    ...prev.serviceNetworkCopy,
+                    eyebrow: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
             />
             <LocalizedTextField
               label="服务网络描述"
               value={draft.serviceNetworkCopy.description}
-              onChange={(next) => setDraft((prev) => ({ ...prev, serviceNetworkCopy: { ...prev.serviceNetworkCopy, description: next } }))}
+              translationContext="联系我们-服务网络-描述"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  serviceNetworkCopy: {
+                    ...prev.serviceNetworkCopy,
+                    description: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
               multiline
               rows={3}
             />
@@ -1091,16 +1139,19 @@ function ConnectSectionDialog({
                       删除
                     </button>
                   </div>
-                  <LocalizedTextField
-                    label="名称"
-                    value={hub.name}
+                 <LocalizedTextField
+                   label="名称"
+                   value={hub.name}
+                    translationContext={`联系我们-服务枢纽名称 ${index + 1}`}
                     onChange={(next) =>
                       setDraft((prev) => ({
                         ...prev,
-                        serviceHubs: prev.serviceHubs.map((item, idx) => (idx === index ? { ...item, name: next } : item)),
+                        serviceHubs: prev.serviceHubs.map((item, idx) =>
+                          idx === index ? { ...item, name: ensureLocalizedNoFallback(next) } : item,
+                        ),
                       }))
                     }
-                  />
+                 />
                 </div>
               ))}
               {!draft.serviceHubs.length ? (
@@ -1114,15 +1165,27 @@ function ConnectSectionDialog({
 
         {showForm ? (
           <div className="space-y-4">
-            <LocalizedTextField
-              label="表单标题"
-              value={draft.formPanel.title}
-              onChange={(next) => setDraft((prev) => ({ ...prev, formPanel: { ...prev.formPanel, title: next } }))}
+           <LocalizedTextField
+             label="表单标题"
+             value={draft.formPanel.title}
+              translationContext="联系我们-表单标题"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  formPanel: { ...prev.formPanel, title: ensureLocalizedNoFallback(next) },
+                }))
+              }
             />
             <LocalizedTextField
               label="响应说明"
               value={draft.formPanel.responseNote}
-              onChange={(next) => setDraft((prev) => ({ ...prev, formPanel: { ...prev.formPanel, responseNote: next } }))}
+              translationContext="联系我们-表单响应说明"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  formPanel: { ...prev.formPanel, responseNote: ensureLocalizedNoFallback(next) },
+                }))
+              }
               multiline
               rows={3}
             />
@@ -1168,20 +1231,47 @@ function GuaranteeSectionDialog({
       <div className="space-y-6 text-sm">
         {showHeading ? (
           <div className="space-y-4">
-            <LocalizedTextField
-              label="眉头"
-              value={draft.sectionHeading.eyebrow}
-              onChange={(next) => setDraft((prev) => ({ ...prev, sectionHeading: { ...prev.sectionHeading, eyebrow: next } }))}
+           <LocalizedTextField
+             label="眉头"
+             value={draft.sectionHeading.eyebrow}
+              translationContext="联系我们-承诺-眉头"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  sectionHeading: {
+                    ...prev.sectionHeading,
+                    eyebrow: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
             />
             <LocalizedTextField
               label="标题"
               value={draft.sectionHeading.title}
-              onChange={(next) => setDraft((prev) => ({ ...prev, sectionHeading: { ...prev.sectionHeading, title: next } }))}
+              translationContext="联系我们-承诺-标题"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  sectionHeading: {
+                    ...prev.sectionHeading,
+                    title: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
             />
             <LocalizedTextField
               label="描述"
               value={draft.sectionHeading.description}
-              onChange={(next) => setDraft((prev) => ({ ...prev, sectionHeading: { ...prev.sectionHeading, description: next } }))}
+              translationContext="联系我们-承诺-描述"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  sectionHeading: {
+                    ...prev.sectionHeading,
+                    description: ensureLocalizedNoFallback(next),
+                  },
+                }))
+              }
               multiline
               rows={4}
             />
@@ -1241,23 +1331,29 @@ function GuaranteeSectionDialog({
                     }
                     placeholder="shield-check"
                   />
-                  <LocalizedTextField
-                    label="标题"
-                    value={item.title}
+                 <LocalizedTextField
+                   label="标题"
+                   value={item.title}
+                    translationContext={`联系我们-承诺标题 ${index + 1}`}
                     onChange={(next) =>
                       setDraft((prev) => ({
                         ...prev,
-                        guarantees: prev.guarantees.map((guarantee, idx) => (idx === index ? { ...guarantee, title: next } : guarantee)),
+                        guarantees: prev.guarantees.map((guarantee, idx) =>
+                          idx === index ? { ...guarantee, title: ensureLocalizedNoFallback(next) } : guarantee,
+                        ),
                       }))
                     }
                   />
                   <LocalizedTextField
                     label="描述"
                     value={item.description}
+                    translationContext={`联系我们-承诺描述 ${index + 1}`}
                     onChange={(next) =>
                       setDraft((prev) => ({
                         ...prev,
-                        guarantees: prev.guarantees.map((guarantee, idx) => (idx === index ? { ...guarantee, description: next } : guarantee)),
+                        guarantees: prev.guarantees.map((guarantee, idx) =>
+                          idx === index ? { ...guarantee, description: ensureLocalizedNoFallback(next) } : guarantee,
+                        ),
                       }))
                     }
                     multiline
@@ -1340,6 +1436,7 @@ function ContactPreview({ config, onEdit }: { config: ContactConfigState; onEdit
 
 export function ContactConfigEditor({ configKey, initialConfig }: { configKey: string; initialConfig: Record<string, unknown> }) {
   const [config, setConfig] = useState<ContactConfigState>(() => normalizeConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baseline, setBaseline] = useState<ContactConfigState>(() => normalizeConfig(initialConfig));
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [formState, dispatch] = useFormState<UpdateSiteConfigActionState, FormData>(updateSiteConfigAction, { status: "idle" });

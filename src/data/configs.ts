@@ -1535,11 +1535,6 @@ export const footer_config = {
       "zh-TW": "© 2025 時代篷房 版權所有",
       "en": "© 2025 TIMES TENT. All rights reserved."
     },
-    "icp": {
-      "zh-CN": "浙ICP备12345678号",
-      "zh-TW": "浙ICP備12345678號",
-      "en": "ICP No. 12345678"
-    },
     "privacy": {
       "label": {
         "zh-CN": "隐私政策",

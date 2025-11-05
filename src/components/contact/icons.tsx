@@ -14,15 +14,15 @@ export function ContactIcon({ name }: { name: IconName }): JSX.Element {
       return (
         <svg
           aria-hidden="true"
-          className="h-5 w-5"
+          className="h-3 w-3"
           fill="none"
-          height="24"
+          height="16"
           stroke="currentColor"
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={2}
           viewBox="0 0 24 24"
-          width="24"
+          width="16"
         >
           <path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384" />
         </svg>

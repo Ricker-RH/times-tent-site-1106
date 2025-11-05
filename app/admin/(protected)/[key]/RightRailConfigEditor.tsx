@@ -6,7 +6,9 @@ import { createPortal } from "react-dom";
 import { FALLBACK_RIGHT_RAIL_CONFIG } from "@/constants/siteFallbacks";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
+import { LocalizedTextField } from "./LocalizedTextField";
 import { ensureArray, ensureString, mergeMeta } from "./editorUtils";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
 import { useFormState, useFormStatus } from "react-dom";
@@ -47,14 +49,9 @@ const EDIT_GROUPS: Array<{
   },
 ];
 
-const LOCALES: Array<{ code: string; label: string }> = [
-  { code: "zh-CN", label: "简体中文" },
-  { code: "en", label: "English" },
-  { code: "zh-TW", label: "繁體中文" },
-];
-
 export function RightRailConfigEditor({ configKey, initialConfig }: { configKey: string; initialConfig: Record<string, unknown> }) {
   const [config, setConfig] = useState<RightRailConfigState>(() => normalizeConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baseline, setBaseline] = useState<RightRailConfigState>(() => normalizeConfig(initialConfig));
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [formState, dispatch] = useFormState<UpdateSiteConfigActionState, FormData>(updateSiteConfigAction, { status: "idle" });
@@ -256,14 +253,20 @@ function ButtonsDialog({ value, onSave, onCancel }: { value: RightRailConfigStat
                   label="按钮标题"
                   value={button.label}
                   onChange={(next) =>
-                    setDraft((prev) => prev.map((item) => (item.id === button.id ? { ...item, label: next } : item)))
+                    setDraft((prev) =>
+                      prev.map((item) => (item.id === button.id ? { ...item, label: cleanLocalized(next) } : item)),
+                    )
                   }
                 />
                 <LocalizedTextField
                   label="按钮描述"
                   value={button.description}
                   onChange={(next) =>
-                    setDraft((prev) => prev.map((item) => (item.id === button.id ? { ...item, description: next } : item)))
+                    setDraft((prev) =>
+                      prev.map((item) =>
+                        item.id === button.id ? { ...item, description: cleanLocalized(next) } : item,
+                      ),
+                    )
                   }
                   multiline
                   rows={3}
@@ -374,48 +377,6 @@ function SubmitButton({ disabled, highlight }: { disabled: boolean; highlight?: 
     >
       {pending ? "保存中..." : "保存配置"}
     </button>
-  );
-}
-
-function LocalizedTextField({
-  label,
-  value,
-  onChange,
-  multiline = false,
-  rows = 3,
-}: {
-  label: string;
-  value: LocalizedRecord;
-  onChange: (next: LocalizedRecord) => void;
-  multiline?: boolean;
-  rows?: number;
-}) {
-  return (
-    <div className="space-y-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">{label}</p>
-      {LOCALES.map((locale) => (
-        <label
-          key={locale.code}
-          className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]"
-        >
-          <span>{locale.label}</span>
-          {multiline ? (
-            <textarea
-              value={value[locale.code] ?? ""}
-              onChange={(event) => onChange({ ...value, [locale.code]: event.target.value })}
-              rows={rows}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-            />
-          ) : (
-            <input
-              value={value[locale.code] ?? ""}
-              onChange={(event) => onChange({ ...value, [locale.code]: event.target.value })}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-            />
-          )}
-        </label>
-      ))}
-    </div>
   );
 }
 

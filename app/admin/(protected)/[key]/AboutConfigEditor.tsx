@@ -18,6 +18,8 @@ import { updateSiteConfigAction } from "../actions";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
 import { useToast } from "@/providers/ToastProvider";
+import { useLocalizedAutoTranslate } from "@/hooks/useLocalizedAutoTranslate";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 import {
   DEFAULT_LOCALE,
   ensureArray,
@@ -28,6 +30,7 @@ import {
   ensureLocalizedNoFallback,
   serializeLocalizedAllowEmpty,
 } from "./editorUtils";
+import type { LocaleKey } from "@/i18n/locales";
 
 const LOCALES = [
   { code: "zh-CN", label: "中文" },
@@ -431,6 +434,30 @@ function LocalizedTextField({
   const [activeLocale, setActiveLocale] = useState<string>(DEFAULT_LOCALE);
   const record = ensureLocalizedRecord(value);
   const currentValue = record[activeLocale] ?? "";
+  const targetLocales = useMemo(
+    () => LOCALES.map((locale) => locale.code).filter((code) => code !== DEFAULT_LOCALE),
+    [],
+  );
+  const normalizedValue = ensureLocalizedNoFallback(value);
+
+  const translator = useLocalizedAutoTranslate({
+    label,
+    value: normalizedValue,
+    sourceLocale: DEFAULT_LOCALE,
+    targetLocales,
+    context: label,
+    onApply: (translations) => {
+      const base = ensureLocalizedNoFallback(value);
+      const next = { ...base } as Record<string, string>;
+      targetLocales.forEach((locale) => {
+        const translated = translations[locale];
+        if (typeof translated === "string" && translated.trim()) {
+          next[locale] = translated.trim();
+        }
+      });
+      onChange(next);
+    },
+  });
 
   const handleChange = (locale: string, nextValue: string) => {
     onChange(setLocaleText(record, nextValue, locale));
@@ -455,6 +482,14 @@ function LocalizedTextField({
               {locale.label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={translator.openDialog}
+            disabled={translator.isLoading}
+            className="rounded-full border border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)]/10 disabled:cursor-not-allowed disabled:border-dashed disabled:text-[var(--color-text-tertiary,#8690a3)]"
+          >
+            {translator.isLoading ? "翻译中…" : "自动适配其他语言"}
+          </button>
         </div>
       </div>
       {multiline ? (
@@ -472,6 +507,7 @@ function LocalizedTextField({
         />
       )}
       {helperText ? <p className="text-xs text-[var(--color-text-tertiary,#8690a3)]">{helperText}</p> : null}
+      {translator.renderDialog()}
     </div>
   );
 }
@@ -1867,6 +1903,7 @@ function WhyDialog({
 
 export function AboutConfigEditor({ configKey, initialConfig }: AboutConfigEditorProps) {
   const [config, setConfig] = useState<AboutConfigState>(() => normalizeAboutConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baseline, setBaseline] = useState<AboutConfigState>(() => normalizeAboutConfig(initialConfig));
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [formState, dispatch] = useFormState<UpdateSiteConfigActionState, FormData>(updateSiteConfigAction, {

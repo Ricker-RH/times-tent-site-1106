@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, Fragment } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -15,7 +15,7 @@ import type { RightRailConfig } from "@/server/pageConfigs";
 const cn = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(" ");
 
-const PHONE_ICON_COMPONENTS = [IconPhoneDesk, IconPhoneMobile, IconPhoneClassic] as const;
+const PHONE_ICON_COMPONENTS = [IconPhone, IconPhoneMobile, IconPhoneClassic] as const;
 
 // Add a resilient resolver to handle either string or localized record labels
 function resolveLabel(value: unknown, fallback = ""): string {
@@ -128,7 +128,7 @@ function Header({ links, currentPath, mobileOpen, onToggleMobile, onCloseMobile 
         >
           <Image src="/logo-horizontal.png" alt="TIMES TENT 时代篷房" width={160} height={48} className="h-11 w-auto lg:h-12" priority />
         </Link>
-        <nav className="hidden items-center gap-6 lg:flex">
+        <nav className="hidden flex-1 items-center justify-end gap-6 pr-6 lg:flex">
           {links.map((link) => (
             <DesktopNavItem key={link.slug ?? link.href} link={link} isActive={isLinkActive(link, currentPath)} />
           ))}
@@ -407,34 +407,37 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
               <p className="whitespace-nowrap text-2xl font-semibold tracking-[0.03em]">{brandNameZh}</p>
               <p className="whitespace-nowrap text-lg tracking-[-0.04em] text-white/80">{brandNameEn}</p>
             </div>
-            <div className="space-y-3 text-sm text-white/80">
-              <div className="flex items-start gap-2">
-                <IconMapPin className="mt-1 h-4 w-4 text-white/80" />
-                <p className="font-medium leading-relaxed">{t(footer.contact.address)}</p>
-              </div>
+            <div className="grid grid-cols-[1.35rem,1fr] items-start gap-x-2 gap-y-2 text-sm text-white/80">
+              <span className="flex items-start justify-center pt-[2px] text-white/80">
+                <IconMapPin className="h-4 w-4" />
+              </span>
+              <p className="font-medium leading-snug">{t(footer.contact.address)}</p>
               {contactPhones.map((phone, index) => {
                 const trimmedLabel = resolveLabel(phone.label, "电话");
                 const trimmedHref = (phone.href ?? "").trim();
                 const fallbackHref = trimmedLabel ? `tel:${trimmedLabel.replace(/\s+/g, "")}` : "#";
                 const IconComponent = PHONE_ICON_COMPONENTS[index] ?? IconPhoneClassic;
+                const iconSizeClass = index === 0 ? "h-[14px] w-[14px]" : "h-4 w-4";
                 return (
-                  <div key={`footer-phone-${index}`} className="flex items-center gap-2">
-                    <IconComponent className="h-4 w-4 text-white/75" />
+                  <Fragment key={`footer-phone-${index}`}>
+                    <span className="flex items-start justify-center pt-[2px] text-white/75">
+                      <IconComponent className={iconSizeClass} />
+                    </span>
                     <a href={trimmedHref || fallbackHref} className="transition hover:text-white">
                       {trimmedLabel}
                     </a>
-                  </div>
+                  </Fragment>
                 );
               })}
-              <div className="flex items-center gap-2">
-                <IconMail className="h-4 w-4 text-white/80" />
-                <a href={footer.contact.email.href} className="transition hover:text-white">
-                  {resolveLabel(footer.contact.email.label, "邮箱")}
-                </a>
-              </div>
+              <span className="flex items-start justify-center pt-[2px] text-white/80">
+                <IconMail className="h-4 w-4" />
+              </span>
+              <a href={footer.contact.email.href} className="transition hover:text-white">
+                {resolveLabel(footer.contact.email.label, "邮箱")}
+              </a>
             </div>
           </div>
-          <nav className="ml-auto flex flex-wrap items-start justify-end gap-8 text-sm text-white/75">
+          <nav className="ml-auto flex flex-wrap items-start justify-end gap-8 text-sm text-white/75 transform translate-x-[4.75rem]">
             {orderedColumns.map((group) => (
               <div key={group.title} className="min-w-[140px] space-y-3 text-left">
                 <p className="text-base font-bold tracking-wide text-[var(--color-brand-primary)]">{group.title}</p>
@@ -467,7 +470,6 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
             <Link href={footer.legal.terms.href} className="transition hover:text-white">
               {t(footer.legal.terms.label)}
             </Link>
-            <span>{t(footer.legal.icp)}</span>
           </div>
         </div>
       </div>
@@ -576,9 +578,10 @@ interface RailButtonProps {
 
 function RailButton({ label, description, href, icon, iconLarge, target, active, onHover, variant = "default" }: RailButtonProps) {
   const isFlat = variant === "flat";
+  const showTooltip = description.trim().length > 0;
 
   const handleHover = (state: boolean) => {
-    if (isFlat) return;
+    if (!showTooltip) return;
     onHover(state);
   };
 
@@ -592,7 +595,7 @@ function RailButton({ label, description, href, icon, iconLarge, target, active,
       onMouseEnter={() => handleHover(true)}
       onMouseLeave={() => handleHover(false)}
     >
-      {!isFlat ? (
+      {showTooltip ? (
         <div
           className={cn(
             "pointer-events-none absolute right-14 top-1/2 -translate-y-1/2 transform transition duration-200",
@@ -727,17 +730,17 @@ function IconPhoneDesk(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" {...props}>
       <path
-        d="M4.5 9.5h15a1.5 1.5 0 011.5 1.5v6.25a1.75 1.75 0 01-1.75 1.75H4.75A1.75 1.75 0 013 17.25V11a1.5 1.5 0 011.5-1.5z"
+        d="M6 11h12a1.1 1.1 0 011.1 1.1v4.6A1.1 1.1 0 0118 17.8H6a1.1 1.1 0 01-1.1-1.1v-4.6A1.1 1.1 0 016 11z"
         stroke="currentColor"
         strokeWidth={1.5}
       />
       <path
-        d="M7 9c0-2.761 2.239-5 5-5s5 2.239 5 5"
+        d="M8.3 9c0-2.12 1.72-3.85 3.7-3.85s3.7 1.73 3.7 3.85"
         stroke="currentColor"
         strokeWidth={1.5}
         strokeLinecap="round"
       />
-      <path d="M9.5 15h5" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
+      <path d="M10.3 15h3.4" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
     </svg>
   );
 }
@@ -745,9 +748,10 @@ function IconPhoneDesk(props: React.SVGProps<SVGSVGElement>) {
 function IconPhoneMobile(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" {...props}>
-      <rect x={8} y={3} width={8} height={18} rx={1.5} stroke="currentColor" strokeWidth={1.5} />
-      <path d="M10 6h4" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
-      <circle cx={12} cy={18} r={0.9} fill="currentColor" />
+      <rect x={6} y={2} width={12} height={20} rx={2.5} stroke="currentColor" strokeWidth={1.5} />
+      <path d="M9 6h6" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
+      <rect x={8.75} y={8.75} width={6.5} height={8.5} rx={1.2} stroke="currentColor" strokeWidth={1.3} />
+      <circle cx={12} cy={17.8} r={0.9} fill="currentColor" />
     </svg>
   );
 }

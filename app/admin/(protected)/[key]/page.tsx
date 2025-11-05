@@ -10,6 +10,8 @@ import { listSiteConfigHistory } from "@/server/siteConfigHistory";
 import { VISIBILITY_CONFIG_KEY } from "@/constants/visibility";
 import { PreviewLocaleSwitch } from "./PreviewLocaleSwitch";
 import { getVisibilityConfig } from "@/server/visibility";
+import { GlobalTranslationProvider } from "@/hooks/useGlobalTranslationManager";
+import { GlobalTranslationBar } from "./GlobalTranslationBar";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +84,21 @@ export default async function AdminConfigDetailPage({
   const record = canRenderVisual ? (safeValue as Record<string, unknown>) : {};
   const ConfigEditor = getConfigEditorComponent(configKey);
 
+  let visualSection;
+
+  if (canRenderVisual) {
+    const editorNode = (
+      <>
+        {isSuperAdmin ? <GlobalTranslationBar /> : null}
+        <ConfigEditor configKey={configKey} initialConfig={record} relatedData={relatedData} />
+      </>
+    );
+
+    visualSection = isSuperAdmin ? <GlobalTranslationProvider>{editorNode}</GlobalTranslationProvider> : editorNode;
+  } else {
+    visualSection = <EditConfigForm configKey={configKey} defaultValue={prettyValue} />;
+  }
+
   return (
     <div className="space-y-10">
       <div className="space-y-4">
@@ -114,11 +131,7 @@ export default async function AdminConfigDetailPage({
           {meta.updatedAt ? <span>最近更新：{formatDate(meta.updatedAt)}</span> : null}
         </div>
       </div>
-      {canRenderVisual ? (
-        <ConfigEditor configKey={configKey} initialConfig={record} relatedData={relatedData} />
-      ) : (
-        <EditConfigForm configKey={configKey} defaultValue={prettyValue} />
-      )}
+      {visualSection}
       {isSuperAdmin ? (
         <ConfigHistoryPanel history={history} configKey={configKey} />
       ) : null}

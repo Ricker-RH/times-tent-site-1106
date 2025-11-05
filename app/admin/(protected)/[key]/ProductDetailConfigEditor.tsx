@@ -10,6 +10,7 @@ import { useFormState, useFormStatus } from "react-dom";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
 import { SaveBar } from "./SaveBar";
+import { LocalizedTextField as SharedLocalizedTextField } from "./LocalizedTextField";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
 import { useToast } from "@/providers/ToastProvider";
@@ -26,8 +27,9 @@ import {
   type ProductDetailConfigMap,
 } from "@/types/productDetails";
 import { PRODUCT_MEDIA, DEFAULT_MEDIA } from "@/data/productMedia";
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureLocalizedRecord, setLocaleText } from "./editorUtils";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureLocalizedRecord } from "./editorUtils";
 import type { LocaleKey } from "@/i18n/locales";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
 interface ProductDetailConfigEditorProps {
   configKey: string;
@@ -189,19 +191,6 @@ function ImageInput({
 // 本地化字段类型与输入控件
 
 type LocalizedValue = Record<LocaleKey, string>;
-
-const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((code) => {
-  switch (code) {
-    case "zh-CN":
-      return { code, label: "中文" } as const;
-    case "zh-TW":
-      return { code, label: "繁體" } as const;
-    case "en":
-      return { code, label: "English" } as const;
-    default:
-      return { code, label: code } as const;
-  }
-});
 
 function cleanLocalized(record: unknown): LocalizedValue {
   const r = ensureLocalizedRecord(record) as LocalizedValue;
@@ -482,6 +471,8 @@ function LocalizedTextField({
   multiline = false,
   rows = 3,
   placeholder,
+  translationContext,
+  helper,
 }: {
   label: string;
   value: LocalizedValue | string;
@@ -489,49 +480,21 @@ function LocalizedTextField({
   multiline?: boolean;
   rows?: number;
   placeholder?: string;
+  translationContext?: string;
+  helper?: string;
 }) {
-  const [activeLocale, setActiveLocale] = useState<LocaleKey>(DEFAULT_LOCALE);
-  const record = ensureLocalizedRecord(value) as LocalizedValue;
-  const currentValue = record[activeLocale] ?? "";
-
+  const normalized = cleanLocalized(value);
   return (
-    <div className="space-y-2 text-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium text-[var(--color-brand-secondary)]">{label}</span>
-        <div className="flex items-center gap-1">
-          {LOCALE_OPTIONS.map(({ code, label: localeLabel }) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => setActiveLocale(code as LocaleKey)}
-              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                activeLocale === code
-                  ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]"
-                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-              }`}
-            >
-              {localeLabel}
-            </button>
-          ))}
-        </div>
-      </div>
-      {multiline ? (
-        <textarea
-          value={currentValue}
-          onChange={(event) => onChange(cleanLocalized(setLocaleText(record, event.target.value, activeLocale)))}
-          rows={rows}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-brand-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      ) : (
-        <input
-          value={currentValue}
-          onChange={(event) => onChange(cleanLocalized(setLocaleText(record, event.target.value, activeLocale)))}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-brand-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      )}
-    </div>
+    <SharedLocalizedTextField
+      label={label}
+      value={normalized}
+      multiline={multiline}
+      rows={rows}
+      placeholder={placeholder}
+      translationContext={translationContext}
+      helper={helper}
+      onChange={(next) => onChange(cleanLocalized(next))}
+    />
   );
 }
 
@@ -921,6 +884,8 @@ interface HeroDialogProps {
 }
 
 function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDialogProps) {
+  const slugContext = value.slug || "未命名产品";
+  const heroContextBase = `产品详情(${slugContext})英雄区`;
   const [draft, setDraft] = useState<ProductDetailConfig>(() => cloneDetail(value));
 
   // 初始化本地化记录：默认语言取当前值，其他语言优先使用覆盖
@@ -972,12 +937,34 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
       onCancel={onCancel}
     >
       <div className="space-y-4 text-sm">
-        <LocalizedTextField label="页面标题" value={titleRecord} onChange={setTitleRecord} />
+        <LocalizedTextField
+          label="页面标题"
+          translationContext={`${heroContextBase}页面标题`}
+          value={titleRecord}
+          onChange={setTitleRecord}
+        />
         <div className="grid gap-4 md:grid-cols-2">
-          <LocalizedTextField label="英雄区徽章（可选）" value={badgeRecord} onChange={setBadgeRecord} />
-          <LocalizedTextField label="适用场景" value={scenariosRecord} onChange={setScenariosRecord} />
+          <LocalizedTextField
+            label="英雄区徽章（可选）"
+            translationContext={`${heroContextBase}徽章`}
+            value={badgeRecord}
+            onChange={setBadgeRecord}
+          />
+          <LocalizedTextField
+            label="适用场景"
+            translationContext={`${heroContextBase}适用场景`}
+            value={scenariosRecord}
+            onChange={setScenariosRecord}
+          />
         </div>
-        <LocalizedTextField label="概述描述" value={descriptionRecord} onChange={setDescriptionRecord} multiline rows={4} />
+        <LocalizedTextField
+          label="概述描述"
+          translationContext={`${heroContextBase}概述描述`}
+          value={descriptionRecord}
+          onChange={setDescriptionRecord}
+          multiline
+          rows={4}
+        />
         <ImageInput
           label="背景图"
           value={draft.hero.image ?? ""}
@@ -1059,6 +1046,8 @@ function BreadcrumbEditorDialog({ value, onSave, onCancel }: BreadcrumbDialogPro
 
 interface SectionDialogProps {
   value: ProductDetailConfig["sections"][number];
+  slug: string;
+  index: number;
   onSave: (
     next: ProductDetailConfig["sections"][number],
     localized?: {
@@ -1077,7 +1066,8 @@ interface SectionDialogProps {
   };
 }
 
-function SectionEditorDialog({ value, onSave, onCancel, initialLocalized }: SectionDialogProps) {
+function SectionEditorDialog({ value, slug, index, onSave, onCancel, initialLocalized }: SectionDialogProps) {
+  const sectionContextBase = `产品详情(${slug || "未命名产品"})章节${index + 1}`;
   const createInitialLocalized = (val: string, preset?: LocalizedValue) => {
     const record: LocalizedValue = {} as LocalizedValue;
     SUPPORTED_LOCALES.forEach((code) => {
@@ -1192,7 +1182,12 @@ function SectionEditorDialog({ value, onSave, onCancel, initialLocalized }: Sect
   return (
     <EditorDialog title="编辑章节" subtitle="维护段落、要点与指标卡片" onCancel={onCancel} onSave={handleSave}>
       <div className="space-y-6 text-sm">
-        <LocalizedTextField label="章节标题" value={headingRecord} onChange={setHeadingRecord} />
+        <LocalizedTextField
+          label="章节标题"
+          translationContext={`${sectionContextBase}标题`}
+          value={headingRecord}
+          onChange={setHeadingRecord}
+        />
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -1209,7 +1204,14 @@ function SectionEditorDialog({ value, onSave, onCancel, initialLocalized }: Sect
             {paragraphRecords.map((rec, idx) => (
               <div key={idx} className="flex items-start gap-2">
                 <div className="flex-1">
-                  <LocalizedTextField label={`段落 ${idx + 1}`} value={rec} onChange={(val) => setParagraphRecords((prev) => prev.map((r, i) => (i === idx ? val : r)))} multiline rows={4} />
+                  <LocalizedTextField
+                    label={`段落 ${idx + 1}`}
+                    translationContext={`${sectionContextBase}段落${idx + 1}`}
+                    value={rec}
+                    onChange={(val) => setParagraphRecords((prev) => prev.map((r, i) => (i === idx ? val : r)))}
+                    multiline
+                    rows={4}
+                  />
                 </div>
                 <button
                   type="button"
@@ -1252,7 +1254,16 @@ function SectionEditorDialog({ value, onSave, onCancel, initialLocalized }: Sect
                   {group.map((rec, ii) => (
                     <div key={ii} className="flex items-start gap-2">
                       <div className="flex-1">
-                        <LocalizedTextField label={`条目 ${ii + 1}`} value={rec} onChange={(val) => setListRecords((prev) => prev.map((g, i) => (i === gi ? g.map((r, j) => (j === ii ? val : r)) : g)))} />
+                        <LocalizedTextField
+                          label={`条目 ${ii + 1}`}
+                          translationContext={`${sectionContextBase}要点列表${gi + 1}条目${ii + 1}`}
+                          value={rec}
+                          onChange={(val) =>
+                            setListRecords((prev) =>
+                              prev.map((g, i) => (i === gi ? g.map((r, j) => (j === ii ? val : r)) : g)),
+                            )
+                          }
+                        />
                       </div>
                       <button
                         type="button"
@@ -1304,8 +1315,26 @@ function SectionEditorDialog({ value, onSave, onCancel, initialLocalized }: Sect
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {group.map((item, ii) => (
                     <div key={ii} className="space-y-2 rounded-xl border border-[var(--color-border)] bg-white p-3">
-                      <LocalizedTextField label={`指标名称 ${ii + 1}`} value={item.label} onChange={(val) => setPairRecords((prev) => prev.map((g, i) => (i === gi ? g.map((it, j) => (j === ii ? { ...it, label: val } : it)) : g)))} />
-                      <LocalizedTextField label={`指标值 ${ii + 1}`} value={item.value} onChange={(val) => setPairRecords((prev) => prev.map((g, i) => (i === gi ? g.map((it, j) => (j === ii ? { ...it, value: val } : it)) : g)))} />
+                      <LocalizedTextField
+                        label={`指标名称 ${ii + 1}`}
+                        translationContext={`${sectionContextBase}指标行${gi + 1}名称${ii + 1}`}
+                        value={item.label}
+                        onChange={(val) =>
+                          setPairRecords((prev) =>
+                            prev.map((g, i) => (i === gi ? g.map((it, j) => (j === ii ? { ...it, label: val } : it)) : g)),
+                          )
+                        }
+                      />
+                      <LocalizedTextField
+                        label={`指标值 ${ii + 1}`}
+                        translationContext={`${sectionContextBase}指标行${gi + 1}数值${ii + 1}`}
+                        value={item.value}
+                        onChange={(val) =>
+                          setPairRecords((prev) =>
+                            prev.map((g, i) => (i === gi ? g.map((it, j) => (j === ii ? { ...it, value: val } : it)) : g)),
+                          )
+                        }
+                      />
                       <div className="flex justify-end">
                         <button
                           type="button"
@@ -1340,9 +1369,11 @@ interface GalleryDialogProps {
   onSave: (next: DetailGalleryItem[], localized?: Array<{ alt?: LocalizedValue }>) => void;
   onCancel: () => void;
   initialLocalized?: Array<{ alt?: LocalizedValue }>;
+  slug: string;
 }
 
-function GalleryEditorDialog({ value, onSave, onCancel, initialLocalized }: GalleryDialogProps) {
+function GalleryEditorDialog({ value, onSave, onCancel, initialLocalized, slug }: GalleryDialogProps) {
+  const galleryContextBase = `产品详情(${slug || "未命名产品"})图库`;
   const createInitialLocalized = (val: string, preset?: LocalizedValue) => {
     const record: LocalizedValue = {} as LocalizedValue;
     SUPPORTED_LOCALES.forEach((code) => {
@@ -1414,6 +1445,7 @@ function GalleryEditorDialog({ value, onSave, onCancel, initialLocalized }: Gall
             />
             <LocalizedTextField
               label="替代文本"
+              translationContext={`${galleryContextBase}图片${index + 1}替代文本`}
               value={item.altRecord}
               onChange={(val) => handleAltChange(index, val)}
             />
@@ -1443,9 +1475,11 @@ interface CtaDialogProps {
   ) => void;
   onCancel: () => void;
   initialLocalized?: { title?: LocalizedValue; description?: LocalizedValue; primaryLabel?: LocalizedValue; phoneLabel?: LocalizedValue };
+  slug: string;
 }
 
-function CtaEditorDialog({ value, onSave, onCancel, initialLocalized }: CtaDialogProps) {
+function CtaEditorDialog({ value, onSave, onCancel, initialLocalized, slug }: CtaDialogProps) {
+  const ctaContextBase = `产品详情(${slug || "未命名产品"})CTA`;
   const createInitialLocalized = (val: string, preset?: LocalizedValue) => {
     const record: LocalizedValue = {} as LocalizedValue;
     SUPPORTED_LOCALES.forEach((code) => {
@@ -1497,10 +1531,27 @@ function CtaEditorDialog({ value, onSave, onCancel, initialLocalized }: CtaDialo
       onCancel={onCancel}
     >
       <div className="space-y-4 text-sm">
-        <LocalizedTextField label="CTA 标题" value={titleRecord} onChange={setTitleRecord} />
-        <LocalizedTextField label="CTA 描述" value={descriptionRecord} onChange={setDescriptionRecord} multiline rows={3} />
+        <LocalizedTextField
+          label="CTA 标题"
+          translationContext={`${ctaContextBase}标题`}
+          value={titleRecord}
+          onChange={setTitleRecord}
+        />
+        <LocalizedTextField
+          label="CTA 描述"
+          translationContext={`${ctaContextBase}描述`}
+          value={descriptionRecord}
+          onChange={setDescriptionRecord}
+          multiline
+          rows={3}
+        />
         <div className="grid gap-4 md:grid-cols-2">
-          <LocalizedTextField label="主按钮文本" value={primaryLabelRecord} onChange={setPrimaryLabelRecord} />
+          <LocalizedTextField
+            label="主按钮文本"
+            translationContext={`${ctaContextBase}主按钮文本`}
+            value={primaryLabelRecord}
+            onChange={setPrimaryLabelRecord}
+          />
           <div>
             <label className="block text-xs text-[var(--color-text-tertiary,#8690a3)]">主按钮链接</label>
             <input
@@ -1512,7 +1563,12 @@ function CtaEditorDialog({ value, onSave, onCancel, initialLocalized }: CtaDialo
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <LocalizedTextField label="电话按钮文本" value={phoneLabelRecord} onChange={setPhoneLabelRecord} />
+          <LocalizedTextField
+            label="电话按钮文本"
+            translationContext={`${ctaContextBase}电话按钮文本`}
+            value={phoneLabelRecord}
+            onChange={setPhoneLabelRecord}
+          />
           <div>
             <label className="block text-xs text-[var(--color-text-tertiary,#8690a3)]">联系电话</label>
             <input
@@ -1534,6 +1590,7 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
   const fallbackSlugs = useMemo(() => listAvailableProductDetailSlugs(), []);
 
   const [details, setDetails] = useState<ProductDetailConfigMap>(() => normalizeProductDetailMap(initialConfig, productSeeds));
+  useGlobalTranslationRegistrationForConfig({ config: details, setConfig: setDetails, labelPrefix: configKey });
   const [baselineSnapshot, setBaselineSnapshot] = useState(() => {
     const normalized = normalizeProductDetailMap(initialConfig, productSeeds);
     return JSON.stringify(serializeProductDetailMap(normalized));
@@ -1762,6 +1819,8 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
         dialog = (
           <SectionEditorDialog
             value={section}
+            slug={selectedSlug}
+            index={editing.index}
             initialLocalized={localizedOverrides[selectedSlug]?.sections?.[editing.index]}
             onSave={(next, localized) => {
               const current = cloneDetail(details[selectedSlug]);
@@ -1814,6 +1873,7 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
         <GalleryEditorDialog
           value={detail.gallery}
           initialLocalized={localizedOverrides[selectedSlug]?.gallery}
+          slug={selectedSlug}
           onSave={(next, localized) => {
             const nextDetails = {
               ...details,
@@ -1856,6 +1916,7 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
         <CtaEditorDialog
           value={detail.cta ?? { title: "", description: "", primaryLabel: "", primaryHref: "", phoneLabel: "", phoneNumber: "" }}
           initialLocalized={localizedOverrides[selectedSlug]?.cta}
+          slug={selectedSlug}
           onSave={(next, localized) => {
             const nextDetails = {
               ...details,

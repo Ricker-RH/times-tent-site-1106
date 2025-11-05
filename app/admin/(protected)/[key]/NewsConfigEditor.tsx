@@ -7,6 +7,7 @@ import { useFormState, useFormStatus } from "react-dom";
 
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
+import { LocalizedTextField as SharedLocalizedTextField } from "./LocalizedTextField";
 
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
@@ -14,6 +15,7 @@ import { resolveImageSrc, sanitizeImageSrc } from "@/utils/image";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from "@/i18n/locales";
 import { getCurrentLocale } from "@/data";
 import { useToast } from "@/providers/ToastProvider";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
 const PRIMARY_LOCALE = "zh-CN";
 
@@ -814,19 +816,6 @@ function TextArea({
   );
 }
 
-const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((code) => {
-  switch (code) {
-    case "zh-CN":
-      return { code, label: "中文" } as const;
-    case "zh-TW":
-      return { code, label: "繁體" } as const;
-    case "en":
-      return { code, label: "English" } as const;
-    default:
-      return { code, label: code } as const;
-  }
-});
-
 function updateLocalizedMap(value: LocalizedMap | undefined, locale: string, nextValue: string): LocalizedMap {
   const next = { ...(value ?? {}) };
   next[locale] = nextValue;
@@ -848,49 +837,39 @@ function LocalizedTextField({
   onChange,
   multiline = false,
   rows = 3,
+  placeholder,
+  translationContext,
 }: {
   label: string;
   value: LocalizedMap;
   onChange: (next: LocalizedMap) => void;
   multiline?: boolean;
   rows?: number;
+  placeholder?: string;
+  translationContext?: string;
 }) {
-  const [activeLocale, setActiveLocale] = useState<string>(DEFAULT_LOCALE);
-  const currentValue = (value ?? {})[activeLocale] ?? "";
-
+  const normalizedValue = normalizeLocalizedField(value);
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-[var(--color-brand-secondary)]">{label}</span>
-        <div className="flex gap-2">
-          {LOCALE_OPTIONS.map((option) => (
-            <button
-              key={option.code}
-              type="button"
-              onClick={() => setActiveLocale(option.code)}
-              className={`rounded-full border px-3 py-1 text-xs ${activeLocale === option.code ? "border-[var(--color-brand-primary)] text-[var(--color-brand-primary)]" : "border-[var(--color-border)] text-[var(--color-text-secondary)]"}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      {multiline ? (
-        <textarea
-          value={currentValue}
-          onChange={(event) => onChange(updateLocalizedMap(value, activeLocale, event.target.value))}
-          rows={rows}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/80 px-3 py-2 text-sm text-[var(--color-brand-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      ) : (
-        <input
-          value={currentValue}
-          onChange={(event) => onChange(updateLocalizedMap(value, activeLocale, event.target.value))}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white/80 px-3 py-2 text-sm text-[var(--color-brand-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      )}
-    </div>
+    <SharedLocalizedTextField
+      label={label}
+      value={normalizedValue}
+      multiline={multiline}
+      rows={rows}
+      placeholder={placeholder}
+      translationContext={translationContext}
+      onChange={(next) => onChange(normalizeLocalizedField(next))}
+    />
   );
+}
+
+function normalizeLocalizedField(value: LocalizedMap | undefined): LocalizedMap {
+  const base = ensureLocalized(value);
+  const result: LocalizedMap = {};
+  for (const locale of SUPPORTED_LOCALES) {
+    const raw = base[locale];
+    result[locale] = typeof raw === "string" ? raw : "";
+  }
+  return result;
 }
 
 function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (next: boolean) => void }) {
@@ -913,6 +892,7 @@ function Checkbox({ label, checked, onChange }: { label: string; checked: boolea
 export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorProps) {
   const normalized = useMemo(() => normalizeConfig(initialConfig), [initialConfig]);
   const [config, setConfig] = useState<NewsConfig>(normalized);
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [initialSnapshot, setInitialSnapshot] = useState<NewsConfig>(normalized);
   const lastSubmittedRef = useRef<NewsConfig>(normalized);
   const editingBackupRef = useRef<NewsConfig | null>(null);
@@ -1237,6 +1217,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
     editingTarget && editingTarget.type === "article"
       ? editingTarget.index
       : selectedArticleIndex;
+  const editingArticleDisplayIndex = editingArticleIndex >= 0 ? editingArticleIndex + 1 : 0;
   const editingLabel = editingTarget
     ? editingTarget.type === "hero"
       ? "英雄区"
@@ -1299,37 +1280,40 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
         helper="最佳尺寸 1200×420"
       />
       <LocalizedTextField
-  label="眉标"
-  value={config.hero.eyebrow ?? {}}
-  onChange={(next) =>
-    setConfig((prev) => ({
-      ...prev,
-      hero: { ...prev.hero, eyebrow: next },
-    }))
-  }
-/>
-<LocalizedTextField
-  label="主标题"
-  value={config.hero.title ?? {}}
-  onChange={(next) =>
-    setConfig((prev) => ({
-      ...prev,
-      hero: { ...prev.hero, title: next },
-    }))
-  }
-/>
-<LocalizedTextField
-  label="描述"
-  value={config.hero.description ?? {}}
-  onChange={(next) =>
-    setConfig((prev) => ({
-      ...prev,
-      hero: { ...prev.hero, description: next },
-    }))
-  }
-  multiline
-  rows={4}
-/>
+        label="眉标"
+        value={config.hero.eyebrow ?? {}}
+        translationContext="新闻英雄区眉标"
+        onChange={(next) =>
+          setConfig((prev) => ({
+            ...prev,
+            hero: { ...prev.hero, eyebrow: next },
+          }))
+        }
+      />
+      <LocalizedTextField
+        label="主标题"
+        value={config.hero.title ?? {}}
+        translationContext="新闻英雄区主标题"
+        onChange={(next) =>
+          setConfig((prev) => ({
+            ...prev,
+            hero: { ...prev.hero, title: next },
+          }))
+        }
+      />
+      <LocalizedTextField
+        label="描述"
+        value={config.hero.description ?? {}}
+        translationContext="新闻英雄区描述"
+        onChange={(next) =>
+          setConfig((prev) => ({
+            ...prev,
+            hero: { ...prev.hero, description: next },
+          }))
+        }
+        multiline
+        rows={4}
+      />
     </section>
   );
 
@@ -1339,6 +1323,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
       <LocalizedTextField
         label="眉标"
         value={config.sectionHeading.eyebrow ?? {}}
+        translationContext="新闻导语眉标"
         onChange={(next) =>
           setConfig((prev) => ({
             ...prev,
@@ -1349,6 +1334,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
       <LocalizedTextField
         label="标题"
         value={config.sectionHeading.title ?? {}}
+        translationContext="新闻导语标题"
         onChange={(next) =>
           setConfig((prev) => ({
             ...prev,
@@ -1359,6 +1345,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
       <LocalizedTextField
         label="描述"
         value={config.sectionHeading.description ?? {}}
+        translationContext="新闻导语描述"
         onChange={(next) =>
           setConfig((prev) => ({
             ...prev,
@@ -1381,6 +1368,9 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
     }
 
     const sections = editingArticle.detailSections ?? [];
+    const articleContextBase = editingArticleDisplayIndex
+      ? `新闻文章${editingArticleDisplayIndex}`
+      : "新闻文章";
 
     return (
       <section className="space-y-5">
@@ -1478,6 +1468,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
         <LocalizedTextField
           label="标题"
           value={editingArticle.title ?? {}}
+          translationContext={`${articleContextBase}标题`}
           onChange={(next) =>
             updateArticle(editingArticleIndex, (prev) => ({
               ...prev,
@@ -1488,6 +1479,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
         <LocalizedTextField
           label="摘要"
           value={editingArticle.excerpt ?? {}}
+          translationContext={`${articleContextBase}摘要`}
           onChange={(next) =>
             updateArticle(editingArticleIndex, (prev) => ({
               ...prev,
@@ -1500,6 +1492,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
         <LocalizedTextField
           label="正文补充文本 (可选)"
           value={typeof editingArticle.body === "string" ? { [DEFAULT_LOCALE]: editingArticle.body } : ((editingArticle.body as LocalizedMap) ?? {})}
+          translationContext={`${articleContextBase}正文补充内容`}
           onChange={(next) =>
             updateArticle(editingArticleIndex, (prev) => ({
               ...prev,
@@ -1518,6 +1511,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
                 <LocalizedTextField
                   label={`标签 ${tagIndex + 1}`}
                   value={tag ?? {}}
+                  translationContext={`${articleContextBase}标签${tagIndex + 1}`}
                   onChange={(next) =>
                     updateArticle(editingArticleIndex, (prev) => {
                       const tags = (prev.tags ?? []).slice();
@@ -1574,6 +1568,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
               const sectionDescription = readLocalized(section.description);
               const sectionQuote = readLocalized(section.quote);
               const bullets = section.bullets ?? [];
+              const sectionContextBase = `${articleContextBase}段落${sectionIndex + 1}`;
 
               return (
                 <details key={section.slug || sectionIndex} className="group rounded-2xl border border-[var(--color-border)] bg-white/60 p-4">
@@ -1595,6 +1590,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
                     <LocalizedTextField
                       label="段落标题"
                       value={section.title ?? {}}
+                      translationContext={`${sectionContextBase}标题`}
                       onChange={(next) =>
                         updateDetailSection(editingArticleIndex, sectionIndex, (current) => ({
                           ...current,
@@ -1605,6 +1601,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
                     <LocalizedTextField
                       label="段落描述"
                       value={section.description ?? {}}
+                      translationContext={`${sectionContextBase}描述`}
                       onChange={(next) =>
                         updateDetailSection(editingArticleIndex, sectionIndex, (current) => ({
                           ...current,
@@ -1622,6 +1619,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
                             <LocalizedTextField
                               label={`要点 ${bulletIndex + 1}`}
                               value={bullet ?? {}}
+                              translationContext={`${sectionContextBase}要点${bulletIndex + 1}`}
                               onChange={(next) =>
                                 updateDetailSection(editingArticleIndex, sectionIndex, (current) => {
                                   const nextBullets = (current.bullets ?? []).slice();
@@ -1653,6 +1651,7 @@ export function NewsConfigEditor({ configKey, initialConfig }: NewsConfigEditorP
                     <LocalizedTextField
                       label="引用 (可选)"
                       value={section.quote ?? {}}
+                      translationContext={`${sectionContextBase}引用`}
                       onChange={(next) =>
                         updateDetailSection(editingArticleIndex, sectionIndex, (current) => ({
                           ...current,

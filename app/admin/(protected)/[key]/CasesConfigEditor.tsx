@@ -8,11 +8,13 @@ import { useFormState, useFormStatus } from "react-dom";
 
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
+import { LocalizedTextField } from "./LocalizedTextField";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
 import { useToast } from "@/providers/ToastProvider";
 import { resolveImageSrc, sanitizeImageSrc } from "@/utils/image";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureLocalizedRecord, getLocaleText, setLocaleText, ensureLocalizedNoFallback, serializeLocalizedAllowEmpty } from "./editorUtils";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 import type { LocaleKey } from "@/i18n/locales";
 import type { CaseCategory } from "@/server/pageConfigs";
 
@@ -110,16 +112,6 @@ const DEFAULT_HERO_IMAGE = "https://images.unsplash.com/photo-1542626991-cbc4e32
 const DEFAULT_STUDY_IMAGE = "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80";
 
 type LocalizedValue = Record<LocaleKey, string>;
-
-const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((code) => ({
-  code: code as LocaleKey,
-  label:
-    code === "zh-CN"
-      ? "中文"
-      : code === "zh-TW"
-      ? "繁體"
-      : "English",
-}));
 
 function ensureLocalized(value: unknown, fallback: string): LocalizedValue {
   return ensureLocalizedNoFallback(value) as LocalizedValue;
@@ -609,68 +601,6 @@ function ImageInput({
         ) : null}
       </div>
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-    </div>
-  );
-}
-
-function LocalizedTextField({
-  label,
-  value,
-  onChange,
-  placeholder,
-  helper,
-  multiline,
-}: {
-  label: string;
-  value: LocalizedValue | string;
-  onChange: (next: LocalizedValue) => void;
-  placeholder?: string;
-  helper?: string;
-  multiline?: boolean;
-}) {
-  const [activeLocale, setActiveLocale] = useState(DEFAULT_LOCALE as LocaleKey);
-  const record = ensureLocalizedRecord(value) as LocalizedValue;
-
-  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const next = event.target.value;
-    const updated = setLocaleText(record, next, activeLocale) as LocalizedValue;
-    onChange(updated);
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="font-medium text-[var(--color-brand-secondary)]">{label}</span>
-        <div className="flex items-center gap-1">
-          {LOCALE_OPTIONS.map((opt) => (
-            <button
-              key={opt.code}
-              type="button"
-              onClick={() => setActiveLocale(opt.code)}
-              className={`rounded-full px-2 py-1 text-xs border ${activeLocale === opt.code ? "border-[var(--color-brand-primary)] text-[var(--color-brand-primary)]" : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-brand-secondary)]"}`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      {multiline ? (
-        <textarea
-          value={record[activeLocale] || ""}
-          onChange={handleChange}
-          rows={4}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-brand-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      ) : (
-        <input
-          value={record[activeLocale] || ""}
-          onChange={handleChange}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-brand-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      )}
-      {helper ? <p className="text-xs text-[var(--color-text-tertiary,#8690a3)]">{helper}</p> : null}
     </div>
   );
 }
@@ -2597,6 +2527,7 @@ interface CasesConfigEditorProps {
 
 export function CasesConfigEditor({ configKey, initialConfig }: CasesConfigEditorProps) {
   const [config, setConfig] = useState<CasesConfig>(() => normalizeConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baselineSnapshot, setBaselineSnapshot] = useState(() =>
     JSON.stringify(normalizeConfig(initialConfig)),
   );

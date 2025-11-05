@@ -23,6 +23,7 @@ import {
   mergeMeta,
   setLocaleText,
 } from "./editorUtils";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
 const LOCALE_LABELS: Record<string, string> = {
   "zh-CN": "简体中文",
@@ -74,7 +75,6 @@ interface FooterQuickLinkState {
 
 interface FooterLegalState {
   copyright: LocalizedRecord;
-  icp: LocalizedRecord;
   privacyLabel: LocalizedRecord;
   privacyHref: string;
   termsLabel: LocalizedRecord;
@@ -129,6 +129,7 @@ const FOOTER_EDIT_GROUPS: Array<{
 
 export function FooterConfigEditor({ configKey, initialConfig }: { configKey: string; initialConfig: Record<string, unknown> }) {
   const [config, setConfig] = useState<FooterConfigState>(() => normalizeFooterConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baseline, setBaseline] = useState<FooterConfigState>(() => normalizeFooterConfig(initialConfig));
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [formState, dispatch] = useFormState<UpdateSiteConfigActionState, FormData>(updateSiteConfigAction, { status: "idle" });
@@ -242,7 +243,6 @@ function FooterPreview({ config, onEdit }: { config: FooterConfigState; onEdit: 
   const brandNameEn = getLocaleText(config.brand.name, "en", brandNameZh);
   const taglineZh = getLocaleText(config.brand.tagline, "zh-CN", "模块化临建 · 设计制造交付一体");
   const address = getLocaleText(config.contact.address, "zh-CN", "广东省广州市");
-  const icp = getLocaleText(config.legal.icp, undefined, "浙ICP备00000000号");
   const copyright = getLocaleText(config.legal.copyright, undefined, "© Times Tent");
   const contactPhones = config.contact.phones.filter((phone) =>
     Boolean(phone.label?.trim() || phone.href?.trim()),
@@ -398,7 +398,6 @@ function FooterPreview({ config, onEdit }: { config: FooterConfigState; onEdit: 
                 <Link href={config.legal.termsHref || "#"} className="transition hover:text-white">
                   {getLocaleText(config.legal.termsLabel, undefined, "服务条款")}
                 </Link>
-                <span>{icp}</span>
               </div>
             </div>
           </div>
@@ -968,14 +967,6 @@ function LegalDialog({ value, onSave, onCancel }: { value: FooterLegalState; onS
             rows={2}
           />
         ))}
-        {SUPPORTED_LOCALES.map((locale) => (
-          <TextField
-            key={`icp-${locale}`}
-            label={`备案号（${LOCALE_LABELS[locale]}）`}
-            value={draft.icp[locale] ?? ""}
-            onChange={(next) => setDraft((prev) => ({ ...prev, icp: setLocaleText(prev.icp, next, locale) }))}
-          />
-        ))}
         <div className="grid gap-4 md:grid-cols-2">
           {SUPPORTED_LOCALES.map((locale) => (
             <TextField
@@ -1272,7 +1263,6 @@ function normalizeFooterConfig(raw: Record<string, unknown>): FooterConfigState 
     quickLinks,
     legal: {
       copyright: ensureLocalizedRecord(legalRecord.copyright),
-      icp: ensureLocalizedRecord(legalRecord.icp),
       privacyLabel: ensureLocalizedRecord(ensureRecord(legalRecord.privacy).label),
       privacyHref: ensureString(ensureRecord(legalRecord.privacy).href),
       termsLabel: ensureLocalizedRecord(ensureRecord(legalRecord.terms).label),
@@ -1329,7 +1319,6 @@ function serializeFooterConfig(config: FooterConfigState): Record<string, unknow
     quickLinks,
     legal: {
       copyright: cleanLocalized(config.legal.copyright, true),
-      ...(hasLocalized(config.legal.icp) ? { icp: cleanLocalized(config.legal.icp) } : {}),
       privacy: {
         href: config.legal.privacyHref.trim(),
         label: cleanLocalized(config.legal.privacyLabel, true),

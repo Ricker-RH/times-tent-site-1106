@@ -10,25 +10,21 @@ import { updateSiteConfigAction } from "../actions";
 import { useToast } from "@/providers/ToastProvider";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
+import { LocalizedTextField } from "./LocalizedTextField";
 import {
   DEFAULT_LOCALE,
   ensureArray,
   ensureLocalizedRecord,
   ensureString,
   mergeMeta,
-  setLocaleText,
+  ensureLocalizedNoFallback,
 } from "./editorUtils";
 import { navigation_config } from "@/data/configs";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value ?? null)) as T;
 }
-
-const LOCALE_LABELS: Record<string, string> = {
-  "zh-CN": "简体中文",
-  "en": "English",
-};
-const SUPPORTED_LOCALES = Object.keys(LOCALE_LABELS) as Array<keyof typeof LOCALE_LABELS>;
 
 interface LocalizedRecord {
   [locale: string]: string;
@@ -88,6 +84,7 @@ const FALLBACK_NAVIGATION = navigation_config;
 
 export function NavigationConfigEditor({ configKey, initialConfig }: { configKey: string; initialConfig: Record<string, unknown> }) {
   const [config, setConfig] = useState<NavigationConfigState>(() => normalizeNavigationConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baseline, setBaseline] = useState<NavigationConfigState>(() => normalizeNavigationConfig(initialConfig));
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [formState, dispatch] = useFormState<UpdateSiteConfigActionState, FormData>(updateSiteConfigAction, { status: "idle" });
@@ -190,21 +187,25 @@ function NavigationHeader({
         <Link href="#" className="flex items-center gap-3" aria-label="预览 LOGO">
           <Image src="/logo-horizontal.png" alt="TIMES TENT" width={144} height={44} className="h-11 w-auto" />
         </Link>
-        <nav className="hidden items-center gap-6 lg:flex">
-          {mainLinks.map((link) => (
-            <PreviewNavItem key={link.id} link={link} />
-          ))}
-        </nav>
-        <div className="hidden items-center gap-3 lg:flex" data-preview-anchor="utility-nav">
-          {utilityLinks.map((link) => (
-            <Link
-              key={link.id}
-              href={link.href || "#"}
-              className="rounded-full border border-[var(--color-border)] px-4 py-2 text-xs font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-            >
-              {formatLocalized(link.label)}
-            </Link>
-          ))}
+        <div className="hidden flex-1 items-center justify-end gap-6 lg:flex" data-preview-anchor="desktop-nav">
+          <nav className="flex items-center gap-6">
+            {mainLinks.map((link) => (
+              <PreviewNavItem key={link.id} link={link} />
+            ))}
+          </nav>
+          {utilityLinks.length ? (
+            <div className="flex items-center gap-3" data-preview-anchor="utility-nav">
+              {utilityLinks.map((link) => (
+                <Link
+                  key={link.id}
+                  href={link.href || "#"}
+                  className="rounded-full border border-[var(--color-border)] px-4 py-2 text-xs font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                >
+                  {formatLocalized(link.label)}
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
         <button
           type="button"
@@ -427,24 +428,20 @@ function MainLinksDialog({ value, onSave, onCancel }: { value: NavigationMainLin
                     placeholder="/path 或 https://"
                   />
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {SUPPORTED_LOCALES.map((locale) => (
-                    <TextField
-                      key={`${link.id}-label-${locale}`}
-                      label={`链接文案（${LOCALE_LABELS[locale]}）`}
-                      value={link.label[locale] ?? ""}
-                      onChange={(next) =>
-                        setDraft((prev) =>
-                          prev.map((item) =>
-                            item.id === link.id
-                              ? { ...item, label: setLocaleText(item.label, next, locale) }
-                              : item,
-                          ),
-                        )
-                      }
-                    />
-                  ))}
-                </div>
+                <LocalizedTextField
+                  label="链接文案"
+                  value={ensureLocalizedNoFallback(link.label)}
+                  translationContext={`导航主链接 ${link.slug}`}
+                  onChange={(next) =>
+                    setDraft((prev) =>
+                      prev.map((item) =>
+                        item.id === link.id
+                          ? { ...item, label: ensureLocalizedNoFallback(next) }
+                          : item,
+                      ),
+                    )
+                  }
+                />
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">下拉子链接</h4>
@@ -528,31 +525,27 @@ function MainLinksDialog({ value, onSave, onCancel }: { value: NavigationMainLin
                               placeholder="/path 或 https://"
                             />
                           </div>
-                          <div className="grid gap-4 md:grid-cols-2">
-                            {SUPPORTED_LOCALES.map((locale) => (
-                              <TextField
-                                key={`${child.id}-label-${locale}`}
-                                label={`显示文本（${LOCALE_LABELS[locale]}）`}
-                                value={child.label[locale] ?? ""}
-                                onChange={(next) =>
-                                  setDraft((prev) =>
-                                    prev.map((item) =>
-                                      item.id === link.id
-                                        ? {
-                                            ...item,
-                                            children: item.children.map((entry) =>
-                                              entry.id === child.id
-                                                ? { ...entry, label: setLocaleText(entry.label, next, locale) }
-                                                : entry,
-                                            ),
-                                          }
-                                        : item,
-                                    ),
-                                  )
-                                }
-                              />
-                            ))}
-                          </div>
+                          <LocalizedTextField
+                            label="显示文本"
+                            value={ensureLocalizedNoFallback(child.label)}
+                            translationContext={`导航子链接 ${child.slug || childIndex + 1}`}
+                            onChange={(next) =>
+                              setDraft((prev) =>
+                                prev.map((item) =>
+                                  item.id === link.id
+                                    ? {
+                                        ...item,
+                                        children: item.children.map((entry) =>
+                                          entry.id === child.id
+                                            ? { ...entry, label: ensureLocalizedNoFallback(next) }
+                                            : entry,
+                                        ),
+                                      }
+                                    : item,
+                                ),
+                              )
+                            }
+                          />
                         </div>
                       ))}
                     </div>
@@ -666,24 +659,20 @@ function UtilityLinksDialog({ value, onSave, onCancel }: { value: NavigationUtil
                     placeholder="/path 或 https://"
                   />
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {SUPPORTED_LOCALES.map((locale) => (
-                    <TextField
-                      key={`${link.id}-label-${locale}`}
-                      label={`显示文本（${LOCALE_LABELS[locale]}）`}
-                      value={link.label[locale] ?? ""}
-                      onChange={(next) =>
-                        setDraft((prev) =>
-                          prev.map((item) =>
-                            item.id === link.id
-                              ? { ...item, label: setLocaleText(item.label, next, locale) }
-                              : item,
-                          ),
-                        )
-                      }
-                    />
-                  ))}
-                </div>
+                <LocalizedTextField
+                  label="显示文本"
+                  value={ensureLocalizedNoFallback(link.label)}
+                  translationContext={`快捷入口 ${link.slug || index + 1}`}
+                  onChange={(next) =>
+                    setDraft((prev) =>
+                      prev.map((item) =>
+                        item.id === link.id
+                          ? { ...item, label: ensureLocalizedNoFallback(next) }
+                          : item,
+                      ),
+                    )
+                  }
+                />
               </div>
             ))}
           </div>

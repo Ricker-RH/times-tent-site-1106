@@ -15,6 +15,7 @@ import { updateSiteConfigAction } from "../actions";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
 import { useToast } from "@/providers/ToastProvider";
+import { LocalizedTextField as SharedLocalizedTextField } from "./LocalizedTextField";
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
@@ -26,21 +27,9 @@ import {
   serializeLocalizedAllowEmpty,
 } from "./editorUtils";
 import type { LocaleKey } from "@/i18n/locales";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
 type LocalizedValue = Record<LocaleKey, string>;
-
-const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((code) => {
-  switch (code) {
-    case "zh-CN":
-      return { code, label: "中文" } as const;
-    case "zh-TW":
-      return { code, label: "繁體" } as const;
-    case "en":
-      return { code, label: "English" } as const;
-    default:
-      return { code, label: code } as const;
-  }
-});
 
 interface HeroState {
   backgroundImage: string;
@@ -173,12 +162,6 @@ function asRecord(value: unknown): Record<string, unknown> {
 function normalizeLocalizedValue(value: unknown, fallback: string): LocalizedValue {
   // 无回退：保留各语言的空值，不注入默认或 base 文案
   return ensureLocalizedNoFallback(value) as LocalizedValue;
-}
-
-function updateLocalizedValue(value: LocalizedValue, locale: LocaleKey, nextValue: string): LocalizedValue {
-  // 不扩散填充：仅更新当前语言，其他语言保持原样或空字符串
-  const base = ensureLocalizedNoFallback(value) as LocalizedValue;
-  return { ...base, [locale]: nextValue } as LocalizedValue;
 }
 
 function ensureLocalized(value: unknown, fallback: string): LocalizedValue {
@@ -331,56 +314,31 @@ function LocalizedTextField({
   onChange,
   multiline = false,
   rows = 3,
+  placeholder,
+  translationContext,
+  helper,
 }: {
   label: string;
   value: LocalizedValue;
   onChange: (next: LocalizedValue) => void;
   multiline?: boolean;
   rows?: number;
+  placeholder?: string;
+  translationContext?: string;
+  helper?: string;
 }) {
-  const [activeLocale, setActiveLocale] = useState<LocaleKey>(DEFAULT_LOCALE);
-  const currentValue = value[activeLocale] ?? "";
-
-  const handleChange = (locale: LocaleKey, nextValue: string) => {
-    onChange(updateLocalizedValue(value, locale, nextValue));
-  };
-
+  const normalized = ensureLocalizedNoFallback(value) as LocalizedValue;
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">{label}</span>
-        <div className="flex items-center gap-1">
-          {LOCALE_OPTIONS.map(({ code, label: localeLabel }) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => setActiveLocale(code as LocaleKey)}
-              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                activeLocale === code
-                  ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]"
-                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-              }`}
-            >
-              {localeLabel}
-            </button>
-          ))}
-        </div>
-      </div>
-      {multiline ? (
-        <textarea
-          value={currentValue}
-          onChange={(event) => handleChange(activeLocale, event.target.value)}
-          rows={rows}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      ) : (
-        <input
-          value={currentValue}
-          onChange={(event) => handleChange(activeLocale, event.target.value)}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      )}
-    </div>
+    <SharedLocalizedTextField
+      label={label}
+      value={normalized}
+      multiline={multiline}
+      rows={rows}
+      placeholder={placeholder}
+      translationContext={translationContext}
+      helper={helper}
+      onChange={(next) => onChange(ensureLocalizedNoFallback(next) as LocalizedValue)}
+    />
   );
 }
 
@@ -578,6 +536,7 @@ function SectionWrapper({ actions, children }: { actions: { label: string; onCli
 
 function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scope: HeroEditingScope; onSave: (next: HeroState) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState<HeroState>(cloneState(value));
+  const heroContextBase = "视频库英雄区";
 
   useEffect(() => {
     setDraft(cloneState(value));
@@ -601,10 +560,21 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
       <div className="space-y-6 text-sm">
         {showBasic ? (
           <div className="space-y-6">
-            <LocalizedTextField label="眉头" value={draft.eyebrow} onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: next }))} />
-            <LocalizedTextField label="标题" value={draft.title} onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))} />
+            <LocalizedTextField
+              label="眉头"
+              translationContext={`${heroContextBase}眉头`}
+              value={draft.eyebrow}
+              onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: next }))}
+            />
+            <LocalizedTextField
+              label="标题"
+              translationContext={`${heroContextBase}标题`}
+              value={draft.title}
+              onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))}
+            />
             <LocalizedTextField
               label="描述"
+              translationContext={`${heroContextBase}描述`}
               value={draft.description}
               onChange={(next) => setDraft((prev) => ({ ...prev, description: next }))}
               multiline
@@ -636,6 +606,7 @@ function SectionHeadingDialog({
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState<SectionHeadingState>(cloneState(value));
+  const sectionHeadingContextBase = "视频库精选影像板块";
 
   useEffect(() => {
     setDraft(cloneState(value));
@@ -646,16 +617,19 @@ function SectionHeadingDialog({
       <div className="space-y-6 text-sm">
         <LocalizedTextField
           label="眉头"
+          translationContext={`${sectionHeadingContextBase}眉头`}
           value={draft.eyebrow}
           onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: next }))}
         />
         <LocalizedTextField
           label="标题"
+          translationContext={`${sectionHeadingContextBase}标题`}
           value={draft.title}
           onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))}
         />
         <LocalizedTextField
           label="描述"
+          translationContext={`${sectionHeadingContextBase}描述`}
           value={draft.description}
           onChange={(next) => setDraft((prev) => ({ ...prev, description: next }))}
           multiline
@@ -747,18 +721,20 @@ function VideosItemsDialog({ value, onSave, onCancel }: { value: VideoItemState[
           </button>
         </div>
         <div className="space-y-4">
-          {draft.map((item, index) => (
-            <div
-              key={item.internalId}
-              ref={(node) => {
-                if (node) {
-                  itemRefs.current.set(item.internalId, node);
-                } else {
-                  itemRefs.current.delete(item.internalId);
-                }
-              }}
-              className="space-y-4 rounded-2xl border border-[var(--color-border)] bg-white/80 p-4"
-            >
+          {draft.map((item, index) => {
+            const cardContextBase = `视频库视频卡片(${item.slug || index + 1})`;
+            return (
+              <div
+                key={item.internalId}
+                ref={(node) => {
+                  if (node) {
+                    itemRefs.current.set(item.internalId, node);
+                  } else {
+                    itemRefs.current.delete(item.internalId);
+                  }
+                }}
+                className="space-y-4 rounded-2xl border border-[var(--color-border)] bg-white/80 p-4"
+              >
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--color-text-tertiary,#8690a3)]">
                 <span>视频 {index + 1}</span>
                 <div className="flex flex-wrap gap-2">
@@ -800,26 +776,28 @@ function VideosItemsDialog({ value, onSave, onCancel }: { value: VideoItemState[
                 placeholder="video-key"
                 inputProps={{ "data-focus-target": "slug" }}
               />
-              <LocalizedTextField
-                label="标题"
-                value={item.title}
-                onChange={(next) =>
-                  setDraft((prev) =>
-                    prev.map((video, idx) => (idx === index ? { ...video, title: next } : video)),
-                  )
-                }
-              />
-              <LocalizedTextField
-                label="描述"
-                value={item.description}
-                onChange={(next) =>
-                  setDraft((prev) =>
-                    prev.map((video, idx) => (idx === index ? { ...video, description: next } : video)),
-                  )
-                }
-                multiline
-                rows={3}
-              />
+                <LocalizedTextField
+                  label="标题"
+                  translationContext={`${cardContextBase}标题`}
+                  value={item.title}
+                  onChange={(next) =>
+                    setDraft((prev) =>
+                      prev.map((video, idx) => (idx === index ? { ...video, title: next } : video)),
+                    )
+                  }
+                />
+                <LocalizedTextField
+                  label="描述"
+                  translationContext={`${cardContextBase}描述`}
+                  value={item.description}
+                  onChange={(next) =>
+                    setDraft((prev) =>
+                      prev.map((video, idx) => (idx === index ? { ...video, description: next } : video)),
+                    )
+                  }
+                  multiline
+                  rows={3}
+                />
               <div className="grid gap-4 md:grid-cols-2">
                 <SelectField
                   label="分类"
@@ -910,6 +888,7 @@ function VideosItemsDialog({ value, onSave, onCancel }: { value: VideoItemState[
                       </div>
                       <LocalizedTextField
                         label="标签文案"
+                        translationContext={`${cardContextBase}标签${tagIndex + 1}`}
                         value={tag}
                         onChange={(next) =>
                           setDraft((prev) =>
@@ -933,8 +912,9 @@ function VideosItemsDialog({ value, onSave, onCancel }: { value: VideoItemState[
                   ) : null}
                 </div>
               </div>
-            </div>
-          ))}
+              </div>
+            );
+          })}
           {!draft.length ? (
             <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white/60 p-6 text-center text-xs text-[var(--color-text-secondary)]">
               暂无视频，请新增。
@@ -948,6 +928,7 @@ function VideosItemsDialog({ value, onSave, onCancel }: { value: VideoItemState[
 
 function FiltersDialog({ value, onSave, onCancel }: { value: FilterState[]; onSave: (next: FilterState[]) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState<FilterState[]>(cloneState(value));
+  const filtersContextBase = "视频库筛选标签";
 
   useEffect(() => {
     setDraft(cloneState(value));
@@ -1009,6 +990,7 @@ function FiltersDialog({ value, onSave, onCancel }: { value: FilterState[]; onSa
             />
             <LocalizedTextField
               label="标签名称"
+              translationContext={`${filtersContextBase}${index + 1}`}
               value={filter.label}
               onChange={(next) =>
                 setDraft((prev) =>
@@ -1071,6 +1053,7 @@ function VideosPreview({ config, onEdit }: { config: VideosConfigState; onEdit: 
 
 export function VideosConfigEditor({ configKey, initialConfig }: { configKey: string; initialConfig: Record<string, unknown> }) {
   const [config, setConfig] = useState<VideosConfigState>(() => normalizeConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baseline, setBaseline] = useState<VideosConfigState>(() => normalizeConfig(initialConfig));
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [formState, dispatch] = useFormState<UpdateSiteConfigActionState, FormData>(updateSiteConfigAction, { status: "idle" });

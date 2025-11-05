@@ -148,11 +148,11 @@ export function ProductMatrixSection({
               ) : null}
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid auto-rows-fr gap-6 md:grid-cols-2 xl:grid-cols-3">
               {cards.map((product) => (
                 <article
                   key={product.slug}
-                  className="group flex h-[420px] flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-white transition hover:-translate-y-1 hover:shadow-xl sm:h-[440px]"
+                  className="group flex h-full flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-white transition hover:-translate-y-1 hover:shadow-xl"
                 >
                   <div className="relative flex-none overflow-hidden">
                     <div className="relative h-[220px] w-full overflow-hidden sm:h-[240px]">
@@ -187,7 +187,7 @@ export function ProductMatrixSection({
                           return null;
                         }
                         return (
-                          <p className="text-sm text-[var(--color-text-secondary)] line-clamp-3">
+                          <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
                             {description}
                           </p>
                         );

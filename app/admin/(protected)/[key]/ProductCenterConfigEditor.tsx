@@ -10,6 +10,7 @@ import { resolveImageSrc, sanitizeImageSrc } from "@/utils/image";
 
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
+import { LocalizedTextField } from "./LocalizedTextField";
 import { SaveBar } from "./SaveBar";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
@@ -17,6 +18,7 @@ import { useToast } from "@/providers/ToastProvider";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureLocalizedRecord, getLocaleText, setLocaleText } from "./editorUtils";
 import type { LocaleKey } from "@/i18n/locales";
 import { ensureCompleteLocalizedField } from "@/i18n/locales";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
 const DEFAULT_PRODUCT_IMAGE = "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&w=1600&q=80";
 
@@ -381,79 +383,6 @@ function ImageInput({
   );
 }
 
-function LocalizedTextField({
-  label,
-  value,
-  onChange,
-  multiline = false,
-  rows = 3,
-  placeholder,
-}: {
-  label: string;
-  value: LocalizedValue | string;
-  onChange: (next: LocalizedValue) => void;
-  multiline?: boolean;
-  rows?: number;
-  placeholder?: string;
-}) {
-  const [activeLocale, setActiveLocale] = useState<LocaleKey>(DEFAULT_LOCALE);
-  const record = ensureLocalizedRecord(value) as LocalizedValue;
-  const currentValue = record[activeLocale] ?? "";
-
-  const LOCALE_OPTIONS = SUPPORTED_LOCALES.map((code) => {
-    switch (code) {
-      case "zh-CN":
-        return { code, label: "中文" } as const;
-      case "zh-TW":
-        return { code, label: "繁體" } as const;
-      case "en":
-        return { code, label: "English" } as const;
-      default:
-        return { code, label: code } as const;
-    }
-  });
-
-  return (
-    <div className="space-y-2 text-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium text-[var(--color-brand-secondary)]">{label}</span>
-        <div className="flex items-center gap-1">
-          {LOCALE_OPTIONS.map(({ code, label: localeLabel }) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => setActiveLocale(code as LocaleKey)}
-              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                activeLocale === code
-                  ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary)]"
-                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-              }`}
-            >
-              {localeLabel}
-            </button>
-          ))}
-        </div>
-      </div>
-      {multiline ? (
-        <textarea
-          value={currentValue}
-          onChange={(event) => onChange(cleanLocalized(setLocaleText(record, event.target.value, activeLocale)))}
-          rows={rows}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-brand-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      ) : (
-        <input
-          value={currentValue}
-          onChange={(event) => onChange(cleanLocalized(setLocaleText(record, event.target.value, activeLocale)))}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-brand-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/30"
-        />
-      )}
-    </div>
-  );
-}
-
 function BreadcrumbPreview({ breadcrumb }: { breadcrumb: BreadcrumbItem[] }) {
   const items = breadcrumb.length ? breadcrumb : [{ href: "/", label: "首页" }, { href: "/products", label: "产品" }];
   return (
@@ -756,20 +685,20 @@ function HeroEditorDialog({ value, onSave, onCancel }: HeroEditorProps) {
           <LocalizedTextField
             label="眉头（可选）"
             value={draft.eyebrow}
-            onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: next }))}
+            onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: cleanLocalized(next) }))}
             placeholder="如：TIMES TENT"
           />
         </div>
         <LocalizedTextField
           label="主标题"
           value={draft.title}
-          onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))}
+          onChange={(next) => setDraft((prev) => ({ ...prev, title: cleanLocalized(next) }))}
           placeholder="模块化产品矩阵"
         />
         <LocalizedTextField
           label="描述"
           value={draft.description}
-          onChange={(next) => setDraft((prev) => ({ ...prev, description: next }))}
+          onChange={(next) => setDraft((prev) => ({ ...prev, description: cleanLocalized(next) }))}
           multiline
           rows={4}
           placeholder="补充一句话介绍产品中心的核心价值。"
@@ -833,12 +762,12 @@ function GeneralEditorDialog({ value, onSave, onCancel }: GeneralEditorProps) {
         <LocalizedTextField
           label="侧栏标题"
           value={sidebarTitle}
-          onChange={(next) => setSidebarTitle(next)}
+          onChange={(next) => setSidebarTitle(cleanLocalized(next))}
         />
         <LocalizedTextField
           label="卡片 CTA 文案"
           value={ctaLabel}
-          onChange={(next) => setCtaLabel(next)}
+          onChange={(next) => setCtaLabel(cleanLocalized(next))}
         />
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -926,7 +855,7 @@ function ProductEditorDialog({ value, index, total, onSave, onRemove, onCancel }
             <LocalizedTextField
               label="产品名称"
               value={draft.name}
-              onChange={(next) => setDraft((prev) => ({ ...prev, name: next }))}
+              onChange={(next) => setDraft((prev) => ({ ...prev, name: cleanLocalized(next) }))}
               placeholder="人字形篷房"
             />
           </div>
@@ -944,7 +873,8 @@ function ProductEditorDialog({ value, index, total, onSave, onRemove, onCancel }
           <LocalizedTextField
             label="副标题 / 标签（可选）"
             value={draft.tagline}
-            onChange={(next) => setDraft((prev) => ({ ...prev, tagline: next, taglineConfigured: true }))}
+            onChange={(next) =>
+              setDraft((prev) => ({ ...prev, tagline: cleanLocalized(next), taglineConfigured: true }))}
             placeholder="旗舰爆款"
           />
         </div>
@@ -952,7 +882,8 @@ function ProductEditorDialog({ value, index, total, onSave, onRemove, onCancel }
           <LocalizedTextField
             label="摘要"
             value={draft.summary}
-            onChange={(next) => setDraft((prev) => ({ ...prev, summary: next, summaryConfigured: true }))}
+            onChange={(next) =>
+              setDraft((prev) => ({ ...prev, summary: cleanLocalized(next), summaryConfigured: true }))}
             multiline
             rows={4}
             placeholder="简要说明产品亮点、适用场景或核心参数。"
@@ -978,7 +909,7 @@ function ProductEditorDialog({ value, index, total, onSave, onRemove, onCancel }
           <LocalizedTextField
             label="详情页摘要（可选）"
             value={draft.description}
-            onChange={(next) => setDraft((prev) => ({ ...prev, description: next }))}
+            onChange={(next) => setDraft((prev) => ({ ...prev, description: cleanLocalized(next) }))}
             multiline
             rows={4}
             placeholder="详细描述将用于产品详情页顶部介绍。"
@@ -1001,6 +932,7 @@ function ProductEditorDialog({ value, index, total, onSave, onRemove, onCancel }
 
 export function ProductCenterConfigEditor({ configKey, initialConfig }: ProductCenterConfigEditorProps) {
   const [config, setConfig] = useState<ProductCenterConfig>(() => normalizeConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baselineSnapshot, setBaselineSnapshot] = useState(() =>
     JSON.stringify(normalizeConfig(initialConfig)),
   );

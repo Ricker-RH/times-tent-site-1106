@@ -7,16 +7,16 @@ import { FALLBACK_TERMS_CONFIG } from "@/constants/siteFallbacks";
 import type { TermsSection } from "@/server/pageConfigs";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
+import { LocalizedTextField } from "./LocalizedTextField";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureArray, ensureString, ensureLocalizedRecord, getLocaleText, mergeMeta, setLocaleText, ensureLocalizedNoFallback, serializeLocalizedAllowEmpty } from "./editorUtils";
 import type { LocaleKey } from "@/i18n/locales";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
 import { useFormState, useFormStatus } from "react-dom";
 import { useToast } from "@/providers/ToastProvider";
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
 type LocalizedValue = Record<string, string>;
-const LOCALE_LABELS: Record<string, string> = { "zh-CN": "简体中文", "zh-TW": "繁體中文", en: "English" };
-
 interface TermsSectionState {
   id: string;
   heading: string;
@@ -70,6 +70,7 @@ const EDIT_GROUPS: Array<{
 
 export function TermsConfigEditor({ configKey, initialConfig }: { configKey: string; initialConfig: Record<string, unknown> }) {
   const [config, setConfig] = useState<TermsConfigState>(() => normalizeConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baseline, setBaseline] = useState<TermsConfigState>(() => normalizeConfig(initialConfig));
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [formState, dispatch] = useFormState<UpdateSiteConfigActionState, FormData>(updateSiteConfigAction, { status: "idle" });
@@ -219,7 +220,11 @@ function TermsIntroDialog({ value, onSave, onCancel }: { value: TermsConfigState
   return (
     <EditorDialog title="编辑导语" subtitle="设置页面标题与生效时间" onSave={() => onSave({ title: draft.title, intro: { lastUpdated: draft.intro.lastUpdated.trim(), body: draft.intro.body.trim() } })} onCancel={onCancel}>
       <div className="space-y-4 text-sm">
-        <LocalizedTextField label="页面标题" value={draft.title} onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))} />
+        <LocalizedTextField
+          label="页面标题"
+          value={draft.title}
+          onChange={(next) => setDraft((prev) => ({ ...prev, title: ensureLocalizedNoFallback(next) }))}
+        />
         <TextField label="生效日期" value={draft.intro.lastUpdated} onChange={(next) => setDraft((prev) => ({ ...prev, intro: { ...prev.intro, lastUpdated: next } }))} placeholder="例如：2025 年 10 月 18 日" />
         <TextAreaField
           label="导语正文"
@@ -510,68 +515,6 @@ function TextAreaField({ label, value, onChange, rows = 4 }: { label: string; va
         className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
       />
     </label>
-  );
-}
-
-function LocalizedTextField({
-  label,
-  value,
-  onChange,
-  multiline = false,
-  rows = 4,
-  placeholder,
-}: {
-  label: string;
-  value: LocalizedValue;
-  onChange: (next: LocalizedValue) => void;
-  multiline?: boolean;
-  rows?: number;
-  placeholder?: string;
-}) {
-  const [activeLocale, setActiveLocale] = useState<LocaleKey>(DEFAULT_LOCALE);
-  const current = value[activeLocale] ?? "";
-  return (
-    <div className="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">
-      <div className="flex items-center justify-between">
-        <span>{label}</span>
-        <div className="flex gap-2">
-          {SUPPORTED_LOCALES.map((locale) => {
-            const isActive = locale === activeLocale;
-            return (
-              <button
-                key={locale}
-                type="button"
-                onClick={() => setActiveLocale(locale)}
-                className={`rounded-full border px-3 py-1 text-[10px] font-semibold transition ${
-                  isActive
-                    ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white"
-                    : "border-[var(--color-border)] text-[var(--color-text-tertiary,#8690a3)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-                }`}
-                title={LOCALE_LABELS[locale]}
-              >
-                {locale}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      {multiline ? (
-        <textarea
-          value={current}
-          onChange={(event) => onChange(setLocaleText(value, event.target.value, activeLocale))}
-          rows={rows}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      ) : (
-        <input
-          value={current}
-          onChange={(event) => onChange(setLocaleText(value, event.target.value, activeLocale))}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      )}
-    </div>
   );
 }
 

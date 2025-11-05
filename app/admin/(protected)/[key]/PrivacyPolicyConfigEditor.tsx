@@ -7,15 +7,14 @@ import { FALLBACK_PRIVACY_POLICY_CONFIG } from "@/constants/siteFallbacks";
 import type { PolicySection } from "@/server/pageConfigs";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureArray, ensureString, ensureLocalizedRecord, getLocaleText, mergeMeta, setLocaleText, ensureLocalizedNoFallback, serializeLocalizedAllowEmpty } from "./editorUtils";
+import { LocalizedTextField as SharedLocalizedTextField } from "./LocalizedTextField";
+import { ensureArray, ensureString, ensureLocalizedRecord, getLocaleText, mergeMeta, ensureLocalizedNoFallback, serializeLocalizedAllowEmpty } from "./editorUtils";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
 import { useFormState, useFormStatus } from "react-dom";
 import { useToast } from "@/providers/ToastProvider";
-import type { LocaleKey } from "@/i18n/locales";
-
+import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 type LocalizedValue = Record<string, string>;
-const LOCALE_LABELS: Record<string, string> = { "zh-CN": "简体中文", "zh-TW": "繁體中文", en: "English" };
 
 interface PolicySectionItemState {
   id: string;
@@ -78,6 +77,7 @@ const EDIT_GROUPS: Array<{
 
 export function PrivacyPolicyConfigEditor({ configKey, initialConfig }: { configKey: string; initialConfig: Record<string, unknown> }) {
   const [config, setConfig] = useState<PrivacyPolicyConfigState>(() => normalizeConfig(initialConfig));
+  useGlobalTranslationRegistrationForConfig({ config, setConfig, labelPrefix: configKey });
   const [baseline, setBaseline] = useState<PrivacyPolicyConfigState>(() => normalizeConfig(initialConfig));
   const [editing, setEditing] = useState<EditingTarget | null>(null);
   const [formState, dispatch] = useFormState<UpdateSiteConfigActionState, FormData>(updateSiteConfigAction, { status: "idle" });
@@ -241,7 +241,12 @@ function IntroDialog({ value, onSave, onCancel }: { value: PrivacyPolicyConfigSt
   return (
     <EditorDialog title="编辑导语" subtitle="设置页面标题与生效时间" onSave={() => onSave({ title: draft.title, intro: { lastUpdated: draft.intro.lastUpdated.trim(), body: draft.intro.body.trim() } })} onCancel={onCancel}>
       <div className="space-y-4 text-sm">
-        <LocalizedTextField label="页面标题" value={draft.title} onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))} />
+        <LocalizedTextField
+          label="页面标题"
+          translationContext="隐私政策页面标题"
+          value={draft.title}
+          onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))}
+        />
         <TextField label="生效日期" value={draft.intro.lastUpdated} onChange={(next) => setDraft((prev) => ({ ...prev, intro: { ...prev.intro, lastUpdated: next } }))} placeholder="例如：2025 年 10 月 18 日" />
         <TextAreaField
           label="导语正文"
@@ -701,6 +706,7 @@ function LocalizedTextField({
   multiline = false,
   rows = 4,
   placeholder,
+  translationContext,
 }: {
   label: string;
   value: LocalizedValue;
@@ -708,51 +714,19 @@ function LocalizedTextField({
   multiline?: boolean;
   rows?: number;
   placeholder?: string;
+  translationContext?: string;
 }) {
-  const [activeLocale, setActiveLocale] = useState<LocaleKey>(DEFAULT_LOCALE);
-  const current = value[activeLocale] ?? "";
+  const normalized = ensureLocalizedRecord(value);
   return (
-    <div className="space-y-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">
-      <div className="flex items-center justify-between">
-        <span>{label}</span>
-        <div className="flex gap-2">
-          {SUPPORTED_LOCALES.map((locale) => {
-            const isActive = locale === activeLocale;
-            return (
-              <button
-                key={locale}
-                type="button"
-                onClick={() => setActiveLocale(locale)}
-                className={`rounded-full border px-3 py-1 text-[10px] font-semibold transition ${
-                  isActive
-                    ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white"
-                    : "border-[var(--color-border)] text-[var(--color-text-tertiary,#8690a3)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-                }`}
-                title={LOCALE_LABELS[locale]}
-              >
-                {locale}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      {multiline ? (
-        <textarea
-          value={current}
-          onChange={(event) => onChange(setLocaleText(value, event.target.value, activeLocale))}
-          rows={rows}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm leading-relaxed text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      ) : (
-        <input
-          value={current}
-          onChange={(event) => onChange(setLocaleText(value, event.target.value, activeLocale))}
-          placeholder={placeholder}
-          className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
-        />
-      )}
-    </div>
+    <SharedLocalizedTextField
+      label={label}
+      value={normalized}
+      multiline={multiline}
+      rows={rows}
+      placeholder={placeholder}
+      translationContext={translationContext}
+      onChange={(next) => onChange(ensureLocalizedRecord(next))}
+    />
   );
 }
 
