@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-noto-sans-sc), var(--font-inter), "Noto Sans SC", "Inter", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
   --color-brand-primary: #d02827;
   --color-brand-secondary: #3e3a39;
   --color-text-primary: #3e3a39;
