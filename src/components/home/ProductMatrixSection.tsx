@@ -500,7 +500,7 @@ function CapabilityCarousel({
                         className="object-cover"
                       />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 text-center">
                       {titleText ? (
                         <p className="text-sm font-semibold leading-relaxed text-[var(--color-brand-secondary)]">{titleText}</p>
                       ) : null}
