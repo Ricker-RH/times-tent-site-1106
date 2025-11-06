@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { t } from "@/data";
+import { getCurrentLocale, t } from "@/data";
 import type { LocalizedField } from "@/i18n/locales";
 
 const FALLBACK_PRODUCT_IMAGE = "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&w=1600&q=80";
@@ -16,9 +16,28 @@ const CTA_BUTTON_SECONDARY = CTA_BUTTON_PRIMARY;
 
 type LocalizedOrString = string | LocalizedField | Record<string, string | undefined>;
 
-function resolveText(value: LocalizedOrString | undefined, fallback = ""): string {
-  if (!value) return fallback;
-  if (typeof value === "string") return value;
+type ResolveTextOptions = {
+  localizedOnly?: boolean;
+};
+
+function resolveText(value: LocalizedOrString | undefined, fallback = "", options?: ResolveTextOptions): string {
+  if (value === null || typeof value === "undefined") {
+    return fallback;
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (options?.localizedOnly) {
+    const locale = getCurrentLocale();
+    if (!locale) {
+      return fallback;
+    }
+    const localizedValue = value[locale];
+    if (typeof localizedValue === "string") {
+      return localizedValue;
+    }
+    return fallback;
+  }
   return t(value) || fallback;
 }
 
@@ -419,6 +438,13 @@ export function ProductMatrixSection({
   );
 }
 
+type CapabilityItem = {
+  data: { title?: LocalizedOrString; subtitle?: LocalizedOrString; description?: LocalizedOrString; image?: string };
+  titleText: string;
+  subtitleText: string;
+  descriptionText: string;
+};
+
 function CapabilityCarousel({
   heading,
   items,
@@ -426,14 +452,21 @@ function CapabilityCarousel({
   heading?: LocalizedOrString;
   items: Array<{ title?: LocalizedOrString; subtitle?: LocalizedOrString; description?: LocalizedOrString; image?: string }>;
 }) {
-  const cards = items.filter((item) =>
-    Boolean(
-      resolveText(item.title).trim() ||
-        resolveText(item.subtitle).trim() ||
-        resolveText(item.description).trim() ||
-        item.image?.trim(),
-    ),
-  );
+  const cards: CapabilityItem[] = items
+    .map((item) => {
+      const titleText = resolveText(item.title).trim();
+      const subtitleText = resolveText(item.subtitle, "", { localizedOnly: true }).trim();
+      const descriptionText = resolveText(item.description, "", { localizedOnly: true }).trim();
+      return {
+        data: item,
+        titleText,
+        subtitleText,
+        descriptionText,
+      };
+    })
+    .filter(({ data, titleText, subtitleText, descriptionText }) =>
+      Boolean(titleText || subtitleText || descriptionText || data.image?.trim()),
+    );
   if (!cards.length) {
     return null;
   }
@@ -451,31 +484,31 @@ function CapabilityCarousel({
             className="mx-auto flex w-max gap-4"
             style={{ animation: 'home-capability-carousel 65s linear infinite' }}
           >
-            {loop.map((item, index) => {
+            {loop.map(({ data, titleText, subtitleText, descriptionText }, index) => {
               return (
                 <article
-                  key={`${resolveText(item.title, resolveText(item.subtitle, "capability"))}-${index}`}
+                  key={`${titleText || subtitleText || "capability"}-${index}`}
                   className="relative w-[240px] flex-shrink-0 overflow-hidden rounded-2xl p-4 text-[var(--color-brand-secondary)] sm:w-[260px]"
                 >
                   <div className="flex h-full flex-col gap-4">
                     <div className="relative h-32 w-full overflow-hidden rounded-xl">
                       <Image
-                        src={resolveImage(item.image, FALLBACK_CAPABILITY_IMAGE)}
-                        alt={resolveText(item.title, resolveText(item.subtitle, "能力亮点"))}
+                        src={resolveImage(data.image, FALLBACK_CAPABILITY_IMAGE)}
+                        alt={titleText || subtitleText || "能力亮点"}
                         fill
                         sizes="(min-width: 1280px) 20vw, (min-width: 768px) 30vw, 60vw"
                         className="object-cover"
                       />
                     </div>
                     <div className="space-y-2">
-                      {resolveText(item.title) ? (
-                        <p className="text-sm font-semibold leading-relaxed text-[var(--color-brand-secondary)]">{resolveText(item.title)}</p>
+                      {titleText ? (
+                        <p className="text-sm font-semibold leading-relaxed text-[var(--color-brand-secondary)]">{titleText}</p>
                       ) : null}
-                      {resolveText(item.subtitle) ? (
-                        <p className="text-xs text-[var(--color-brand-primary)]/75">{resolveText(item.subtitle)}</p>
+                      {subtitleText ? (
+                        <p className="text-xs text-[var(--color-brand-primary)]/75">{subtitleText}</p>
                       ) : null}
-                      {resolveText(item.description) ? (
-                        <p className="text-xs text-[var(--color-text-secondary)]">{resolveText(item.description)}</p>
+                      {descriptionText ? (
+                        <p className="text-xs text-[var(--color-text-secondary)]">{descriptionText}</p>
                       ) : null}
                     </div>
                   </div>
