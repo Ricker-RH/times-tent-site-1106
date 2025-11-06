@@ -66,6 +66,30 @@ function pickLocalizedValue(...candidates: unknown[]): LocalizedOrString | undef
   return undefined;
 }
 
+function isExplicitEmptyLocalized(value: unknown): boolean {
+  if (value === null) return true;
+  if (typeof value === "undefined") return false;
+  if (typeof value === "string") {
+    return value.trim().length === 0;
+  }
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (!entries.length) {
+      return false;
+    }
+    return entries.every(([, raw]) => {
+      if (raw === null || typeof raw === "undefined") {
+        return true;
+      }
+      if (typeof raw === "string") {
+        return raw.trim().length === 0;
+      }
+      return false;
+    });
+  }
+  return false;
+}
+
 function toDefaultLocaleString(candidates: unknown[], fallback = ""): string {
   const value = pickLocalizedValue(...candidates);
   if (!value) return fallback;
@@ -800,6 +824,8 @@ function buildCompanyOverview(homeConfig: HomeConfig): HomeCompanyOverview {
     }),
     capabilities: capabilitiesSource.map((item, index) => {
       const fallbackItem = (fallbackCompany.capabilities ?? [])[index] ?? {};
+      const subtitleExplicitEmpty = isExplicitEmptyLocalized(item?.subtitle);
+      const descriptionExplicitEmpty = isExplicitEmptyLocalized(item?.description);
       return {
         title: pickLocalizedValue(
           item?.title,
@@ -807,18 +833,22 @@ function buildCompanyOverview(homeConfig: HomeConfig): HomeCompanyOverview {
           fallbackItem?.title,
           (fallbackItem as Record<string, unknown>)?.titleEn,
         ),
-        subtitle: pickLocalizedValue(
-          item?.subtitle,
-          (item as Record<string, unknown>)?.subtitleEn,
-          fallbackItem?.subtitle,
-          (fallbackItem as Record<string, unknown>)?.subtitleEn,
-        ),
-        description: pickLocalizedValue(
-          item?.description,
-          (item as Record<string, unknown>)?.descriptionEn,
-          fallbackItem?.description,
-          (fallbackItem as Record<string, unknown>)?.descriptionEn,
-        ),
+        subtitle: subtitleExplicitEmpty
+          ? ""
+          : pickLocalizedValue(
+              item?.subtitle,
+              (item as Record<string, unknown>)?.subtitleEn,
+              fallbackItem?.subtitle,
+              (fallbackItem as Record<string, unknown>)?.subtitleEn,
+            ),
+        description: descriptionExplicitEmpty
+          ? ""
+          : pickLocalizedValue(
+              item?.description,
+              (item as Record<string, unknown>)?.descriptionEn,
+              fallbackItem?.description,
+              (fallbackItem as Record<string, unknown>)?.descriptionEn,
+            ),
         image: item?.image ?? fallbackItem?.image,
       };
     }),
