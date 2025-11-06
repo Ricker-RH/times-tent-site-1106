@@ -1,6 +1,7 @@
 .track {
+  --track-gap: 24px;
   display: flex;
-  gap: 24px;
+  gap: var(--track-gap);
   width: max-content;
   animation: marquee 28s linear infinite;
 }
@@ -17,6 +18,6 @@
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(calc(-50% - (var(--track-gap) / 2)));
   }
 }
