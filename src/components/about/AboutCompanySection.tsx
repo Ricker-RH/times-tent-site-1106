@@ -6,10 +6,10 @@ import { t } from "@/data";
 import type { AboutConfig } from "@/server/pageConfigs";
 
 const STAT_CARD_CLASSES = [
-  "rounded-2xl border border-white/15 bg-gradient-to-br from-[#ff7b8a]/90 via-[#d02827]/90 to-[#8f101b]/85 px-5 py-4 text-white shadow-[0_24px_55px_rgba(208,40,39,0.45)] backdrop-blur-xl",
-  "rounded-2xl border border-white/15 bg-gradient-to-br from-[#ff8f9c]/85 via-[#e1353a]/85 to-[#a61220]/80 px-5 py-4 text-white shadow-[0_20px_50px_rgba(208,40,39,0.38)] backdrop-blur-xl",
-  "rounded-2xl border border-white/15 bg-gradient-to-br from-[#ffa6b1]/80 via-[#f0484c]/80 to-[#bb1925]/75 px-5 py-4 text-white shadow-[0_18px_46px_rgba(208,40,39,0.32)] backdrop-blur-xl",
-  "rounded-2xl border border-white/15 bg-gradient-to-br from-[#ffbdc3]/75 via-[#ff6370]/75 to-[#c7222e]/70 px-5 py-4 text-white shadow-[0_16px_40px_rgba(208,40,39,0.28)] backdrop-blur-xl",
+  "rounded-2xl border border-white/10 bg-[#d02827]/95 px-5 py-4 text-white shadow-[0_24px_55px_rgba(208,40,39,0.45)] backdrop-blur-md",
+  "rounded-2xl border border-white/10 bg-[#d02827]/90 px-5 py-4 text-white shadow-[0_20px_45px_rgba(208,40,39,0.38)] backdrop-blur-md",
+  "rounded-2xl border border-white/10 bg-[#d02827]/85 px-5 py-4 text-white shadow-[0_18px_40px_rgba(208,40,39,0.32)] backdrop-blur-md",
+  "rounded-2xl border border-white/10 bg-[#d02827]/80 px-5 py-4 text-white shadow-[0_16px_36px_rgba(208,40,39,0.28)] backdrop-blur-md",
 ] as const;
 
 interface AboutCompanySectionProps {
