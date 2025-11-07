@@ -27,7 +27,7 @@ export default async function Page(): Promise<JSX.Element> {
 
   return (
     <main className="flex-1">
-      <div className="bg-[var(--color-surface-muted)] pb-20">
+      <div className="bg-white pb-20">
         {!hideHero ? <AboutHeroSection hero={about.hero} /> : null}
         {!hideCompany ? <AboutCompanySection introSection={about.introSection} /> : null}
         {!hideFactory ? <AboutFactorySection manufacturingSection={about.manufacturingSection} /> : null}
