@@ -684,9 +684,10 @@ function renderRailIcon(name: string, size: "small" | "large" = "small"): React.
 function IconGlobe(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" {...props}>
-      <path d="M4 12h16" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
-      <path d="M12 4v16" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
       <circle cx={12} cy={12} r={9} stroke="currentColor" strokeWidth={1.5} />
+      <path d="M12 3c-2.4 2.4-3.75 5.7-3.75 9s1.35 6.6 3.75 9c2.4-2.4 3.75-5.7 3.75-9s-1.35-6.6-3.75-9Z" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.5 8a17 17 0 0 0 13 0" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
+      <path d="M5.5 16a17 17 0 0 1 13 0" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
     </svg>
   );
 }
