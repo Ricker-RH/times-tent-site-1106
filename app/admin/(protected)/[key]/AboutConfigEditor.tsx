@@ -67,20 +67,12 @@ interface ManufacturingGalleryState {
   order?: number;
 }
 
-interface ManufacturingFeatureCardState {
-  label: Record<string, string>;
-  description: Record<string, string>;
-  image: string;
-  order?: number;
-}
-
 interface ManufacturingState {
   eyebrow: Record<string, string>;
   title: Record<string, string>;
   description: Record<string, string>;
   mainImage: string;
   gallery: ManufacturingGalleryState[];
-  featureCards: ManufacturingFeatureCardState[];
   bulletPoints: Record<string, string>[];
 }
 
@@ -148,7 +140,7 @@ interface AboutConfigEditorProps {
 }
 
 type IntroEditingScope = "basic" | "stats" | "campusImage" | "full";
-type ManufacturingEditingScope = "basic" | "gallery" | "featureCards" | "bulletPoints" | "full";
+type ManufacturingEditingScope = "basic" | "gallery" | "bulletPoints" | "full";
 type TeamEditingScope = "basic" | "composition" | "leadership" | "full";
 type HonorsEditingScope = "basic" | "certificates" | "patents" | "full";
 type WhyEditingScope = "basic" | "highlights" | "full";
@@ -238,12 +230,6 @@ function normalizeAboutConfig(raw: Record<string, unknown>): AboutConfigState {
       labelEn: ensureString(item.labelEn),
       image: ensureString(item.image),
       description: item.description ? ensureLocalized(item.description, `图库描述 ${index + 1}`) : undefined,
-      order: typeof item.order === "number" ? item.order : undefined,
-    })),
-    featureCards: ensureArray<Record<string, unknown>>(manufacturingRaw.featureCards).map((item, index) => ({
-      label: ensureLocalizedWithLegacy(item.label, `卡片 ${index + 1}`, [["en", item.labelEn]]),
-      image: ensureString(item.image),
-      description: ensureLocalized(item.description, `卡片描述 ${index + 1}`),
       order: typeof item.order === "number" ? item.order : undefined,
     })),
     bulletPoints: ensureArray<Record<string, unknown>>(manufacturingRaw.bulletPoints).map((item, index) =>
@@ -343,12 +329,6 @@ function serializeAboutConfig(config: AboutConfigState): AboutConfig {
         labelEn: item.labelEn.trim(),
         image: item.image.trim(),
         description: item.description ? serializeLocalized(item.description) : undefined,
-        order: item.order,
-      })),
-      featureCards: config.manufacturing.featureCards.map((item) => ({
-        label: serializeLocalized(item.label),
-        image: item.image.trim(),
-        description: serializeLocalized(item.description),
         order: item.order,
       })),
       bulletPoints: config.manufacturing.bulletPoints.map((point) => serializeLocalized(point)),
@@ -721,7 +701,6 @@ function AboutPreview({ config, onEdit }: { config: AboutConfigState; onEdit: (t
           actions={[
             { label: "基础信息", onClick: () => onEdit({ type: "manufacturing", scope: "basic" }) },
             { label: "生产图库", onClick: () => onEdit({ type: "manufacturing", scope: "gallery" }) },
-            { label: "亮点卡片", onClick: () => onEdit({ type: "manufacturing", scope: "featureCards" }) },
             { label: "要点列表", onClick: () => onEdit({ type: "manufacturing", scope: "bulletPoints" }) },
             { label: "全部字段", onClick: () => onEdit({ type: "manufacturing", scope: "full" }) },
           ]}
@@ -974,20 +953,8 @@ function ManufacturingDialog({
     });
   };
 
-  const updateFeatureCard = (
-    index: number,
-    updater: (item: ManufacturingFeatureCardState) => ManufacturingFeatureCardState,
-  ) => {
-    setDraft((prev) => {
-      const featureCards = [...prev.featureCards];
-      featureCards[index] = updater(featureCards[index]);
-      return { ...prev, featureCards };
-    });
-  };
-
   const showBasic = scope === "basic" || scope === "full";
   const showGallery = scope === "gallery" || scope === "full";
-  const showFeatures = scope === "featureCards" || scope === "full";
   const showBullets = scope === "bulletPoints" || scope === "full";
 
   let dialogTitle = "编辑制造实力";
@@ -1001,10 +968,6 @@ function ManufacturingDialog({
     case "gallery":
       dialogTitle = "编辑制造实力 - 生产图库";
       dialogSubtitle = "新增或排序制造现场图片";
-      break;
-    case "featureCards":
-      dialogTitle = "编辑制造实力 - 亮点卡片";
-      dialogSubtitle = "维护制造优势卡片内容";
       break;
     case "bulletPoints":
       dialogTitle = "编辑制造实力 - 亮点要点";
@@ -1162,122 +1125,6 @@ function ManufacturingDialog({
               {!draft.gallery.length ? (
                 <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white/60 p-4 text-center text-xs text-[var(--color-text-secondary)]">
                   暂无图库，请新增。
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-
-        {showFeatures ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-[var(--color-brand-secondary)]">制造优势卡片</span>
-              <button
-                type="button"
-                onClick={() =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    featureCards: [
-                      ...prev.featureCards,
-                      {
-                        label: emptyLocalized("模块名称"),
-                        description: emptyLocalized("模块描述"),
-                        image: "",
-                        order: prev.featureCards.length + 1,
-                      },
-                    ],
-                  }))
-                }
-                className="rounded-full border border-dashed border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)]/10"
-              >
-                + 新增卡片
-              </button>
-            </div>
-            <div className="space-y-3">
-              {draft.featureCards.map((card, index) => (
-                <div key={index} className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-white/80 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--color-text-tertiary,#8690a3)]">
-                    <span>卡片 {index + 1}</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            featureCards: arrayMove(prev.featureCards, index, index - 1),
-                          }))
-                        }
-                        disabled={index === 0}
-                        className="rounded-full border border-[var(--color-border)] px-3 py-1 transition hover:border-[var(--color-brand-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        上移
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            featureCards: arrayMove(prev.featureCards, index, index + 1),
-                          }))
-                        }
-                        disabled={index === draft.featureCards.length - 1}
-                        className="rounded-full border border-[var(--color-border)] px-3 py-1 transition hover:border-[var(--color-brand-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        下移
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            featureCards: prev.featureCards.filter((_, idx) => idx !== index),
-                          }))
-                        }
-                        className="rounded-full border border-rose-200 px-3 py-1 text-rose-500 transition hover:bg-rose-50"
-                      >
-                        删除
-                      </button>
-                    </div>
-                  </div>
-                  <LocalizedTextField
-                    label="标题"
-                    value={card.label}
-                    onChange={(next) => updateFeatureCard(index, (prevCard) => ({ ...prevCard, label: next }))}
-                  />
-                  <LocalizedTextField
-                    label="描述"
-                    value={card.description}
-                    onChange={(next) => updateFeatureCard(index, (prevCard) => ({ ...prevCard, description: next }))}
-                    multiline
-                    rows={4}
-                  />
-                  <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
-                    <ImageInputField
-                      label="背景图片"
-                      value={card.image}
-                      onChange={(next) => updateFeatureCard(index, (prevCard) => ({ ...prevCard, image: next }))}
-                      helper="最佳尺寸 388×520"
-                    />
-                    <div className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">排序 (可选)</span>
-                      <input
-                        value={card.order ?? ""}
-                        onChange={(event) =>
-                          updateFeatureCard(index, (prevCard) => ({
-                            ...prevCard,
-                            order: event.target.value ? Number(event.target.value) : undefined,
-                          }))
-                        }
-                        placeholder="数字"
-                        className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!draft.featureCards.length ? (
-                <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white/60 p-4 text-center text-xs text-[var(--color-text-secondary)]">
-                  暂无卡片，请新增。
                 </div>
               ) : null}
             </div>

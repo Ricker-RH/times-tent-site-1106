@@ -15,7 +15,6 @@ export function AboutFactorySection({ manufacturingSection }: AboutFactorySectio
   }
 
   const galleryItems = manufacturingSection.gallery ?? [];
-  const featureCards = manufacturingSection.featureCards ?? [];
   const bulletPoints = manufacturingSection.bulletPoints ?? [];
 
   return (
@@ -57,31 +56,6 @@ export function AboutFactorySection({ manufacturingSection }: AboutFactorySectio
           </div>
         </article>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {featureCards.map((card, index) => (
-            <div
-              key={`feature-${index}-${card.image}`}
-              className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] text-white shadow-[0_18px_45px_rgba(15,23,42,0.16)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.22)]"
-            >
-              <div className="absolute inset-0">
-                <Image
-                  src={card.image}
-                  alt={t(card.label)}
-                  fill
-                  sizes="(min-width: 1280px) 25vw, 100vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(140deg,rgba(12,19,33,0.85)_0%,rgba(12,19,33,0.55)_60%,rgba(12,19,33,0.35)_100%)] transition-opacity duration-300 group-hover:opacity-95" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.18),transparent_55%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              </div>
-              <div className="relative flex h-full flex-col gap-4 p-6 md:p-7">
-                <span className="text-xs uppercase tracking-[0.3em] text-white/70">{index + 1}</span>
-                <h3 className="text-lg font-semibold md:text-xl">{t(card.label)}</h3>
-                <p className="text-sm text-white/85">{t(card.description)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );

@@ -1895,50 +1895,6 @@ export const about_config = {
         "image": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&w=2000&q=80"
       }
     ],
-    "featureCards": [
-      {
-        "order": 1,
-        "label": {
-          "zh-CN": "设备总览",
-          "zh-TW": "設備總覽",
-          "en": "Facility overview"
-        },
-        "image": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&w=1600&q=80",
-        "description": {
-          "zh-CN": "覆盖关键制造流程",
-          "zh-TW": "涵蓋關鍵製程",
-          "en": "Covering key manufacturing stages"
-        }
-      },
-      {
-        "order": 2,
-        "label": {
-          "zh-CN": "铝型材生产线",
-          "zh-TW": "鋁型材生產線",
-          "en": "Aluminum extrusion line"
-        },
-        "image": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&w=1600&q=80",
-        "description": {
-          "zh-CN": "覆盖关键制造流程",
-          "zh-TW": "涵蓋關鍵製程",
-          "en": "Covering key manufacturing stages"
-        }
-      },
-      {
-        "order": 3,
-        "label": {
-          "zh-CN": "膜材焊接车间",
-          "zh-TW": "膜材焊接車間",
-          "en": "Membrane welding workshop"
-        },
-        "image": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&w=1600&q=80",
-        "description": {
-          "zh-CN": "覆盖关键制造流程",
-          "zh-TW": "涵蓋關鍵製程",
-          "en": "Covering key manufacturing stages"
-        }
-      }
-    ],
     "bulletPoints": [
       {
         "zh-CN": "通过 ISO9001 / ISO14001 质量与环境管理体系",
