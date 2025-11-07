@@ -18,7 +18,7 @@ export function AboutHonorsSection({ honorsSection }: AboutHonorsSectionProps): 
   const tracks = [honorsSection.certificates ?? [], honorsSection.patents ?? []];
 
   return (
-    <section className="bg-[var(--color-surface-muted)] py-20" id="about-honors">
+    <section className="bg-[var(--color-surface-muted)] py-14" id="about-honors">
       <div className="mx-auto w-full max-w-[1200px] space-y-12 px-4 sm:px-6 lg:px-8">
         <div className="space-y-3 text-center md:text-left">
           <h2 className="text-2xl font-semibold text-[var(--color-brand-secondary)] md:text-3xl">
