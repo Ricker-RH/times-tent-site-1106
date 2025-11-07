@@ -161,7 +161,7 @@ function HeroCard({ hero }: { hero: ProductCenterData["hero"] }) {
           </span>
         ) : null}
         <h1 className="text-3xl font-semibold md:text-4xl">{title}</h1>
-        <p className="max-w-2xl text-base text-white/80 md:text-lg">{description}</p>
+        <p className="max-w-2xl text-sm text-white/80 md:text-base">{description}</p>
       </div>
     </section>
   );
