@@ -94,8 +94,6 @@ export interface ProductMatrixSectionProps {
   productShowcase: {
     heading?: LocalizedOrString;
     description?: LocalizedOrString;
-    viewAllHref?: string;
-    viewAllLabel?: LocalizedOrString;
     cardCtaLabel?: LocalizedOrString;
     cards: HomeProductCard[];
   };
@@ -122,7 +120,6 @@ export function ProductMatrixSection({
   const hideInventory = hiddenSections?.inventory === true;
   const hideContactCta = hiddenSections?.contactCta === true;
   const cards = productShowcase.cards ?? [];
-  const viewAllHref = productShowcase.viewAllHref ?? "/products";
   const rawCardCtaLabel = resolveText(productShowcase.cardCtaLabel, "查看详情");
   const cardCtaLabel = normalizeCtaLabel(rawCardCtaLabel);
 
@@ -146,24 +143,12 @@ export function ProductMatrixSection({
       {cards.length && !hideProduct ? (
         <section className="relative bg-[var(--color-surface-muted)] py-16" data-preview-anchor="product">
           <div className="mx-auto w-full max-w-[1200px] space-y-6 px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-3 text-left md:flex-row md:items-end md:justify-between">
-              <div className="max-w-3xl space-y-2">
-                <h2 className="text-2xl font-bold text-[var(--color-brand-secondary)] md:text-3xl">
-                  {resolveText(productShowcase.heading, "核心篷房产品矩阵")}
-                </h2>
-                {resolveText(productShowcase.description) ? (
-                  <p className="text-sm text-[var(--color-text-secondary)]">{resolveText(productShowcase.description)}</p>
-                ) : null}
-              </div>
-              {viewAllHref ? (
-                <div className="mt-2 md:mt-0">
-                  <Link
-                    href={viewAllHref}
-                    className="rounded-full border border-[var(--color-border)] px-5 py-2 text-sm font-semibold text-[var(--color-brand-secondary)] transform transition duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/25 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                  >
-                    {resolveText(productShowcase.viewAllLabel, "浏览所有产品")}
-                  </Link>
-                </div>
+            <div className="max-w-3xl space-y-2">
+              <h2 className="text-2xl font-bold text-[var(--color-brand-secondary)] md:text-3xl">
+                {resolveText(productShowcase.heading, "核心篷房产品矩阵")}
+              </h2>
+              {resolveText(productShowcase.description) ? (
+                <p className="text-sm text-[var(--color-text-secondary)]">{resolveText(productShowcase.description)}</p>
               ) : null}
             </div>
 

@@ -172,10 +172,8 @@ export default async function Page(): Promise<JSX.Element> {
   const productRaw = homeConfig.productShowcase ?? {};
   const shouldHideProduct =
     Object.prototype.hasOwnProperty.call(productRaw, "heading") &&
-    Object.prototype.hasOwnProperty.call(productRaw, "viewAllLabel") &&
     Object.prototype.hasOwnProperty.call(productRaw, "cardCtaLabel") &&
     (productRaw as Record<string, unknown>).heading === null &&
-    (productRaw as Record<string, unknown>).viewAllLabel === null &&
     (productRaw as Record<string, unknown>).cardCtaLabel === null;
 
   const companyRaw = homeConfig.companyOverview ?? {};
@@ -678,14 +676,6 @@ function buildProductShowcase(homeConfig: HomeConfig, productConfig: ProductCent
       "核心篷房产品矩阵",
     ) ?? "核心篷房产品矩阵";
 
-  const viewAllLabel =
-    pickLocalizedValue(
-      (productShowcaseConfig as Record<string, unknown>)?.viewAllLabel,
-      (productShowcaseConfig as Record<string, unknown>)?.viewAllLabelEn,
-      (FALLBACK_HOME_CONFIG.productShowcase as Record<string, unknown>)?.viewAllLabel,
-      "浏览所有产品",
-    ) ?? "浏览所有产品";
-
   const cardCtaLabel =
     pickLocalizedValue(
       productShowcaseConfig.cardCtaLabel,
@@ -727,8 +717,6 @@ function buildProductShowcase(homeConfig: HomeConfig, productConfig: ProductCent
 
   return {
     heading,
-    viewAllHref: "/products",
-    viewAllLabel,
     cardCtaLabel,
     description,
     cards,

@@ -296,11 +296,6 @@ export const FALLBACK_HOME_CONFIG: HomeConfig = {
       "zh-TW": "精選核心產品，適配賽事、展會、旅遊等多場景。",
       "en": "Curated flagship tents for events, exhibitions, and hospitality.",
     },
-    viewAllLabel: {
-      "zh-CN": "浏览所有产品",
-      "zh-TW": "瀏覽所有產品",
-      "en": "View All Products",
-    },
     cardCtaLabel: {
       "zh-CN": "查看详情",
       "zh-TW": "查看詳情",

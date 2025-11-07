@@ -278,7 +278,6 @@ interface ProductShowcaseState {
   heading: LocalizedText;
   description: LocalizedText;
   cardCtaLabel: LocalizedText;
-  viewAllLabel: LocalizedText;
   selectedProductSlugs: string[];
   cards: ProductCardState[];
 }
@@ -762,14 +761,6 @@ function normalizeProductShowcase(raw: unknown, productOptions: ProductOption[])
       {
         en: showcase.cardCtaLabelEn,
         "zh-TW": (showcase as Record<string, unknown>)["cardCtaLabelZhTw"],
-      },
-    ),
-    viewAllLabel: normalizeLocalizedText(
-      (showcase as Record<string, unknown>)["viewAllLabel"],
-      empty,
-      {
-        en: (showcase as Record<string, unknown>)["viewAllLabelEn"],
-        "zh-TW": (showcase as Record<string, unknown>)["viewAllLabelZhTw"],
       },
     ),
     selectedProductSlugs: effectiveSelectedProductSlugs,
@@ -1299,11 +1290,6 @@ function serializeConfig(config: HomeConfigState): HomeConfig {
   const cardCtaField = serializeLocalizedField(config.productShowcase.cardCtaLabel);
   if (cardCtaField) {
     productShowcase.cardCtaLabel = cardCtaField;
-  }
-
-  const viewAllField = serializeLocalizedField(config.productShowcase.viewAllLabel);
-  if (viewAllField) {
-    productShowcase.viewAllLabel = viewAllField;
   }
 
   const applicationAreas: HomeApplicationAreasConfig = {
@@ -2230,8 +2216,6 @@ function buildPreviewProductShowcase(
   return {
     heading: homeConfig.productShowcase?.heading,
     description: homeConfig.productShowcase?.description,
-    viewAllHref: "/products",
-    viewAllLabel: homeConfig.productShowcase?.viewAllLabel,
     cardCtaLabel: homeConfig.productShowcase?.cardCtaLabel,
     cards,
   };
@@ -3061,7 +3045,6 @@ function ProductShowcaseDialog({
     heading: cloneLocalized(value.heading),
     description: cloneLocalized(value.description),
     cardCtaLabel: cloneLocalized(value.cardCtaLabel),
-    viewAllLabel: cloneLocalized(value.viewAllLabel),
     selectedProductSlugs: [...value.selectedProductSlugs],
     cards: value.cards.map((card) => ({
       ...card,
@@ -3075,7 +3058,6 @@ function ProductShowcaseDialog({
       heading: cloneLocalized(value.heading),
       description: cloneLocalized(value.description),
       cardCtaLabel: cloneLocalized(value.cardCtaLabel),
-      viewAllLabel: cloneLocalized(value.viewAllLabel),
       selectedProductSlugs: [...value.selectedProductSlugs],
       cards: value.cards.map((card) => ({
         ...card,
@@ -3121,7 +3103,6 @@ function ProductShowcaseDialog({
           heading: cloneLocalized(draft.heading),
           description: cloneLocalized(draft.description),
           cardCtaLabel: cloneLocalized(draft.cardCtaLabel),
-          viewAllLabel: cloneLocalized(draft.viewAllLabel),
           selectedProductSlugs: [...draft.selectedProductSlugs],
           cards: draft.cards.map((card) => ({
             ...card,
@@ -3149,11 +3130,6 @@ function ProductShowcaseDialog({
                 rows={4}
               />
             </div>
-            <LocalizedTextField
-              label="查看全部按钮文案"
-              value={draft.viewAllLabel}
-              onChange={(next) => setDraft((prev) => ({ ...prev, viewAllLabel: next }))}
-            />
             <LocalizedTextField
               label="卡片按钮文案"
               value={draft.cardCtaLabel}
@@ -3865,7 +3841,6 @@ export function HomeConfigEditor({
           ...latestConfigRef.current.productShowcase,
           heading: cloneLocalized(latestConfigRef.current.productShowcase.heading),
           cardCtaLabel: cloneLocalized(latestConfigRef.current.productShowcase.cardCtaLabel),
-          viewAllLabel: cloneLocalized(latestConfigRef.current.productShowcase.viewAllLabel),
           selectedProductSlugs: [...latestConfigRef.current.productShowcase.selectedProductSlugs],
           cards: latestConfigRef.current.productShowcase.cards.map((card) => ({
             ...card,

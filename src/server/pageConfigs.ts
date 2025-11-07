@@ -134,8 +134,6 @@ export interface HomeConfig {
     headingEn?: string; // legacy
     description?: string | LocalizedField;
     descriptionEn?: string; // legacy
-    viewAllLabel?: string | LocalizedField;
-    viewAllLabelEn?: string; // legacy
     cardCtaLabel?: string | LocalizedField;
     cardCtaLabelEn?: string; // legacy
     selectedProductSlugs?: string[];

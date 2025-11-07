@@ -52,11 +52,6 @@ if (fallbackHome.hero) {
 auditLocalizedField(fallbackHome.productShowcase?.heading, "FALLBACK_HOME_CONFIG.productShowcase.heading", "fallback");
 auditLocalizedField(fallbackHome.inventoryHighlight?.heading, "FALLBACK_HOME_CONFIG.inventoryHighlight.heading", "fallback");
 auditLocalizedField(fallbackHome.applicationAreas?.heading, "FALLBACK_HOME_CONFIG.applicationAreas.heading", "fallback");
-auditLocalizedField(
-  (fallbackHome.productShowcase as Record<string, unknown>)?.viewAllLabel,
-  "FALLBACK_HOME_CONFIG.productShowcase.viewAllLabel",
-  "fallback",
-);
 
 auditLocalizedField(
   FALLBACK_PRODUCT_CENTER_CONFIG.hero?.title,
