@@ -107,10 +107,10 @@ export default function InventoryClient({ hero, sections, hiddenSections }: Inve
    const summary = resolveText(section.summary);
    const contact = resolveText(section.contact);
    const posters = buildPosterList(section);
-   const sectionPadding = index === 0 ? "pt-8 pb-12" : "py-12";
+  const sectionPadding = index === 0 ? "pt-8 pb-12" : "py-12";
    
-   return (
-     <section id={id} className={`${index % 2 === 1 ? "bg-[var(--color-surface-muted)]" : "bg-white"} scroll-mt-24 ${sectionPadding} last:pb-0`}>
+  return (
+    <section id={id} className={`${index % 2 === 1 ? "bg-[var(--color-surface-muted)]" : "bg-white"} scroll-mt-24 ${sectionPadding}`}>
        <div className="mx-auto w-full max-w-[1200px] space-y-6 px-4 sm:px-6 lg:px-8">
          <div className="space-y-2">
            <h2 className="text-2xl font-semibold text-[var(--color-brand-secondary)] md:text-3xl">{title}</h2>
