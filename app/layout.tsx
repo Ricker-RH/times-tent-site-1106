@@ -20,9 +20,11 @@ export const metadata: Metadata = {
   title: "时代篷房 TIMES TENT",
   description: "模块化篷房解决方案 · 赛事、文旅、工业、品牌活动全场景覆盖",
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 };
 
