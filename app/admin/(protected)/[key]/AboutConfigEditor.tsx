@@ -76,12 +76,6 @@ interface ManufacturingState {
   bulletPoints: Record<string, string>[];
 }
 
-interface TeamCompositionState {
-  label: Record<string, string>;
-  value: string;
-  description: Record<string, string>;
-}
-
 interface TeamLeaderState {
   name: string;
   role: Record<string, string>;
@@ -93,7 +87,6 @@ interface TeamState {
   eyebrow: Record<string, string>;
   title: Record<string, string>;
   description: Record<string, string>;
-  composition: TeamCompositionState[];
   leadership: TeamLeaderState[];
 }
 
@@ -141,7 +134,7 @@ interface AboutConfigEditorProps {
 
 type IntroEditingScope = "basic" | "stats" | "campusImage" | "full";
 type ManufacturingEditingScope = "basic" | "gallery" | "bulletPoints" | "full";
-type TeamEditingScope = "basic" | "composition" | "leadership" | "full";
+type TeamEditingScope = "basic" | "leadership" | "full";
 type HonorsEditingScope = "basic" | "certificates" | "patents" | "full";
 type WhyEditingScope = "basic" | "highlights" | "full";
 
@@ -241,15 +234,6 @@ function normalizeAboutConfig(raw: Record<string, unknown>): AboutConfigState {
     eyebrow: ensureLocalized(teamRaw.eyebrow, "团队介绍"),
     title: ensureLocalized(teamRaw.title, "跨学科团队"),
     description: ensureLocalized(teamRaw.description, "研发、销售顾问与施工交付组成三位一体团队。"),
-    composition: ensureArray<Record<string, unknown>>(teamRaw.composition).map((item, index) => ({
-      label: ensureLocalizedWithLegacy(item.label, `板块 ${index + 1}`, [["en", item.labelEn]]),
-      value: ensureString(item.value, "0"),
-      description: ensureLocalizedWithLegacy(
-        item.description,
-        ensureString(item.description, `板块描述 ${index + 1}`),
-        [["en", item.descriptionEn]],
-      ),
-    })),
     leadership: ensureArray<Record<string, unknown>>(teamRaw.leadership).map((item, index) => ({
       name: ensureString(item.name, `成员 ${index + 1}`),
       role: ensureLocalized(item.role, "岗位角色"),
@@ -337,11 +321,6 @@ function serializeAboutConfig(config: AboutConfigState): AboutConfig {
       eyebrow: serializeLocalized(config.team.eyebrow),
       title: serializeLocalized(config.team.title),
       description: serializeLocalized(config.team.description),
-      composition: config.team.composition.map((item) => ({
-        label: serializeLocalized(item.label),
-        value: item.value.trim(),
-        description: serializeLocalized(item.description),
-      })),
       leadership: config.team.leadership.map((leader) => ({
         name: leader.name.trim(),
         role: serializeLocalized(leader.role),
@@ -710,7 +689,6 @@ function AboutPreview({ config, onEdit }: { config: AboutConfigState; onEdit: (t
         <SectionWrapper
           actions={[
             { label: "基础信息", onClick: () => onEdit({ type: "team", scope: "basic" }) },
-            { label: "团队构成", onClick: () => onEdit({ type: "team", scope: "composition" }) },
             { label: "核心团队", onClick: () => onEdit({ type: "team", scope: "leadership" }) },
             { label: "全部字段", onClick: () => onEdit({ type: "team", scope: "full" }) },
           ]}
@@ -1205,32 +1183,16 @@ function TeamDialog({
     setDraft(cloneState(value));
   }, [value]);
 
-  const updateComposition = (
-    index: number,
-    updater: (item: TeamCompositionState) => TeamCompositionState,
-  ) => {
-    setDraft((prev) => {
-      const composition = [...prev.composition];
-      composition[index] = updater(composition[index]);
-      return { ...prev, composition };
-    });
-  };
-
   const showBasic = scope === "basic" || scope === "full";
-  const showComposition = scope === "composition" || scope === "full";
   const showLeadership = scope === "leadership" || scope === "full";
 
   let dialogTitle = "编辑团队介绍";
-  let dialogSubtitle = "维护团队文案、能力构成与核心成员";
+  let dialogSubtitle = "维护团队文案与核心成员";
 
   switch (scope) {
     case "basic":
       dialogTitle = "编辑团队介绍 - 基础信息";
       dialogSubtitle = "更新眉头、标题与描述文案";
-      break;
-    case "composition":
-      dialogTitle = "编辑团队介绍 - 能力构成";
-      dialogSubtitle = "维护能力构成及说明";
       break;
     case "leadership":
       dialogTitle = "编辑团队介绍 - 核心成员";
@@ -1238,7 +1200,7 @@ function TeamDialog({
       break;
     default:
       dialogTitle = "编辑团队介绍";
-      dialogSubtitle = "维护团队文案、能力构成与核心成员";
+      dialogSubtitle = "维护团队文案与核心成员";
   }
 
   return (
@@ -1260,85 +1222,6 @@ function TeamDialog({
               multiline
               rows={4}
             />
-          </div>
-        ) : null}
-
-        {showComposition ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-[var(--color-brand-secondary)]">能力构成</span>
-              <button
-                type="button"
-                onClick={() =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    composition: [
-                      ...prev.composition,
-                      {
-                        label: emptyLocalized("能力模块"),
-                        value: "0",
-                        description: emptyLocalized("模块说明"),
-                      },
-                    ],
-                  }))
-                }
-                className="rounded-full border border-dashed border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)]/10"
-              >
-                + 新增模块
-              </button>
-            </div>
-            <div className="space-y-3">
-              {draft.composition.map((item, index) => (
-                <div key={index} className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-white/80 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--color-text-tertiary,#8690a3)]">
-                    <span>模块 {index + 1}</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setDraft((prev) => ({
-                          ...prev,
-                          composition: prev.composition.filter((_, idx) => idx !== index),
-                        }))
-                      }
-                      className="rounded-full border border-rose-200 px-3 py-1 text-rose-500 transition hover:bg-rose-50"
-                    >
-                      删除
-                    </button>
-                  </div>
-                  <LocalizedTextField
-                    label="模块名称"
-                    value={item.label}
-                    onChange={(next) => updateComposition(index, (prevItem) => ({ ...prevItem, label: next }))}
-                  />
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <div className="space-y-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">占比</span>
-                      <input
-                        value={item.value}
-                        onChange={(event) =>
-                          updateComposition(index, (prevItem) => ({ ...prevItem, value: event.target.value }))
-                        }
-                        className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <LocalizedTextField
-                        label="说明"
-                        value={item.description}
-                        onChange={(next) => updateComposition(index, (prevItem) => ({ ...prevItem, description: next }))}
-                        multiline
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!draft.composition.length ? (
-                <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white/60 p-4 text-center text-xs text-[var(--color-text-secondary)]">
-                  暂无模块，请新增。
-                </div>
-              ) : null}
-            </div>
           </div>
         ) : null}
 

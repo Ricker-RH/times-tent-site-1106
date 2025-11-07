@@ -1929,47 +1929,6 @@ export const about_config = {
       "zh-TW": "研發、銷售顧問與施工交付組成三位一體的核心團隊，確保從方案設計、客戶溝通到現場落地的全鏈路高效協同。",
       "en": "R&D, sales consultants, and construction delivery squads form an integrated core team that keeps solutions, communication, and on-site execution aligned end to end."
     },
-    "composition": [
-      {
-        "label": {
-          "zh-CN": "研发设计",
-          "zh-TW": "研發設計",
-          "en": "R&D"
-        },
-        "value": "40%",
-        "description": {
-          "zh-CN": "结构工程师、产品设计师与数字化团队，负责模块创新与方案深化。",
-          "zh-TW": "結構工程師、產品設計師與數位化團隊，負責模組創新與方案深化。",
-          "en": "Structural engineers, product designers, and digital teams driving modular innovation and scheme development."
-        }
-      },
-      {
-        "label": {
-          "zh-CN": "销售服务",
-          "zh-TW": "銷售服務",
-          "en": "Sales"
-        },
-        "value": "25%",
-        "description": {
-          "zh-CN": "区域顾问与项目经理提供前期咨询、预算评估与客户协同。",
-          "zh-TW": "區域顧問與專案經理提供前期諮詢、預算評估與客戶協同。",
-          "en": "Regional consultants and project managers orchestrating presales advisory, budgeting, and client coordination."
-        }
-      },
-      {
-        "label": {
-          "zh-CN": "施工交付",
-          "zh-TW": "施工交付",
-          "en": "Construction"
-        },
-        "value": "35%",
-        "description": {
-          "zh-CN": "施工管理、现场搭建与运维团队，保障交付周期与安全标准。",
-          "zh-TW": "施工管理、現場搭建與運維團隊，保障交付週期與安全標準。",
-          "en": "Construction managers and on-site crews ensuring delivery timelines and safety standards."
-        }
-      }
-    ],
     "leadership": [
       {
         "name": "Lena Zhang",

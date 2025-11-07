@@ -24,19 +24,6 @@ export function AboutTeamSection({ teamSection }: AboutTeamSectionProps): JSX.El
           <p className="text-base leading-7 text-[var(--color-text-secondary)]">{t(teamSection.description)}</p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          {(teamSection.composition ?? []).map((item, index) => (
-            <div
-              key={`composition-${index}-${item.value}`}
-              className="rounded-[10px] bg-[var(--color-surface-muted)] px-6 py-6 text-left shadow-[0_18px_60px_rgba(15,23,42,0.08)]"
-            >
-              <p className="text-4xl font-semibold text-[var(--color-brand-secondary)]">{item.value}</p>
-              <p className="mt-3 text-sm font-semibold text-[var(--color-brand-secondary)]">{t(item.label)}</p>
-              <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{t(item.description)}</p>
-            </div>
-          ))}
-        </div>
-
         <div className="grid gap-6 md:grid-cols-3">
           {(teamSection.leadership ?? []).map((leader) => (
             <div
