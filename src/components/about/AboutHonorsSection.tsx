@@ -21,7 +21,7 @@ export function AboutHonorsSection({ honorsSection }: AboutHonorsSectionProps): 
     <section className="bg-[var(--color-surface-muted)] py-20" id="about-honors">
       <div className="mx-auto w-full max-w-[1200px] space-y-12 px-4 sm:px-6 lg:px-8">
         <div className="space-y-3 text-center md:text-left">
-          <h2 className="text-3xl font-semibold text-[var(--color-brand-secondary)] md:text-4xl">
+          <h2 className="text-2xl font-semibold text-[var(--color-brand-secondary)] md:text-3xl">
             {t(honorsSection.title)}
           </h2>
           <p className="text-base leading-7 text-[var(--color-text-secondary)]">
