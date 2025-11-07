@@ -17,7 +17,7 @@ export function AboutWhySection({ whyUsSection }: AboutWhySectionProps): JSX.Ele
   }
 
   return (
-    <section className="bg-white pt-16 pb-10" id="about-why">
+    <section className="bg-white pt-16 pb-10 last:pb-10" id="about-why">
       <div className="mx-auto w-full max-w-[1200px] space-y-8 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 text-left md:flex-row md:items-end md:justify-between">
           <div className="max-w-3xl space-y-2">
