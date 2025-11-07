@@ -6,7 +6,7 @@ import { t } from "@/data";
 import type { AboutConfig } from "@/server/pageConfigs";
 
 const STAT_CARD_CLASS =
-  "rounded-2xl border border-white/10 bg-[#d02827] px-5 py-4 text-white shadow-[0_24px_55px_rgba(208,40,39,0.45)] backdrop-blur-md";
+  "rounded-2xl border border-white/10 bg-[#b31217] px-5 py-4 text-white shadow-[0_24px_55px_rgba(179,18,23,0.5)] backdrop-blur-md";
 
 interface AboutCompanySectionProps {
   introSection: AboutConfig["introSection"];
@@ -45,7 +45,7 @@ export function AboutCompanySection({ introSection }: AboutCompanySectionProps):
 
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {(introSection.stats ?? []).map((stat, index) => (
             <div
               key={`stat-${index}-${stat.value}`}
