@@ -6,10 +6,10 @@ import { t } from "@/data";
 import type { AboutConfig } from "@/server/pageConfigs";
 
 const STAT_CARD_CLASSES = [
-  "rounded-xl border border-white/15 bg-gradient-to-br from-[#ff5f6d]/80 via-[#ff2e56]/75 to-[#b31217]/75 px-5 py-4 text-white shadow-[0_18px_50px_rgba(208,40,39,0.45)] backdrop-blur-md",
-  "rounded-xl border border-white/15 bg-gradient-to-br from-[#ff7a88]/75 via-[#ff3b5f]/70 to-[#c01628]/75 px-5 py-4 text-white shadow-[0_18px_45px_rgba(208,40,39,0.38)] backdrop-blur-md",
-  "rounded-xl border border-white/15 bg-gradient-to-br from-[#ffa1ac]/70 via-[#ff5c72]/70 to-[#d31f33]/70 px-5 py-4 text-white shadow-[0_16px_40px_rgba(208,40,39,0.32)] backdrop-blur-md",
-  "rounded-xl border border-white/15 bg-gradient-to-br from-[#ffc0c8]/65 via-[#ff768a]/65 to-[#e02f40]/65 px-5 py-4 text-white shadow-[0_14px_36px_rgba(208,40,39,0.28)] backdrop-blur-md",
+  "rounded-2xl border border-white/15 bg-gradient-to-br from-[#ff7b8a]/90 via-[#d02827]/90 to-[#8f101b]/85 px-5 py-4 text-white shadow-[0_24px_55px_rgba(208,40,39,0.45)] backdrop-blur-xl",
+  "rounded-2xl border border-white/15 bg-gradient-to-br from-[#ff8f9c]/85 via-[#e1353a]/85 to-[#a61220]/80 px-5 py-4 text-white shadow-[0_20px_50px_rgba(208,40,39,0.38)] backdrop-blur-xl",
+  "rounded-2xl border border-white/15 bg-gradient-to-br from-[#ffa6b1]/80 via-[#f0484c]/80 to-[#bb1925]/75 px-5 py-4 text-white shadow-[0_18px_46px_rgba(208,40,39,0.32)] backdrop-blur-xl",
+  "rounded-2xl border border-white/15 bg-gradient-to-br from-[#ffbdc3]/75 via-[#ff6370]/75 to-[#c7222e]/70 px-5 py-4 text-white shadow-[0_16px_40px_rgba(208,40,39,0.28)] backdrop-blur-xl",
 ] as const;
 
 interface AboutCompanySectionProps {
@@ -47,17 +47,18 @@ export function AboutCompanySection({ introSection }: AboutCompanySectionProps):
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-black/45 via-black/15 to-transparent" />
           </div>
 
-          <div className="absolute inset-x-6 bottom-6 grid gap-3 sm:grid-cols-4">
-            {(introSection.stats ?? []).map((stat, index) => (
-              <div
-                key={`stat-${index}-${stat.value}`}
-                className={STAT_CARD_CLASSES[index] ?? STAT_CARD_CLASSES[STAT_CARD_CLASSES.length - 1]}
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/75">{t(stat.label)}</p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight">{stat.value}</p>
-              </div>
-            ))}
-          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {(introSection.stats ?? []).map((stat, index) => (
+            <div
+              key={`stat-${index}-${stat.value}`}
+              className={STAT_CARD_CLASSES[index] ?? STAT_CARD_CLASSES[STAT_CARD_CLASSES.length - 1]}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/75">{t(stat.label)}</p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight">{stat.value}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
