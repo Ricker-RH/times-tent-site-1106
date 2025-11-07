@@ -5,12 +5,8 @@ import Image from "next/image";
 import { t } from "@/data";
 import type { AboutConfig } from "@/server/pageConfigs";
 
-const STAT_CARD_CLASSES = [
-  "rounded-2xl border border-white/10 bg-[#d02827]/95 px-5 py-4 text-white shadow-[0_24px_55px_rgba(208,40,39,0.45)] backdrop-blur-md",
-  "rounded-2xl border border-white/10 bg-[#d02827]/90 px-5 py-4 text-white shadow-[0_20px_45px_rgba(208,40,39,0.38)] backdrop-blur-md",
-  "rounded-2xl border border-white/10 bg-[#d02827]/85 px-5 py-4 text-white shadow-[0_18px_40px_rgba(208,40,39,0.32)] backdrop-blur-md",
-  "rounded-2xl border border-white/10 bg-[#d02827]/80 px-5 py-4 text-white shadow-[0_16px_36px_rgba(208,40,39,0.28)] backdrop-blur-md",
-] as const;
+const STAT_CARD_CLASS =
+  "rounded-2xl border border-white/10 bg-[#d02827] px-5 py-4 text-white shadow-[0_24px_55px_rgba(208,40,39,0.45)] backdrop-blur-md";
 
 interface AboutCompanySectionProps {
   introSection: AboutConfig["introSection"];
@@ -53,7 +49,7 @@ export function AboutCompanySection({ introSection }: AboutCompanySectionProps):
           {(introSection.stats ?? []).map((stat, index) => (
             <div
               key={`stat-${index}-${stat.value}`}
-              className={STAT_CARD_CLASSES[index] ?? STAT_CARD_CLASSES[STAT_CARD_CLASSES.length - 1]}
+              className={STAT_CARD_CLASS}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/75">{t(stat.label)}</p>
               <p className="mt-2 text-2xl font-semibold tracking-tight">{stat.value}</p>
