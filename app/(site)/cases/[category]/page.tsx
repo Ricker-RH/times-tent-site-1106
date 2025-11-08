@@ -101,16 +101,18 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
                         className="object-cover"
                         sizes="100vw"
                       />
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 text-center">
-                        <h2 className="text-2xl font-semibold text-white drop-shadow-[0_8px_18px_rgba(0,0,0,0.35)] md:text-3xl">
-                           {t(study.title)}
-                         </h2>
-                        <Link
-                          href={`/cases/${category.slug}/${study.slug}`}
-                          className="inline-flex items-center rounded-full border border-[var(--color-brand-primary)] px-6 py-3 text-sm font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)] hover:text-white"
-                        >
-                          查看详情
-                        </Link>
+                      <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                        <div className="flex w-full max-w-[520px] flex-col items-center gap-4 rounded-2xl border border-white/60 bg-white/75 px-6 py-5 text-center shadow-[0_20px_55px_rgba(0,0,0,0.22)] backdrop-blur-md">
+                          <h2 className="text-2xl font-bold text-[var(--color-brand-primary)] drop-shadow-[0_6px_16px_rgba(255,0,0,0.28)] md:text-3xl">
+                            {t(study.title)}
+                          </h2>
+                          <Link
+                            href={`/cases/${category.slug}/${study.slug}`}
+                            className="inline-flex items-center rounded-full border-2 border-[var(--color-brand-primary)] px-6 py-3 text-sm font-bold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)] hover:text-white"
+                          >
+                            查看详情
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </article>
