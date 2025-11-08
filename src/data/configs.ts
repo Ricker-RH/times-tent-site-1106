@@ -79,14 +79,17 @@ export const cases_config = {
           "location": "浙江杭州",
           "summary": "赛事入口、媒体、观众服务等多模块临建体系。",
           "background": "需在短周期内完成核心配套搭建，满足国际赛事标准。",
+          "backgroundImage": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&w=1600&q=80",
           "highlights": [
             "48 小时完成核心区域吊装",
             "模块化机电保障赛事运行"
           ],
+          "highlightsImage": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&w=1600&q=80",
           "deliverables": [
             "赛事外场临建集群",
             "媒体与贵宾接待中心"
           ],
+          "deliverablesImage": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&w=1600&q=80",
           "metrics": [
             {
               "label": "搭建面积",
@@ -107,14 +110,17 @@ export const cases_config = {
           "location": "江苏南京",
           "summary": "暖通、指挥与媒体模块满足室内锦标赛运营。",
           "background": "在既有体育中心基础上扩建辅助空间，需保持温控与分区。",
+          "backgroundImage": "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&w=1600&q=80",
           "highlights": [
             "双层篷房媒体中心",
             "温控稳定 20±1℃"
           ],
+          "highlightsImage": "https://images.unsplash.com/photo-1500534319179-34d4982c68d3?auto=format&w=1600&q=80",
           "deliverables": [
             "运营指挥中心",
             "媒体直播区"
           ],
+          "deliverablesImage": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&w=1600&q=80",
           "metrics": [
             {
               "label": "搭建面积",

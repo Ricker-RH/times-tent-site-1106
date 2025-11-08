@@ -44,6 +44,9 @@ export type CaseStudy = CaseCategory["studies"][number] & {
   highlightsI18n?: Array<string | LocalizedField>;
   deliverablesI18n?: Array<string | LocalizedField>;
   metricsI18n?: Array<{ label: string | LocalizedField; value: string | LocalizedField }>;
+  backgroundImage?: string;
+  highlightsImage?: string;
+  deliverablesImage?: string;
 };
 
 export interface ProductCenterProduct {

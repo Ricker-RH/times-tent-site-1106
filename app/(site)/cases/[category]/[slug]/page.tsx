@@ -165,19 +165,34 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
             {showBackgroundSection ? (
               <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                 <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目背景</h2>
-                {t(study.background) ? (
-                  <p className="mt-3 text-sm text-[var(--color-text-secondary)]">{t(study.background)}</p>
-                ) : null}
-                {metricsLocalized.length ? (
-                  <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                    {metricsLocalized.map((metric) => (
-                      <div key={`${metric.label}-${metric.value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
-                        <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{metric.value}</p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">{metric.label}</p>
+                <div className={`mt-4 grid gap-6 ${study.backgroundImage ? "md:grid-cols-[1.1fr_0.9fr]" : ""}`}>
+                  <div>
+                    {t(study.background) ? (
+                      <p className="text-sm text-[var(--color-text-secondary)]">{t(study.background)}</p>
+                    ) : null}
+                    {metricsLocalized.length ? (
+                      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                        {metricsLocalized.map((metric) => (
+                          <div key={`${metric.label}-${metric.value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
+                            <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{metric.value}</p>
+                            <p className="text-xs text-[var(--color-text-secondary)]">{metric.label}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : null}
                   </div>
-                ) : null}
+                  {study.backgroundImage ? (
+                    <figure className="relative h-64 overflow-hidden rounded-xl">
+                      <Image
+                        src={study.backgroundImage}
+                        alt={`${t(study.title)} 项目背景`}
+                        fill
+                        className="object-cover"
+                        sizes="(min-width: 1024px) 40vw, 100vw"
+                      />
+                    </figure>
+                  ) : null}
+                </div>
               </section>
             ) : null}
 
@@ -191,15 +206,28 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
               return highlightsDisplay.length && !hideHighlights ? (
                 <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                   <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">解决方案亮点</h2>
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {highlightsDisplay.map((item) => (
-                      <div
-                        key={item}
-                        className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.12)] text-center transition hover:-translate-y-1"
-                      >
-                        <p className="text-sm font-semibold leading-6 text-[var(--color-brand-primary)]">{item}</p>
-                      </div>
-                    ))}
+                  <div className={`mt-6 grid gap-6 ${study.highlightsImage ? "lg:grid-cols-[minmax(0,2fr)_340px]" : ""}`}>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {highlightsDisplay.map((item) => (
+                        <div
+                          key={item}
+                          className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.12)] text-center transition hover:-translate-y-1"
+                        >
+                          <p className="text-sm font-semibold leading-6 text-[var(--color-brand-primary)]">{item}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {study.highlightsImage ? (
+                      <figure className="relative h-64 overflow-hidden rounded-xl">
+                        <Image
+                          src={study.highlightsImage}
+                          alt={`${t(study.title)} 亮点配图`}
+                          fill
+                          className="object-cover"
+                          sizes="(min-width: 1024px) 30vw, 100vw"
+                        />
+                      </figure>
+                    ) : null}
                   </div>
                 </section>
               ) : null;
@@ -215,13 +243,26 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
               return deliverablesDisplay.length && !hideDeliverables ? (
                 <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                   <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">交付成果</h2>
-                  <div className="mt-4 space-y-3 text-sm text-[var(--color-text-secondary)]">
-                    {deliverablesDisplay.map((item) => (
-                      <p key={item} className="flex items-start gap-2">
-                        <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
-                        <span>{item}</span>
-                      </p>
-                    ))}
+                  <div className={`mt-4 grid gap-6 ${study.deliverablesImage ? "md:grid-cols-[minmax(0,1.4fr)_1fr]" : ""}`}>
+                    <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
+                      {deliverablesDisplay.map((item) => (
+                        <p key={item} className="flex items-start gap-2">
+                          <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
+                          <span>{item}</span>
+                        </p>
+                      ))}
+                    </div>
+                    {study.deliverablesImage ? (
+                      <figure className="relative h-56 overflow-hidden rounded-xl">
+                        <Image
+                          src={study.deliverablesImage}
+                          alt={`${t(study.title)} 交付成果配图`}
+                          fill
+                          className="object-cover"
+                          sizes="(min-width: 1024px) 35vw, 100vw"
+                        />
+                      </figure>
+                    ) : null}
                   </div>
                 </section>
               ) : null;

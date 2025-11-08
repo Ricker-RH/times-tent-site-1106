@@ -36,10 +36,13 @@ interface CaseStudyConfig {
   location: LocalizedValue;
   summary: LocalizedValue;
   background: LocalizedValue;
+  backgroundImage?: string;
   deliverables: string[];
   metrics: CaseStudyMetric[];
   image: string;
   gallery: string[];
+  highlightsImage?: string;
+  deliverablesImage?: string;
   highlightsI18n?: LocalizedValue[];
   deliverablesI18n?: LocalizedValue[];
   metricsI18n?: CaseStudyMetricI18n[];
@@ -169,6 +172,7 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
       location: ensureLocalized(undefined, ""),
       summary: ensureLocalized(undefined, "在此补充案例摘要，概述关键成效。"),
       background: ensureLocalized(undefined, "在此补充项目背景，描述客户与挑战。"),
+      backgroundImage: "",
       deliverables: [],
       metrics: [],
       image: DEFAULT_STUDY_IMAGE,
@@ -194,6 +198,8 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
         { label: ensureLocalized("参与人数", ""), value: ensureLocalized("5,000+", "") },
         { label: ensureLocalized("设备数量", ""), value: ensureLocalized("100+", "") },
       ],
+      highlightsImage: "",
+      deliverablesImage: "",
     };
   }
   const record = raw as Record<string, unknown>;
@@ -204,10 +210,13 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
     location: ensureLocalized(record.location, ""),
     summary: ensureLocalized(record.summary, ""),
     background: ensureLocalized(record.background, ""),
+    backgroundImage: resolveImageSrc(toStringValue((record as any).backgroundImage), ""),
     deliverables: asStringArray(record.deliverables),
     metrics: asMetricArray(record.metrics),
     image: resolveImageSrc(toStringValue(record.image), ""),
     gallery: asStringArray(record.gallery),
+    highlightsImage: resolveImageSrc(toStringValue((record as any).highlightsImage), ""),
+    deliverablesImage: resolveImageSrc(toStringValue((record as any).deliverablesImage), ""),
     highlightsI18n: Array.isArray((record as any).highlightsI18n)
       ? ((record as any).highlightsI18n as Array<unknown>)
           .map((item) => ensureLocalized(item, ""))
@@ -356,6 +365,9 @@ function serializeStudy(study: CaseStudyConfig): Record<string, unknown> {
   if (Object.keys(backgroundClean).length) result.background = backgroundClean;
 
   if (study.image.trim()) result.image = study.image.trim();
+  if (study.backgroundImage?.trim()) result.backgroundImage = study.backgroundImage.trim();
+  if (study.highlightsImage?.trim()) result.highlightsImage = study.highlightsImage.trim();
+  if (study.deliverablesImage?.trim()) result.deliverablesImage = study.deliverablesImage.trim();
   if (study.gallery.length) result.gallery = study.gallery;
 
   if (Array.isArray(study.highlightsI18n)) {
@@ -497,10 +509,13 @@ function cloneCategory(category: CaseCategoryConfig): CaseCategoryConfig {
       location: ensureLocalizedRecord(study.location) as LocalizedValue,
       summary: ensureLocalizedRecord(study.summary) as LocalizedValue,
       background: ensureLocalizedRecord(study.background) as LocalizedValue,
+      backgroundImage: study.backgroundImage,
       deliverables: [...study.deliverables],
       metrics: study.metrics.map((metric) => ({ ...metric })),
       image: study.image,
       gallery: [...study.gallery],
+      highlightsImage: study.highlightsImage,
+      deliverablesImage: study.deliverablesImage,
       highlightsI18n: study.highlightsI18n ? [...study.highlightsI18n] : undefined,
       deliverablesI18n: study.deliverablesI18n ? [...study.deliverablesI18n] : undefined,
       metricsI18n: study.metricsI18n ? study.metricsI18n.map((m) => ({ label: m.label, value: m.value })) : undefined,
@@ -1160,23 +1175,38 @@ function CasesPreviewSurface({
                 </button>
               </div>
             </div>
-            {study.background ? (
-              <p className="mt-3 text-sm text-[var(--color-text-secondary)]">{getLocaleText(study.background, undefined, "")}</p>
-            ) : null}
-            {(study.metricsI18n?.length ?? 0) > 0 ? (
-              <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                {(study.metricsI18n ?? []).map((metric: any) => {
-                  const label = typeof metric.label === "string" ? metric.label : getLocaleText(metric.label, undefined, "");
-                  const value = typeof metric.value === "string" ? metric.value : getLocaleText(metric.value, undefined, "");
-                  return (
-                    <div key={`${label}-${value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
-                      <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{value}</p>
-                      <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
-                    </div>
-                  );
-                })}
+            <div className={`mt-4 grid gap-6 ${study.backgroundImage ? "md:grid-cols-[1.1fr_0.9fr]" : ""}`}>
+              <div>
+                {study.background ? (
+                  <p className="text-sm text-[var(--color-text-secondary)]">{getLocaleText(study.background, undefined, "")}</p>
+                ) : null}
+                {(study.metricsI18n?.length ?? 0) > 0 ? (
+                  <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                    {(study.metricsI18n ?? []).map((metric: any) => {
+                      const label = typeof metric.label === "string" ? metric.label : getLocaleText(metric.label, undefined, "");
+                      const value = typeof metric.value === "string" ? metric.value : getLocaleText(metric.value, undefined, "");
+                      return (
+                        <div key={`${label}-${value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
+                          <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{value}</p>
+                          <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
               </div>
-            ) : null}
+              {study.backgroundImage ? (
+                <figure className="relative h-64 overflow-hidden rounded-xl">
+                  <Image
+                    src={resolveImageSrc(study.backgroundImage, DEFAULT_STUDY_IMAGE)}
+                    alt="项目背景配图"
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 40vw, 100vw"
+                  />
+                </figure>
+              ) : null}
+            </div>
           </section>
         ) : null}
 
@@ -1192,18 +1222,31 @@ function CasesPreviewSurface({
                 亮点（多语言）
               </button>
             </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {(study.highlightsI18n ?? []).map((item: any, idx: number) => {
-                const text = typeof item === "string" ? item : getLocaleText(item, undefined, "");
-                return (
-                  <div
-                    key={`${text}-${idx}`}
-                    className="rounded-xl border border-[var(--color-border)] bg-white p-5 text-center shadow-[0_14px_35px_rgba(15,23,42,0.12)]"
-                  >
-                    <p className="text-sm font-semibold leading-6 text-[var(--color-brand-primary)]">{text}</p>
-                  </div>
-                );
-              })}
+            <div className={`mt-6 grid gap-6 ${study.highlightsImage ? "lg:grid-cols-[minmax(0,2fr)_340px]" : ""}`}>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {(study.highlightsI18n ?? []).map((item: any, idx: number) => {
+                  const text = typeof item === "string" ? item : getLocaleText(item, undefined, "");
+                  return (
+                    <div
+                      key={`${text}-${idx}`}
+                      className="rounded-xl border border-[var(--color-border)] bg-white p-5 text-center shadow-[0_14px_35px_rgba(15,23,42,0.12)]"
+                    >
+                      <p className="text-sm font-semibold leading-6 text-[var(--color-brand-primary)]">{text}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              {study.highlightsImage ? (
+                <figure className="relative h-64 overflow-hidden rounded-xl">
+                  <Image
+                    src={resolveImageSrc(study.highlightsImage, DEFAULT_STUDY_IMAGE)}
+                    alt="亮点配图"
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 30vw, 100vw"
+                  />
+                </figure>
+              ) : null}
             </div>
           </section>
         ) : null}
@@ -1220,16 +1263,29 @@ function CasesPreviewSurface({
                 交付（多语言）
               </button>
             </div>
-            <div className="mt-4 space-y-3 text-sm text-[var(--color-text-secondary)]">
-              {(study.deliverablesI18n || []).map((item: any, idx: number) => {
-                const text = typeof item === "string" ? item : getLocaleText(item, undefined, "");
-                return (
-                  <p key={`${text}-${idx}`} className="flex items-start gap-2">
-                    <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
-                    <span>{text}</span>
-                  </p>
-                );
-              })}
+            <div className={`mt-4 grid gap-6 ${study.deliverablesImage ? "md:grid-cols-[minmax(0,1.4fr)_1fr]" : ""}`}>
+              <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
+                {(study.deliverablesI18n || []).map((item: any, idx: number) => {
+                  const text = typeof item === "string" ? item : getLocaleText(item, undefined, "");
+                  return (
+                    <p key={`${text}-${idx}`} className="flex items-start gap-2">
+                      <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
+                      <span>{text}</span>
+                    </p>
+                  );
+                })}
+              </div>
+              {study.deliverablesImage ? (
+                <figure className="relative h-56 overflow-hidden rounded-xl">
+                  <Image
+                    src={resolveImageSrc(study.deliverablesImage, DEFAULT_STUDY_IMAGE)}
+                    alt="交付成果配图"
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 35vw, 100vw"
+                  />
+                </figure>
+              ) : null}
             </div>
           </section>
         ) : null}
@@ -2143,13 +2199,21 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
           />
         )}
         {(!scope || scope === "background") && (
-          <LocalizedTextField
-            label="项目背景"
-            value={draft.background}
-            onChange={(next) => setDraft((prev) => ({ ...prev, background: next }))}
-            placeholder="描述项目需求、挑战或整体背景"
-            multiline
-          />
+          <div className="space-y-4">
+            <LocalizedTextField
+              label="项目背景"
+              value={draft.background}
+              onChange={(next) => setDraft((prev) => ({ ...prev, background: next }))}
+              placeholder="描述项目需求、挑战或整体背景"
+              multiline
+            />
+            <ImageInput
+              label="项目背景配图（可选）"
+              value={draft.backgroundImage ?? ""}
+              onChange={(next) => setDraft((prev) => ({ ...prev, backgroundImage: next }))}
+              helper="最佳尺寸 1200×675（16:9），留空则仅展示文字"
+            />
+          </div>
         )}
         {(!scope || scope === "basic") && (
           <ImageInput
@@ -2162,24 +2226,40 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
 
         <div className="grid gap-4 md:grid-cols-2">
           {(!scope || scope === "highlights_i18n") && (
-            <LocalizedArrayEditor
-              title="亮点（多语言）"
-              values={draft.highlightsI18n}
-              placeholder="亮点描述（不同语言）"
-              onChange={(index, next) => handleI18nArrayChange("highlightsI18n", index, next)}
-              onAdd={() => handleI18nArrayAdd("highlightsI18n")}
-              onRemove={(index) => handleI18nArrayRemove("highlightsI18n", index)}
-            />
+            <div className="space-y-4">
+              <LocalizedArrayEditor
+                title="亮点（多语言）"
+                values={draft.highlightsI18n}
+                placeholder="亮点描述（不同语言）"
+                onChange={(index, next) => handleI18nArrayChange("highlightsI18n", index, next)}
+                onAdd={() => handleI18nArrayAdd("highlightsI18n")}
+                onRemove={(index) => handleI18nArrayRemove("highlightsI18n", index)}
+              />
+              <ImageInput
+                label="亮点配图（可选）"
+                value={draft.highlightsImage ?? ""}
+                onChange={(next) => setDraft((prev) => ({ ...prev, highlightsImage: next }))}
+                helper="最佳尺寸 1200×675（16:9），留空则不展示"
+              />
+            </div>
           )}
           {(!scope || scope === "deliverables_i18n") && (
-            <LocalizedArrayEditor
-              title="交付成果（多语言）"
-              values={draft.deliverablesI18n}
-              placeholder="交付内容（不同语言）"
-              onChange={(index, next) => handleI18nArrayChange("deliverablesI18n", index, next)}
-              onAdd={() => handleI18nArrayAdd("deliverablesI18n")}
-              onRemove={(index) => handleI18nArrayRemove("deliverablesI18n", index)}
-            />
+            <div className="space-y-4">
+              <LocalizedArrayEditor
+                title="交付成果（多语言）"
+                values={draft.deliverablesI18n}
+                placeholder="交付内容（不同语言）"
+                onChange={(index, next) => handleI18nArrayChange("deliverablesI18n", index, next)}
+                onAdd={() => handleI18nArrayAdd("deliverablesI18n")}
+                onRemove={(index) => handleI18nArrayRemove("deliverablesI18n", index)}
+              />
+              <ImageInput
+                label="交付成果配图（可选）"
+                value={draft.deliverablesImage ?? ""}
+                onChange={(next) => setDraft((prev) => ({ ...prev, deliverablesImage: next }))}
+                helper="最佳尺寸 1200×675（16:9），留空则不展示"
+              />
+            </div>
           )}
         </div>
 
