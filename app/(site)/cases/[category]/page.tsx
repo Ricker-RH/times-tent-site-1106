@@ -103,7 +103,7 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
                       />
                       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
                         <h2 className="text-2xl font-bold text-[var(--color-brand-primary)] md:text-3xl">
-                          <span className="inline-flex items-center rounded-full border border-white/5 bg-white/15 px-5 py-2 text-[var(--color-brand-primary)] shadow-[0_4px_10px_rgba(0,0,0,0.1)] backdrop-blur-sm">
+                          <span className="inline-flex items-center rounded-full bg-white/15 px-5 py-2 text-[var(--color-brand-primary)] shadow-[0_4px_10px_rgba(0,0,0,0.1)] backdrop-blur-sm">
                             {t(study.title)}
                           </span>
                         </h2>
