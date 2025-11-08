@@ -180,7 +180,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
                     </div>
                   ) : null}
                   {study.backgroundImage ? (
-                    <figure className="relative h-64 overflow-hidden rounded-xl">
+                    <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
                       <Image
                         src={study.backgroundImage}
                         alt={`${t(study.title)} 项目背景`}
@@ -216,7 +216,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
                       ))}
                     </div>
                     {study.highlightsImage ? (
-                      <figure className="relative h-64 overflow-hidden rounded-xl">
+                      <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
                         <Image
                           src={study.highlightsImage}
                           alt={`${t(study.title)} 亮点配图`}
@@ -251,7 +251,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
                       ))}
                     </div>
                     {study.deliverablesImage ? (
-                      <figure className="relative h-56 overflow-hidden rounded-xl">
+                      <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
                         <Image
                           src={study.deliverablesImage}
                           alt={`${t(study.title)} 交付成果配图`}

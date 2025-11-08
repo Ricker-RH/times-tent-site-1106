@@ -1194,7 +1194,7 @@ function CasesPreviewSurface({
                 </div>
               ) : null}
               {study.backgroundImage ? (
-                <figure className="relative h-64 overflow-hidden rounded-xl">
+                <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
                   <Image
                     src={resolveImageSrc(study.backgroundImage, DEFAULT_STUDY_IMAGE)}
                     alt="项目背景配图"
@@ -1235,7 +1235,7 @@ function CasesPreviewSurface({
                 })}
               </div>
               {study.highlightsImage ? (
-                <figure className="relative h-64 overflow-hidden rounded-xl">
+                <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
                   <Image
                     src={resolveImageSrc(study.highlightsImage, DEFAULT_STUDY_IMAGE)}
                     alt="亮点配图"
@@ -1274,7 +1274,7 @@ function CasesPreviewSurface({
                 })}
               </div>
               {study.deliverablesImage ? (
-                <figure className="relative h-56 overflow-hidden rounded-xl">
+                <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
                   <Image
                     src={resolveImageSrc(study.deliverablesImage, DEFAULT_STUDY_IMAGE)}
                     alt="交付成果配图"
