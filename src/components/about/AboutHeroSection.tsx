@@ -38,7 +38,9 @@ export function AboutHeroSection({ hero }: AboutHeroSectionProps): JSX.Element {
           </span>
         ) : null}
         <h1 className="max-w-3xl text-3xl font-semibold md:text-4xl">{title}</h1>
-        <p className="max-w-2xl text-sm text-white/80 md:text-base">{description}</p>
+        <p className="max-w-2xl truncate whitespace-nowrap text-sm text-white/80 md:text-base">
+          {description}
+        </p>
       </div>
     </section>
   );
