@@ -165,22 +165,20 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
             {showBackgroundSection ? (
               <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                 <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目背景</h2>
-                <div className={`mt-4 grid gap-6 ${study.backgroundImage ? "md:grid-cols-[1.1fr_0.9fr]" : ""}`}>
-                  <div>
-                    {t(study.background) ? (
-                      <p className="text-sm text-[var(--color-text-secondary)]">{t(study.background)}</p>
-                    ) : null}
-                    {metricsLocalized.length ? (
-                      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                        {metricsLocalized.map((metric) => (
-                          <div key={`${metric.label}-${metric.value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
-                            <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{metric.value}</p>
-                            <p className="text-xs text-[var(--color-text-secondary)]">{metric.label}</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
+                <div className="mt-4 space-y-6">
+                  {t(study.background) ? (
+                    <p className="text-sm text-[var(--color-text-secondary)]">{t(study.background)}</p>
+                  ) : null}
+                  {metricsLocalized.length ? (
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      {metricsLocalized.map((metric) => (
+                        <div key={`${metric.label}-${metric.value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
+                          <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{metric.value}</p>
+                          <p className="text-xs text-[var(--color-text-secondary)]">{metric.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   {study.backgroundImage ? (
                     <figure className="relative h-64 overflow-hidden rounded-xl">
                       <Image
@@ -206,7 +204,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
               return highlightsDisplay.length && !hideHighlights ? (
                 <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                   <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">解决方案亮点</h2>
-                  <div className={`mt-6 grid gap-6 ${study.highlightsImage ? "lg:grid-cols-[minmax(0,2fr)_340px]" : ""}`}>
+                  <div className="mt-6 space-y-6">
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {highlightsDisplay.map((item) => (
                         <div
@@ -243,7 +241,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
               return deliverablesDisplay.length && !hideDeliverables ? (
                 <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                   <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">交付成果</h2>
-                  <div className={`mt-4 grid gap-6 ${study.deliverablesImage ? "md:grid-cols-[minmax(0,1.4fr)_1fr]" : ""}`}>
+                  <div className="mt-4 space-y-6">
                     <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
                       {deliverablesDisplay.map((item) => (
                         <p key={item} className="flex items-start gap-2">

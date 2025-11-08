@@ -1175,26 +1175,24 @@ function CasesPreviewSurface({
                 </button>
               </div>
             </div>
-            <div className={`mt-4 grid gap-6 ${study.backgroundImage ? "md:grid-cols-[1.1fr_0.9fr]" : ""}`}>
-              <div>
-                {study.background ? (
-                  <p className="text-sm text-[var(--color-text-secondary)]">{getLocaleText(study.background, undefined, "")}</p>
-                ) : null}
-                {(study.metricsI18n?.length ?? 0) > 0 ? (
-                  <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                    {(study.metricsI18n ?? []).map((metric: any) => {
-                      const label = typeof metric.label === "string" ? metric.label : getLocaleText(metric.label, undefined, "");
-                      const value = typeof metric.value === "string" ? metric.value : getLocaleText(metric.value, undefined, "");
-                      return (
-                        <div key={`${label}-${value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
-                          <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{value}</p>
-                          <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
+            <div className="mt-4 space-y-6">
+              {study.background ? (
+                <p className="text-sm text-[var(--color-text-secondary)]">{getLocaleText(study.background, undefined, "")}</p>
+              ) : null}
+              {(study.metricsI18n?.length ?? 0) > 0 ? (
+                <div className="grid gap-4 sm:grid-cols-3">
+                  {(study.metricsI18n ?? []).map((metric: any) => {
+                    const label = typeof metric.label === "string" ? metric.label : getLocaleText(metric.label, undefined, "");
+                    const value = typeof metric.value === "string" ? metric.value : getLocaleText(metric.value, undefined, "");
+                    return (
+                      <div key={`${label}-${value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
+                        <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{value}</p>
+                        <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
               {study.backgroundImage ? (
                 <figure className="relative h-64 overflow-hidden rounded-xl">
                   <Image
@@ -1222,7 +1220,7 @@ function CasesPreviewSurface({
                 亮点（多语言）
               </button>
             </div>
-            <div className={`mt-6 grid gap-6 ${study.highlightsImage ? "lg:grid-cols-[minmax(0,2fr)_340px]" : ""}`}>
+            <div className="mt-6 space-y-6">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {(study.highlightsI18n ?? []).map((item: any, idx: number) => {
                   const text = typeof item === "string" ? item : getLocaleText(item, undefined, "");
@@ -1263,7 +1261,7 @@ function CasesPreviewSurface({
                 交付（多语言）
               </button>
             </div>
-            <div className={`mt-4 grid gap-6 ${study.deliverablesImage ? "md:grid-cols-[minmax(0,1.4fr)_1fr]" : ""}`}>
+            <div className="mt-4 space-y-6">
               <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
                 {(study.deliverablesI18n || []).map((item: any, idx: number) => {
                   const text = typeof item === "string" ? item : getLocaleText(item, undefined, "");
