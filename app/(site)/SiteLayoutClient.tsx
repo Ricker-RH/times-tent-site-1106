@@ -439,9 +439,9 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
           </div>
           <nav className="ml-auto flex flex-wrap items-start justify-end gap-8 text-sm text-white/75 transform translate-x-[4.75rem]">
             {orderedColumns.map((group) => (
-              <div key={group.title} className="min-w-[140px] space-y-3 text-left">
+              <div key={group.title} className="min-w-[140px] space-y-3 text-center">
                 <p className="text-base font-bold tracking-wide text-[var(--color-brand-primary)]">{group.title}</p>
-                <ul className="space-y-2">
+                <ul className="space-y-2 text-center">
                   {group.links.map((item) => (
                     <li key={item.href}>
                       <Link href={item.href} className="transition hover:text-white">
