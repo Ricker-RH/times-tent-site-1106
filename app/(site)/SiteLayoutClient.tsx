@@ -405,7 +405,7 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
             <Image src={footer.brand.logo} alt={brandNameZh} width={240} height={60} className="h-10 w-auto md:h-12" />
             <div className="space-y-1 text-white">
               <p className="whitespace-nowrap text-2xl font-semibold tracking-[0.08em]">{brandNameZh}</p>
-              <p className="whitespace-nowrap text-base font-medium tracking-[0.12em] text-white/80">{brandNameEn}</p>
+              <p className="whitespace-nowrap text-sm font-medium tracking-[0.09em] text-white/80">{brandNameEn}</p>
             </div>
             <div className="grid grid-cols-[1.75rem,1fr] items-start gap-x-2 gap-y-2 text-sm text-white/80">
               <span className="relative -top-[2px] flex items-start justify-center text-white/80">
