@@ -75,6 +75,16 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
   }
 
   const { category, study } = data;
+  const galleryLightbox = (config as any).galleryLightbox ?? {};
+  const resolveGalleryText = (value: unknown, fallback: string) => {
+    const resolved = t(toTValue(value));
+    return resolved?.toString().trim().length ? (resolved as string) : fallback;
+  };
+  const galleryHint = resolveGalleryText(galleryLightbox.openHint, "点击查看大图");
+  const galleryNext = resolveGalleryText(galleryLightbox.nextLabel, "下一张");
+  const galleryPrev = resolveGalleryText(galleryLightbox.prevLabel, "上一张");
+  const galleryClose = resolveGalleryText(galleryLightbox.closeLabel, "关闭");
+  const galleryCounter = resolveGalleryText(galleryLightbox.counterPattern, "图 {{current}} / {{total}}");
   type StudyMetric = { label: string | unknown; value: string | unknown };
   const metricsOriginal: ReadonlyArray<{ label: unknown; value: unknown }> =
     Array.isArray((study as any).metricsI18n) && (study as any).metricsI18n.length
@@ -220,7 +230,15 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
             {study.gallery?.length && !hideGallery ? (
               <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                 <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目实景图库</h2>
-                <CaseGallery images={study.gallery} title={t(study.title)} />
+                <CaseGallery
+                  images={study.gallery}
+                  title={t(study.title)}
+                  hintLabel={galleryHint}
+                  prevLabel={galleryPrev}
+                  nextLabel={galleryNext}
+                  closeLabel={galleryClose}
+                  counterPattern={galleryCounter}
+                />
               </section>
             ) : null}
 

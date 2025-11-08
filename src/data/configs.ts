@@ -37,6 +37,33 @@ export const cases_config = {
     "description": "联系我们获取更多案例资料与项目对接方案。",
     "linkLabel": "联系顾问"
   },
+  "galleryLightbox": {
+    "openHint": {
+      "zh-CN": "点击查看大图",
+      "zh-TW": "點擊查看大圖",
+      "en": "View in fullscreen"
+    },
+    "nextLabel": {
+      "zh-CN": "下一张",
+      "zh-TW": "下一張",
+      "en": "Next"
+    },
+    "prevLabel": {
+      "zh-CN": "上一张",
+      "zh-TW": "上一張",
+      "en": "Previous"
+    },
+    "closeLabel": {
+      "zh-CN": "关闭大图",
+      "zh-TW": "關閉大圖",
+      "en": "Close"
+    },
+    "counterPattern": {
+      "zh-CN": "图 {{current}} / {{total}}",
+      "zh-TW": "圖 {{current}} / {{total}}",
+      "en": "Image {{current}} / {{total}}"
+    }
+  },
   "categories": [
     {
       "slug": "sports-events",

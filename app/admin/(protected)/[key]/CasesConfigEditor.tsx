@@ -82,6 +82,14 @@ interface ConsultationConfig {
   phoneNumber: string;
 }
 
+interface GalleryLightboxConfig {
+  openHint: LocalizedValue;
+  nextLabel: LocalizedValue;
+  prevLabel: LocalizedValue;
+  closeLabel: LocalizedValue;
+  counterPattern: LocalizedValue;
+}
+
 interface BreadcrumbItem {
   href: string;
   label: string;
@@ -95,6 +103,7 @@ interface CasesConfig {
   recommendations: RecommendationsConfig;
   // 新增：底部咨询 CTA
   consultation?: ConsultationConfig;
+  galleryLightbox?: GalleryLightboxConfig;
   sidebarTitle: string;
   categoryCaseCountSuffix: string;
   _meta?: Record<string, unknown>;
@@ -257,6 +266,7 @@ function normalizeConfig(raw: Record<string, unknown>): CasesConfig {
   const sectionHeadingRaw = (raw.sectionHeading ?? {}) as Record<string, unknown>;
   const recommendationsRaw = (raw.recommendations ?? {}) as Record<string, unknown>;
   const consultationRaw = (raw.consultation ?? {}) as Record<string, unknown>;
+  const galleryLightboxRaw = (raw.galleryLightbox ?? {}) as Record<string, unknown>;
   const categoriesRaw = Array.isArray(raw.categories) ? raw.categories : [];
   const breadcrumbRaw = Array.isArray(raw.breadcrumb) ? raw.breadcrumb : [];
 
@@ -315,6 +325,13 @@ function normalizeConfig(raw: Record<string, unknown>): CasesConfig {
       primaryHref: toStringValue(consultationRaw.primaryHref),
       phoneLabel: ensureLocalized(consultationRaw.phoneLabel, ""),
       phoneNumber: toStringValue(consultationRaw.phoneNumber),
+    },
+    galleryLightbox: {
+      openHint: ensureLocalized(galleryLightboxRaw.openHint, "点击查看大图"),
+      nextLabel: ensureLocalized(galleryLightboxRaw.nextLabel, "下一张"),
+      prevLabel: ensureLocalized(galleryLightboxRaw.prevLabel, "上一张"),
+      closeLabel: ensureLocalized(galleryLightboxRaw.closeLabel, "关闭"),
+      counterPattern: ensureLocalized(galleryLightboxRaw.counterPattern, "图 {{current}} / {{total}}"),
     },
     sidebarTitle: toStringValue(raw.sidebarTitle),
     categoryCaseCountSuffix: toStringValue(raw.categoryCaseCountSuffix),
@@ -415,6 +432,21 @@ function serializeConfig(config: CasesConfig): Record<string, unknown> {
     if (toStringValue(c.phoneNumber).trim()) consultation.phoneNumber = toStringValue(c.phoneNumber).trim();
   }
 
+  const galleryLightbox: Record<string, unknown> = {};
+  if (config.galleryLightbox) {
+    const gl = config.galleryLightbox;
+    const openHint = cleanLocalized(gl.openHint);
+    if (Object.keys(openHint).length) galleryLightbox.openHint = openHint;
+    const nextLabel = cleanLocalized(gl.nextLabel);
+    if (Object.keys(nextLabel).length) galleryLightbox.nextLabel = nextLabel;
+    const prevLabel = cleanLocalized(gl.prevLabel);
+    if (Object.keys(prevLabel).length) galleryLightbox.prevLabel = prevLabel;
+    const closeLabel = cleanLocalized(gl.closeLabel);
+    if (Object.keys(closeLabel).length) galleryLightbox.closeLabel = closeLabel;
+    const counterPattern = cleanLocalized(gl.counterPattern);
+    if (Object.keys(counterPattern).length) galleryLightbox.counterPattern = counterPattern;
+  }
+
   const breadcrumb = config.breadcrumb
     .map((item) => ({ label: item.label.trim(), href: item.href.trim() }))
     .filter((item) => item.label || item.href);
@@ -425,6 +457,7 @@ function serializeConfig(config: CasesConfig): Record<string, unknown> {
     categories: config.categories.map(serializeCategory),
     recommendations,
     consultation,
+    galleryLightbox,
     sidebarTitle: config.sidebarTitle,
     categoryCaseCountSuffix: config.categoryCaseCountSuffix,
   };
@@ -652,6 +685,7 @@ interface PreviewProps {
   onEditGeneral: () => void;
   onEditRecommendations: () => void;
   onEditConsultation: () => void;
+  onEditGalleryLightbox: () => void;
   onEditCategory: (index: number) => void;
   onEditStudy: (categoryIndex: number, studyIndex: number, scope?: StudyScope) => void;
   onAddCategory: () => void;
@@ -675,6 +709,7 @@ function CasesPreviewSurface({
   onEditGeneral,
   onEditRecommendations,
   onEditConsultation,
+  onEditGalleryLightbox,
   onEditCategory,
   onEditStudy,
   onAddCategory,
@@ -1210,6 +1245,13 @@ function CasesPreviewSurface({
                   className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
                 >
                   编辑项目图库
+                </button>
+                <button
+                  type="button"
+                  onClick={onEditGalleryLightbox}
+                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                >
+                  图库交互文案
                 </button>
               </div>
             </div>
@@ -1855,6 +1897,64 @@ function ConsultationEditorDialog({ value, onSave, onCancel }: ConsultationDialo
             />
           </div>
         </div>
+      </div>
+    </EditorDialog>
+  );
+}
+
+interface GalleryLightboxDialogProps {
+  value: GalleryLightboxConfig;
+  onSave: (next: GalleryLightboxConfig) => void;
+  onCancel: () => void;
+}
+
+function GalleryLightboxDialog({ value, onSave, onCancel }: GalleryLightboxDialogProps) {
+  const [draft, setDraft] = useState<GalleryLightboxConfig>({ ...value });
+
+  useEffect(() => {
+    setDraft({ ...value });
+  }, [value]);
+
+  return (
+    <EditorDialog
+      title="编辑图库交互文案"
+      subtitle="配置点击查看大图提示与弹窗操作按钮文案"
+      onSave={() => onSave({ ...draft })}
+      onCancel={onCancel}
+    >
+      <div className="space-y-4 text-sm">
+        <LocalizedTextField
+          label="卡片悬浮提示"
+          value={draft.openHint}
+          onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, openHint: next }))}
+          placeholder="点击查看大图"
+        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <LocalizedTextField
+            label="上一张按钮文案"
+            value={draft.prevLabel}
+            onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, prevLabel: next }))}
+            placeholder="上一张"
+          />
+          <LocalizedTextField
+            label="下一张按钮文案"
+            value={draft.nextLabel}
+            onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, nextLabel: next }))}
+            placeholder="下一张"
+          />
+        </div>
+        <LocalizedTextField
+          label="关闭按钮文案"
+          value={draft.closeLabel}
+          onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, closeLabel: next }))}
+          placeholder="关闭大图"
+        />
+        <LocalizedTextField
+          label="计数文案（支持 {{current}} / {{total}} 占位符）"
+          value={draft.counterPattern}
+          onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, counterPattern: next }))}
+          placeholder="图 {{current}} / {{total}}"
+        />
       </div>
     </EditorDialog>
   );
@@ -2529,6 +2629,7 @@ type EditingTarget =
   | { type: "general" }
   | { type: "recommendations" }
   | { type: "consultation" }
+  | { type: "galleryLightbox" }
   | { type: "category"; index: number }
   | { type: "study"; categoryIndex: number; studyIndex: number; scope?: StudyScope };
 
@@ -2925,6 +3026,30 @@ const handleAddStudyConfig = (categoryIndex: number) => {
         onCancel={() => setEditing(null)}
       />
     );
+  } else if (editing?.type === "galleryLightbox") {
+    dialog = (
+      <GalleryLightboxDialog
+        value={
+          config.galleryLightbox ?? {
+            openHint: ensureLocalized(undefined, "点击查看大图"),
+            nextLabel: ensureLocalized(undefined, "下一张"),
+            prevLabel: ensureLocalized(undefined, "上一张"),
+            closeLabel: ensureLocalized(undefined, "关闭"),
+            counterPattern: ensureLocalized(undefined, "图 {{current}} / {{total}}"),
+          }
+        }
+        onSave={(next) => {
+          const nextConfig = { ...config, galleryLightbox: { ...next } };
+          setConfig(nextConfig);
+          setEditing(null);
+          const fd = new FormData();
+          fd.append("key", configKey);
+          fd.append("payload", JSON.stringify(serializeConfig(nextConfig)));
+          dispatch(fd);
+        }}
+        onCancel={() => setEditing(null)}
+      />
+    );
   } else if (editing?.type === "category") {
     const category = config.categories[editing.index];
     if (category) {
@@ -3037,6 +3162,7 @@ const handleAddStudyConfig = (categoryIndex: number) => {
         onEditGeneral={() => setEditing({ type: "general" })}
         onEditRecommendations={() => setEditing({ type: "recommendations" })}
         onEditConsultation={() => setEditing({ type: "consultation" })}
+        onEditGalleryLightbox={() => setEditing({ type: "galleryLightbox" })}
         onEditCategory={(index) => setEditing({ type: "category", index })}
         onEditStudy={(categoryIndex, studyIndex, scope) =>
           setEditing({ type: "study", categoryIndex, studyIndex, scope })
