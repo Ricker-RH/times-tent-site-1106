@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { ensurePageVisible, getHiddenSections } from "@/server/visibility";
 
 import { CaseSidebar } from "@/components/cases/CaseSidebar";
+import { CaseGallery } from "@/components/cases/CaseGallery";
 import {
   fetchCaseCategories,
   fetchCaseStudy,
@@ -219,19 +220,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
             {study.gallery?.length && !hideGallery ? (
               <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                 <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目实景图库</h2>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {study.gallery.map((item, index) => (
-                    <figure key={`${item}-${index}`} className="relative aspect-[16/9] overflow-hidden rounded-lg">
-                      <Image
-                        src={item}
-                        alt={`${t(study.title)} 图集 ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 100vw"
-                      />
-                    </figure>
-                  ))}
-                </div>
+                <CaseGallery images={study.gallery} title={t(study.title)} />
               </section>
             ) : null}
 
