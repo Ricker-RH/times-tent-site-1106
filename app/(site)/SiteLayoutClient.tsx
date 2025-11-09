@@ -437,11 +437,11 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
               </a>
             </div>
           </div>
-          <nav className="ml-auto flex w-full flex-wrap items-start justify-end gap-10 text-sm text-white/75">
+          <nav className="ml-auto flex w-full max-w-[900px] flex-wrap items-start justify-end gap-10 text-sm text-white/75">
             {orderedColumns.map((group) => (
-              <div key={group.title} className="min-w-[140px] space-y-3 text-right">
+              <div key={group.title} className="min-w-[140px] space-y-3 text-center">
                 <p className="text-base font-bold tracking-wide text-[var(--color-brand-primary)]">{group.title}</p>
-                <ul className="space-y-2 text-right">
+                <ul className="space-y-2 text-center">
                   {group.links.map((item) => (
                     <li key={item.href}>
                       <Link href={item.href} className="transition hover:text-white">
