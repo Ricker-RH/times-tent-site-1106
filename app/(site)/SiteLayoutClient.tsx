@@ -437,7 +437,7 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
               </a>
             </div>
           </div>
-          <nav className="ml-auto flex flex-wrap items-start justify-end gap-8 text-sm text-white/75 transform translate-x-[4.75rem]">
+          <nav className="ml-auto flex w-full max-w-[720px] flex-wrap items-start justify-between gap-8 text-sm text-white/75">
             {orderedColumns.map((group) => (
               <div key={group.title} className="min-w-[140px] space-y-3 text-center">
                 <p className="text-base font-bold tracking-wide text-[var(--color-brand-primary)]">{group.title}</p>
