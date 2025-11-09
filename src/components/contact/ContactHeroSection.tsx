@@ -41,7 +41,7 @@ export function ContactHeroSection({ hero }: ContactHeroSectionProps): JSX.Eleme
         <div className="max-w-4xl space-y-4">
           <h1 className="max-w-3xl text-3xl font-semibold md:text-4xl">{title}</h1>
           {description?.trim() ? (
-            <p className="max-w-2xl text-sm text-white/85 md:text-base">{description}</p>
+            <p className="w-full text-sm text-white/85 md:text-base">{description}</p>
           ) : null}
         </div>
       </div>

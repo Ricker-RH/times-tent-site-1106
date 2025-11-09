@@ -86,7 +86,7 @@ export default function InventoryClient({ hero, sections, hiddenSections }: Inve
            </span>
          ) : null}
          {title ? <h1 className="max-w-3xl text-3xl font-semibold md:text-4xl">{title}</h1> : null}
-         {description ? <p className="max-w-2xl text-sm text-white/80 md:text-base">{description}</p> : null}
+        {description ? <p className="w-full text-sm text-white/80 md:text-base">{description}</p> : null}
          {badges.length ? (
            <div className="flex flex-wrap gap-2 text-xs text-white/80">
              {badges.map((badge, index) => (
