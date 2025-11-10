@@ -92,12 +92,12 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
     Array.isArray((study as any).highlightsI18n) && (study as any).highlightsI18n.length
       ? ((study as any).highlightsI18n as ReadonlyArray<string | unknown>)
       : ((study.highlights ?? []) as ReadonlyArray<string>);
-  const highlightTexts = !hideHighlights ? highlightCandidates.map((item) => t(toTValue(item))).filter(Boolean) : [];
+  const highlightTexts = highlightCandidates.map((item) => t(toTValue(item))).filter(Boolean);
   const deliverableCandidates: ReadonlyArray<string | unknown> =
     Array.isArray((study as any).deliverablesI18n) && (study as any).deliverablesI18n.length
       ? ((study as any).deliverablesI18n as ReadonlyArray<string | unknown>)
       : ((study.deliverables ?? []) as ReadonlyArray<string>);
-  const deliverableTexts = !hideDeliverables ? deliverableCandidates.map((item) => t(toTValue(item))).filter(Boolean) : [];
+  const deliverableTexts = deliverableCandidates.map((item) => t(toTValue(item))).filter(Boolean);
   const technicalDescriptionRaw = (study as any).technicalDescription;
   const technicalDescriptionText = technicalDescriptionRaw ? t(toTValue(technicalDescriptionRaw)) : "";
   const fallbackTechnicalText = (technicalDescriptionText || highlightTexts.join(" / ") || deliverableTexts.join(" / ")).trim();
