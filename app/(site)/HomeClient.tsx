@@ -215,23 +215,28 @@ export default function HomeClient({
             style={{ transform: `translateX(-${heroIndex * 100}%)` }}
             onTransitionEnd={handleHeroTransitionEnd}
           >
-            {carouselSlides.map((slide, idx) => (
-              <Link
-                key={`${slide.slug}-${idx}`}
-                href={slide.href}
-                aria-label={slide.title}
-                className="relative block h-[520px] w-full flex-shrink-0 overflow-hidden sm:h-[600px] xl:h-[680px]"
-              >
-                <Image
-                  src={slide.image}
-                  alt={slide.title}
-                  fill
-                  className="object-cover"
-                  priority={slidesCount > 1 ? idx === 1 : idx === 0}
-                />
-                {/* Removed overlay to show original image */}
-              </Link>
-            ))}
+            {carouselSlides.map((slide, idx) => {
+              const isPrimaryImage = slides[0]?.slug === slide.slug;
+              return (
+                <Link
+                  key={`${slide.slug}-${idx}`}
+                  href={slide.href}
+                  aria-label={slide.title}
+                  className="relative block h-[520px] w-full flex-shrink-0 overflow-hidden sm:h-[600px] xl:h-[680px]"
+                >
+                  <Image
+                    src={slide.image}
+                    alt={slide.title}
+                    fill
+                    className="object-cover"
+                    priority={slidesCount > 1 ? idx === 1 : idx === 0}
+                  />
+                  {isPrimaryImage ? (
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/5" />
+                  ) : null}
+                </Link>
+              );
+            })}
           </div>
           {slidesCount > 1 ? (
             <>
