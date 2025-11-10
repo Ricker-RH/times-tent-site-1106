@@ -401,12 +401,12 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
     <footer className="relative mt-0 overflow-hidden bg-[var(--color-brand-secondary)] text-white">
       <div className="mx-auto w-full max-w-[1200px] space-y-12 px-4 py-14 sm:px-6 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] lg:items-start lg:gap-16">
-          <div className="space-y-6">
-            <Image src={footer.brand.logo} alt={brandNameZh} width={240} height={60} className="h-10 w-auto md:h-12" />
-            <div className="space-y-1 text-white">
-              <p className="whitespace-nowrap text-2xl font-semibold tracking-[0.08em]">{brandNameZh}</p>
-              <p className="whitespace-nowrap text-[0.95rem] font-medium tracking-[0.09em] text-white/80">{brandNameEn}</p>
-            </div>
+            <div className="space-y-6">
+              <Image src={footer.brand.logo} alt={brandNameZh} width={240} height={60} className="h-10 w-auto md:h-12" />
+              <div className="space-y-1 text-white">
+                <p className="whitespace-nowrap text-2xl font-semibold tracking-[0.08em]">{brandNameZh}</p>
+                <p className="whitespace-nowrap text-[0.95rem] font-medium tracking-[0.04em] text-white/80">{brandNameEn}</p>
+              </div>
             <div className="-ml-2 grid grid-cols-[1.75rem,1fr] items-start gap-x-2 gap-y-2 text-sm text-white/80">
               <span className="relative -top-[2px] flex items-start justify-center text-white/80">
                 <IconMapPin className="h-5 w-5" />
