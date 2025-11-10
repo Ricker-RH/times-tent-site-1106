@@ -229,7 +229,7 @@ export default function HomeClient({
                   className="object-cover"
                   priority={slidesCount > 1 ? idx === 1 : idx === 0}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/15 to-black/5" />
+                {/* Removed overlay to show original image */}
               </Link>
             ))}
           </div>
@@ -367,7 +367,6 @@ export default function HomeClient({
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/40" />
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center text-white md:px-12">
                     {resolveText(applicationTab.highlight) ? (
                       <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">{resolveText(applicationTab.highlight)}</span>
