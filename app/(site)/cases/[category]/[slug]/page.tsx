@@ -153,39 +153,6 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
               />
             )}
 
-            {showBackgroundSection ? (
-              <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
-                <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目背景</h2>
-                <div className="mt-4 space-y-6">
-                  {t(study.background) ? (
-                    <p className="text-sm text-[var(--color-text-secondary)]">{t(study.background)}</p>
-                  ) : null}
-                  {metricsLocalized.length ? (
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      {metricsLocalized.map((metric) => (
-                        <div key={`${metric.label}-${metric.value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
-                          <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{metric.value}</p>
-                          <p className="text-xs text-[var(--color-text-secondary)]">{metric.label}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                  {study.backgroundImage ? (
-                    <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-                      <Image
-                        src={study.backgroundImage}
-                        alt={`${t(study.title)} 项目背景`}
-                        fill
-                        className="object-cover"
-                        sizes="(min-width: 1024px) 40vw, 100vw"
-                      />
-                    </figure>
-                  ) : null}
-                </div>
-              </section>
-            ) : null}
-
-
             {showDetailsSection ? (
               <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                 <div className="space-y-8">
