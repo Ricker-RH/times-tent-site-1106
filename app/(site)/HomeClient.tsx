@@ -229,7 +229,7 @@ export default function HomeClient({
                   className="object-cover"
                   priority={slidesCount > 1 ? idx === 1 : idx === 0}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/10" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/15 to-black/5" />
               </Link>
             ))}
           </div>
