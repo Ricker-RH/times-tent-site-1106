@@ -190,6 +190,19 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
                       </div>
                     </div>
                   ) : null}
+                  {deliverableTexts.length ? (
+                    <div className="space-y-3">
+                      <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">交付成果</h2>
+                      <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
+                        {deliverableTexts.map((item) => (
+                          <p key={item} className="flex items-start gap-2">
+                            <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
+                            <span>{item}</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </section>
             ) : null}
