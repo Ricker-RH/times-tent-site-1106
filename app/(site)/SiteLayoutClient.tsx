@@ -407,7 +407,7 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
               <p className="whitespace-nowrap text-2xl font-semibold tracking-[0.08em]">{brandNameZh}</p>
               <p className="whitespace-nowrap text-[0.95rem] font-medium tracking-[0.09em] text-white/80">{brandNameEn}</p>
             </div>
-            <div className="grid grid-cols-[1rem,1fr] items-start gap-x-1.5 gap-y-2 text-sm text-white/80">
+            <div className="grid grid-cols-[0.8rem,1fr] items-start gap-x-1 gap-y-2 text-sm text-white/80">
               <span className="relative -top-[2px] flex items-start justify-center text-white/80">
                 <IconMapPin className="h-5 w-5" />
               </span>
