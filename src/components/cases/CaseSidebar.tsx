@@ -46,7 +46,7 @@ export function CaseSidebar({ categories, activeCategory, activeStudySlug, title
                         className={[
                           "block rounded-md px-3 py-2 text-xs transition",
                           isActiveStudy
-                            ? "bg-white font-semibold text-[var(--color-brand-primary)] shadow-[0_6px_18px_rgba(225,38,55,0.18)]"
+                            ? "bg-white font-semibold text-[var(--color-brand-primary)]"
                             : "text-[var(--color-text-secondary)] hover:bg-white hover:text-[var(--color-brand-primary)]",
                         ].join(" ")}
                       >
