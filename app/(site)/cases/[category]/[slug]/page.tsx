@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { ensurePageVisible, getHiddenSections } from "@/server/visibility";
 
 import { CaseSidebar } from "@/components/cases/CaseSidebar";
-import { CaseGallery } from "@/components/cases/CaseGallery";
+import { CaseHeroCarousel } from "@/components/cases/CaseHeroCarousel";
 import {
   fetchCaseCategories,
   fetchCaseStudy,
@@ -55,9 +55,6 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
   const hideSidebar = hiddenSections.sidebar === true;
   const hideHero = hiddenSections.hero === true;
   const hideBackground = hiddenSections.background === true;
-  const hideHighlights = hiddenSections.highlights === true;
-  const hideDeliverables = hiddenSections.deliverables === true;
-  const hideGallery = hiddenSections.gallery === true;
   const hideRelated = hiddenSections.related === true;
   const hideAdvisor = hiddenSections.advisor === true;
 
@@ -75,16 +72,6 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
   }
 
   const { category, study } = data;
-  const galleryLightbox = (config as any).galleryLightbox ?? {};
-  const resolveGalleryText = (value: unknown, fallback: string) => {
-    const resolved = t(toTValue(value));
-    return resolved?.toString().trim().length ? (resolved as string) : fallback;
-  };
-  const galleryHint = resolveGalleryText(galleryLightbox.openHint, "点击查看大图");
-  const galleryNext = resolveGalleryText(galleryLightbox.nextLabel, "下一张");
-  const galleryPrev = resolveGalleryText(galleryLightbox.prevLabel, "上一张");
-  const galleryClose = resolveGalleryText(galleryLightbox.closeLabel, "关闭");
-  const galleryCounter = resolveGalleryText(galleryLightbox.counterPattern, "图 {{current}} / {{total}}");
   type StudyMetric = { label: string | unknown; value: string | unknown };
   const metricsOriginal: ReadonlyArray<{ label: unknown; value: unknown }> =
     Array.isArray((study as any).metricsI18n) && (study as any).metricsI18n.length
@@ -96,9 +83,32 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
     label: t(toTValue(m.label)),
     value: t(toTValue(m.value)),
   }));
-  const showBackgroundSection = !hideBackground && (Boolean(study.background) || metricsLocalized.length > 0);
   const relatedStudies = category.studies.filter((item) => item.slug !== study.slug);
   const featuredStudies = relatedStudies.slice(0, 3);
+  const gallerySlides = Array.isArray(study.gallery) ? study.gallery.filter(Boolean) : [];
+  const heroSlides = Array.from(new Set([study.image, ...gallerySlides].filter(Boolean)));
+  const backgroundText = !hideBackground ? t(study.background) : "";
+  const highlightCandidates: ReadonlyArray<string | unknown> =
+    Array.isArray((study as any).highlightsI18n) && (study as any).highlightsI18n.length
+      ? ((study as any).highlightsI18n as ReadonlyArray<string | unknown>)
+      : ((study.highlights ?? []) as ReadonlyArray<string>);
+  const highlightTexts = !hideHighlights ? highlightCandidates.map((item) => t(toTValue(item))).filter(Boolean) : [];
+  const deliverableCandidates: ReadonlyArray<string | unknown> =
+    Array.isArray((study as any).deliverablesI18n) && (study as any).deliverablesI18n.length
+      ? ((study as any).deliverablesI18n as ReadonlyArray<string | unknown>)
+      : ((study.deliverables ?? []) as ReadonlyArray<string>);
+  const deliverableTexts = !hideDeliverables ? deliverableCandidates.map((item) => t(toTValue(item))).filter(Boolean) : [];
+  const technicalDescriptionRaw = (study as any).technicalDescription;
+  const technicalDescriptionText = technicalDescriptionRaw ? t(toTValue(technicalDescriptionRaw)) : "";
+  const fallbackTechnicalText = (technicalDescriptionText || highlightTexts.join(" / ") || deliverableTexts.join(" / ")).trim();
+  const technicalSpecsFromConfig = Array.isArray((study as any).technicalSpecs)
+    ? ((study as any).technicalSpecs as Array<{ label: unknown; value: unknown }>)
+        .map((item) => ({ label: t(toTValue(item.label)), value: t(toTValue(item.value)) }))
+        .filter((entry) => entry.label || entry.value)
+    : [];
+  const technicalSpecsDisplay = technicalSpecsFromConfig.length ? technicalSpecsFromConfig : metricsLocalized;
+  const showDetailsSection =
+    !hideBackground && (Boolean(backgroundText) || Boolean(fallbackTechnicalText) || technicalSpecsDisplay.length > 0);
 
   const baseCrumbs: ReadonlyArray<{ href?: string; label?: string | Record<string, string | undefined> | undefined }> = (
     Array.isArray((config as any).breadcrumbI18n) && (config as any).breadcrumbI18n.length
@@ -124,7 +134,6 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
           )}
 
           <div className="flex-1 space-y-8">
-
             <Breadcrumb
               items={[
                 ...baseCrumbs,
@@ -134,32 +143,14 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
             />
 
             {hideHero ? null : (
-              <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
-                <div className="relative h-[360px] w-full">
-                  <Image
-                    src={study.image}
-                    alt={t(study.title)}
-                    fill
-                    className="object-cover"
-                    sizes="100vw"
-                    priority
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <div className="absolute inset-0 flex flex-col justify-end gap-3 p-8 text-white">
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-white/80">
-                      {study.year ? <span>{study.year}</span> : null}
-                      {study.location ? <span>{t(study.location)}</span> : null}
-                      <span className="rounded-full bg-white/20 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.3em]">
-                         {t(category.name)}
-                       </span>
-                    </div>
-                    <h1 className="text-3xl font-semibold md:text-4xl">{t(study.title)}</h1>
-                    {t(study.summary) ? (
-                      <p className="max-w-3xl text-sm text-white/80">{t(study.summary)}</p>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
+              <CaseHeroCarousel
+                slides={heroSlides}
+                title={t(study.title)}
+                category={t(category.name)}
+                year={study.year}
+                location={t(study.location)}
+                summary={t(study.summary)}
+              />
             )}
 
             {showBackgroundSection ? (
@@ -195,89 +186,44 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
             ) : null}
 
 
-            {(() => {
-              const highlightsCandidates: ReadonlyArray<string | unknown> =
-                Array.isArray((study as any).highlightsI18n) && (study as any).highlightsI18n.length
-                  ? ((study as any).highlightsI18n as ReadonlyArray<string | unknown>)
-                  : ((study.highlights ?? []) as ReadonlyArray<string>);
-              const highlightsDisplay = highlightsCandidates.map((item) => t(toTValue(item)));
-              return highlightsDisplay.length && !hideHighlights ? (
-                <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
-                  <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">解决方案亮点</h2>
-                  <div className="mt-6 space-y-6">
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {highlightsDisplay.map((item) => (
-                        <div
-                          key={item}
-                          className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[0_14px_35px_rgba(15,23,42,0.12)] text-center transition hover:-translate-y-1"
-                        >
-                          <p className="text-sm font-semibold leading-6 text-[var(--color-brand-primary)]">{item}</p>
-                        </div>
-                      ))}
-                    </div>
-                    {study.highlightsImage ? (
-                      <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-                        <Image
-                          src={study.highlightsImage}
-                          alt={`${t(study.title)} 亮点配图`}
-                          fill
-                          className="object-cover"
-                          sizes="(min-width: 1024px) 30vw, 100vw"
-                        />
-                      </figure>
-                    ) : null}
-                  </div>
-                </section>
-              ) : null;
-            })()}
-
-
-            {(() => {
-              const deliverablesCandidates: ReadonlyArray<string | unknown> =
-                Array.isArray((study as any).deliverablesI18n) && (study as any).deliverablesI18n.length
-                  ? ((study as any).deliverablesI18n as ReadonlyArray<string | unknown>)
-                  : ((study.deliverables ?? []) as ReadonlyArray<string>);
-              const deliverablesDisplay = deliverablesCandidates.map((item) => t(toTValue(item)));
-              return deliverablesDisplay.length && !hideDeliverables ? (
-                <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
-                  <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">交付成果</h2>
-                  <div className="mt-4 space-y-6">
-                    <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
-                      {deliverablesDisplay.map((item) => (
-                        <p key={item} className="flex items-start gap-2">
-                          <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
-                          <span>{item}</span>
-                        </p>
-                      ))}
-                    </div>
-                    {study.deliverablesImage ? (
-                      <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-                        <Image
-                          src={study.deliverablesImage}
-                          alt={`${t(study.title)} 交付成果配图`}
-                          fill
-                          className="object-cover"
-                          sizes="(min-width: 1024px) 35vw, 100vw"
-                        />
-                      </figure>
-                    ) : null}
-                  </div>
-                </section>
-              ) : null;
-            })()}
-
-            {study.gallery?.length && !hideGallery ? (
+            {showDetailsSection ? (
               <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
-                <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目实景图库</h2>
-                <CaseGallery
-                  images={study.gallery}
-                  title={t(study.title)}
-                  hintLabel={galleryHint}
-                  prevLabel={galleryPrev}
-                  nextLabel={galleryNext}
-                  closeLabel={galleryClose}
-                  counterPattern={galleryCounter}
-                />
+                <div className="space-y-8">
+                  {backgroundText ? (
+                    <div className="space-y-3">
+                      <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目背景</h2>
+                      <p className="text-sm text-[var(--color-text-secondary)] md:text-base">{backgroundText}</p>
+                    </div>
+                  ) : null}
+                  {fallbackTechnicalText ? (
+                    <div className="space-y-3">
+                      <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">技术参数</h2>
+                      <p className="text-sm text-[var(--color-text-secondary)] md:text-base">{fallbackTechnicalText}</p>
+                    </div>
+                  ) : null}
+                  {technicalSpecsDisplay.length ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">技术参数</h2>
+                        <span className="text-xs text-[var(--color-text-tertiary)]">参数表</span>
+                      </div>
+                      <div className="overflow-hidden rounded-lg border border-[var(--color-border)]">
+                        <table className="w-full text-sm">
+                          <tbody>
+                            {technicalSpecsDisplay.map((spec) => (
+                              <tr key={`${spec.label}-${spec.value}`} className="border-b border-[var(--color-border)] last:border-b-0">
+                                <td className="w-1/3 bg-[var(--color-surface-muted)] px-4 py-3 font-semibold text-[var(--color-brand-secondary)]">
+                                  {spec.label}
+                                </td>
+                                <td className="px-4 py-3 text-[var(--color-text-secondary)]">{spec.value}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               </section>
             ) : null}
 

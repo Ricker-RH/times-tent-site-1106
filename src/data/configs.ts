@@ -261,6 +261,13 @@ export const cases_config = {
             "https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&w=1600&q=80"
+          ],
+          "technicalDescription": "结构采用 6061-T6 铝合金主梁，配置复合膜体和空调系统，实现全天候训练运营。",
+          "technicalSpecs": [
+            { "label": "结构跨度", "value": "42 米" },
+            { "label": "檐口高度", "value": "11 米" },
+            { "label": "覆盖面积", "value": "6,000 ㎡" },
+            { "label": "交付周期", "value": "45 天" }
           ]
         },
         {

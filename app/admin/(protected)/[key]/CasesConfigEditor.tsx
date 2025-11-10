@@ -29,6 +29,11 @@ interface CaseStudyMetricI18n {
   value: LocalizedValue;
 }
 
+interface CaseStudySpecI18n {
+  label: LocalizedValue;
+  value: LocalizedValue;
+}
+
 interface CaseStudyConfig {
   slug: string;
   title: LocalizedValue;
@@ -46,6 +51,8 @@ interface CaseStudyConfig {
   highlightsI18n?: LocalizedValue[];
   deliverablesI18n?: LocalizedValue[];
   metricsI18n?: CaseStudyMetricI18n[];
+  technicalDescription?: LocalizedValue;
+  technicalSpecs?: CaseStudySpecI18n[];
 }
 
 interface CaseCategoryConfig {
@@ -200,6 +207,11 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
       ],
       highlightsImage: "",
       deliverablesImage: "",
+      technicalDescription: ensureLocalized(undefined, "在此补充技术参数说明。"),
+      technicalSpecs: [
+        { label: ensureLocalized("结构跨度", ""), value: ensureLocalized("30m", "") },
+        { label: ensureLocalized("檐口高度", ""), value: ensureLocalized("8m", "") },
+      ],
     };
   }
   const record = raw as Record<string, unknown>;
@@ -240,6 +252,21 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
             return { label, value } satisfies CaseStudyMetricI18n;
           })
           .filter((metric): metric is CaseStudyMetricI18n => Boolean(metric))
+      : undefined,
+    technicalDescription: ensureLocalized((record as any).technicalDescription, ""),
+    technicalSpecs: Array.isArray((record as any).technicalSpecs)
+      ? ((record as any).technicalSpecs as Array<unknown>)
+          .map((item) => {
+            if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+            const rec = item as Record<string, unknown>;
+            const label = ensureLocalized(rec.label, "");
+            const value = ensureLocalized(rec.value, "");
+            if (Object.keys(label).length === 0 && Object.keys(value).length === 0) {
+              return null;
+            }
+            return { label, value } satisfies CaseStudySpecI18n;
+          })
+          .filter((spec): spec is CaseStudySpecI18n => Boolean(spec))
       : undefined,
   } satisfies CaseStudyConfig;
 }
@@ -393,6 +420,21 @@ function serializeStudy(study: CaseStudyConfig): Record<string, unknown> {
       .filter((metric): metric is CaseStudyMetricI18n => Boolean(metric));
     if (metricsI18n.length) result.metricsI18n = metricsI18n;
   }
+  const technicalDescription = study.technicalDescription ? cleanLocalized(study.technicalDescription) : undefined;
+  if (technicalDescription && Object.keys(technicalDescription).length) {
+    result.technicalDescription = technicalDescription;
+  }
+  if (Array.isArray(study.technicalSpecs)) {
+    const technicalSpecs = study.technicalSpecs
+      .map((item) => {
+        const label = cleanLocalized(item.label);
+        const value = cleanLocalized(item.value);
+        if (Object.keys(label).length === 0 && Object.keys(value).length === 0) return null;
+        return { label, value } as CaseStudySpecI18n;
+      })
+      .filter((spec): spec is CaseStudySpecI18n => Boolean(spec));
+    if (technicalSpecs.length) result.technicalSpecs = technicalSpecs;
+  }
 
   return result;
 }
@@ -519,6 +561,12 @@ function cloneCategory(category: CaseCategoryConfig): CaseCategoryConfig {
       highlightsI18n: study.highlightsI18n ? [...study.highlightsI18n] : undefined,
       deliverablesI18n: study.deliverablesI18n ? [...study.deliverablesI18n] : undefined,
       metricsI18n: study.metricsI18n ? study.metricsI18n.map((m) => ({ label: m.label, value: m.value })) : undefined,
+      technicalDescription: study.technicalDescription
+        ? (ensureLocalizedRecord(study.technicalDescription) as LocalizedValue)
+        : undefined,
+      technicalSpecs: study.technicalSpecs
+        ? study.technicalSpecs.map((spec) => ({ label: spec.label, value: spec.value }))
+        : undefined,
     })),
   };
 }
@@ -2120,6 +2168,32 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
     });
   };
 
+  const handleTechnicalSpecChange = (index: number, field: keyof CaseStudySpecI18n, nextValue: LocalizedValue) => {
+    setDraft((prev) => {
+      const specs: CaseStudySpecI18n[] = Array.isArray(prev.technicalSpecs)
+        ? prev.technicalSpecs.map((spec) => ({ label: spec.label, value: spec.value }))
+        : [];
+      const current = specs[index] ?? { label: ensureLocalized(undefined, ""), value: ensureLocalized(undefined, "") };
+      current[field] = nextValue;
+      specs[index] = current;
+      return { ...prev, technicalSpecs: specs };
+    });
+  };
+
+  const handleAddTechnicalSpec = () => {
+    setDraft((prev) => ({
+      ...prev,
+      technicalSpecs: [...(prev.technicalSpecs ?? []), { label: ensureLocalized(undefined, ""), value: ensureLocalized(undefined, "") }],
+    }));
+  };
+
+  const handleRemoveTechnicalSpec = (index: number) => {
+    setDraft((prev) => {
+      const specs = (prev.technicalSpecs ?? []).filter((_, idx) => idx !== index);
+      return { ...prev, technicalSpecs: specs.length ? specs : undefined };
+    });
+  };
+
   return (
     <EditorDialog
       title={
@@ -2311,6 +2385,59 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
             </div>
           </div>
         )}
+        <div className="space-y-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]/60 p-4">
+          <LocalizedTextField
+            label="技术参数说明"
+            value={draft.technicalDescription ?? ensureLocalized(undefined, "")}
+            onChange={(next) => setDraft((prev) => ({ ...prev, technicalDescription: next }))}
+            multiline
+            placeholder="补充技术要点、系统搭配等说明"
+          />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-[var(--color-brand-secondary)]">技术参数表</span>
+              <button
+                type="button"
+                onClick={handleAddTechnicalSpec}
+                className="rounded-full border border-dashed border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)]/10"
+              >
+                新增参数
+              </button>
+            </div>
+            <div className="space-y-2">
+              {(draft.technicalSpecs ?? []).map((spec, index) => (
+                <div key={index} className="grid gap-2 rounded-xl border border-[var(--color-border)] bg-white p-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
+                  <LocalizedTextField
+                    label="参数名称"
+                    value={spec.label}
+                    onChange={(next) => handleTechnicalSpecChange(index, "label", next)}
+                    placeholder="如：结构跨度"
+                  />
+                  <div className="flex justify-center py-2 md:py-0">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTechnicalSpec(index)}
+                      className="rounded-full border border-rose-200 px-3 py-1 text-xs text-rose-500 transition hover:bg-rose-50"
+                    >
+                      删除
+                    </button>
+                  </div>
+                  <LocalizedTextField
+                    label="参数值"
+                    value={spec.value}
+                    onChange={(next) => handleTechnicalSpecChange(index, "value", next)}
+                    placeholder="如：36 米"
+                  />
+                </div>
+              ))}
+              {!((draft.technicalSpecs ?? []).length) ? (
+                <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white/60 p-4 text-xs text-[var(--color-text-tertiary)]">
+                  暂无技术参数，请新增。
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
         {(!scope || scope === "gallery") && (
           <GalleryEditor
             title="项目图库"
