@@ -29,11 +29,6 @@ interface CaseStudyMetricI18n {
   value: LocalizedValue;
 }
 
-interface CaseStudySpecI18n {
-  label: LocalizedValue;
-  value: LocalizedValue;
-}
-
 interface CaseStudyConfig {
   slug: string;
   title: LocalizedValue;
@@ -52,7 +47,7 @@ interface CaseStudyConfig {
   deliverablesI18n?: LocalizedValue[];
   metricsI18n?: CaseStudyMetricI18n[];
   technicalDescription?: LocalizedValue;
-  technicalSpecs?: CaseStudySpecI18n[];
+  technicalSpecs?: CaseStudyMetricI18n[];
 }
 
 interface CaseCategoryConfig {
@@ -1130,6 +1125,24 @@ function CasesPreviewSurface({
 
     const relatedStudies = category.studies.filter((_, idx) => idx !== previewPage.studyIndex);
     const featuredStudies = relatedStudies.slice(0, 3);
+    const backgroundText = getLocaleText(study.background, undefined, "");
+    const highlightTexts = (study.highlightsI18n ?? [])
+      .map((item: any) => getLocaleText(item, undefined, ""))
+      .filter(Boolean);
+    const deliverableTexts = (study.deliverablesI18n ?? [])
+      .map((item: any) => getLocaleText(item, undefined, ""))
+      .filter(Boolean);
+    const technicalDescription = study.technicalDescription ? getLocaleText(study.technicalDescription, undefined, "") : "";
+    const technicalSpecsPreview = (study.technicalSpecs ?? study.metricsI18n ?? [])
+      .map((spec: any) => ({
+        label: typeof spec.label === "string" ? spec.label : getLocaleText(spec.label, undefined, ""),
+        value: typeof spec.value === "string" ? spec.value : getLocaleText(spec.value, undefined, ""),
+      }))
+      .filter((spec) => spec.label || spec.value);
+    const fallbackTechnicalText = technicalDescription || highlightTexts.join(" / ") || deliverableTexts.join(" / ");
+    const showDetailsSection = Boolean(
+      backgroundText || fallbackTechnicalText || technicalSpecsPreview.length || deliverableTexts.length || study.backgroundImage,
+    );
 
     return (
       <div className="space-y-8">
@@ -1202,135 +1215,116 @@ function CasesPreviewSurface({
           </div>
         </section>
 
-        {study.background || (study.metricsI18n?.length ?? 0) > 0 ? (
+        {showDetailsSection ? (
           <section className="rounded-2xl border border-[var(--color-border)] bg-white p-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目背景</h2>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "background")}
-                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-                >
-                  编辑项目背景
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "metrics_i18n")}
-                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-                >
-                  指标（多语言）
-                </button>
-              </div>
-            </div>
-            <div className="mt-4 space-y-6">
-              {study.background ? (
-                <p className="text-sm text-[var(--color-text-secondary)]">{getLocaleText(study.background, undefined, "")}</p>
-              ) : null}
-              {(study.metricsI18n?.length ?? 0) > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {(study.metricsI18n ?? []).map((metric: any) => {
-                    const label = typeof metric.label === "string" ? metric.label : getLocaleText(metric.label, undefined, "");
-                    const value = typeof metric.value === "string" ? metric.value : getLocaleText(metric.value, undefined, "");
-                    return (
-                      <div key={`${label}-${value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
-                        <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{value}</p>
-                        <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
-                      </div>
-                    );
-                  })}
+            <div className="space-y-8">
+              {(backgroundText || (study.metricsI18n?.length ?? 0) > 0 || study.backgroundImage) ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目背景</h2>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "background")}
+                        className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                      >
+                        编辑项目背景
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "metrics_i18n")}
+                        className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                      >
+                        指标（多语言）
+                      </button>
+                    </div>
+                  </div>
+                  {backgroundText ? (
+                    <p className="text-sm text-[var(--color-text-secondary)]">{backgroundText}</p>
+                  ) : null}
+                  {(study.metricsI18n?.length ?? 0) > 0 ? (
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      {(study.metricsI18n ?? []).map((metric: any) => {
+                        const label = typeof metric.label === "string" ? metric.label : getLocaleText(metric.label, undefined, "");
+                        const value = typeof metric.value === "string" ? metric.value : getLocaleText(metric.value, undefined, "");
+                        return (
+                          <div key={`${label}-${value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
+                            <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{value}</p>
+                            <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                  {study.backgroundImage ? (
+                    <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
+                      <Image
+                        src={resolveImageSrc(study.backgroundImage, DEFAULT_STUDY_IMAGE)}
+                        alt="项目背景配图"
+                        fill
+                        className="object-cover"
+                        sizes="(min-width: 1024px) 40vw, 100vw"
+                      />
+                    </figure>
+                  ) : null}
                 </div>
               ) : null}
-              {study.backgroundImage ? (
-                <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-                  <Image
-                    src={resolveImageSrc(study.backgroundImage, DEFAULT_STUDY_IMAGE)}
-                    alt="项目背景配图"
-                    fill
-                    className="object-cover"
-                    sizes="(min-width: 1024px) 40vw, 100vw"
-                  />
-                </figure>
-              ) : null}
-            </div>
-          </section>
-        ) : null}
 
-        {study.highlightsI18n?.length ? (
-          <section className="rounded-2xl border border-[var(--color-border)] bg-white p-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">解决方案亮点</h2>
-              <button
-                type="button"
-                onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "highlights_i18n")}
-                className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-              >
-                亮点（多语言）
-              </button>
-            </div>
-            <div className="mt-6 space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {(study.highlightsI18n ?? []).map((item: any, idx: number) => {
-                  const text = typeof item === "string" ? item : getLocaleText(item, undefined, "");
-                  return (
-                    <div
-                      key={`${text}-${idx}`}
-                      className="rounded-xl border border-[var(--color-border)] bg-white p-5 text-center shadow-[0_14px_35px_rgba(15,23,42,0.12)]"
+              {(fallbackTechnicalText || technicalSpecsPreview.length) ? (
+                <div className="space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]/40 p-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base font-semibold text-[var(--color-brand-secondary)]">技术参数</h2>
+                    <button
+                      type="button"
+                      onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex)}
+                      className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
                     >
-                      <p className="text-sm font-semibold leading-6 text-[var(--color-brand-primary)]">{text}</p>
+                      编辑参数
+                    </button>
+                  </div>
+                  {fallbackTechnicalText ? (
+                    <p className="text-sm text-[var(--color-text-secondary)]">{fallbackTechnicalText}</p>
+                  ) : null}
+                  {technicalSpecsPreview.length ? (
+                    <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
+                      <table className="w-full text-sm">
+                        <tbody>
+                          {technicalSpecsPreview.map((spec, idx) => (
+                            <tr key={`${spec.label}-${idx}`} className="border-b border-[var(--color-border)] last:border-b-0">
+                              <td className="w-1/3 bg-[var(--color-surface-muted)] px-4 py-3 font-semibold text-[var(--color-brand-secondary)]">
+                                {spec.label}
+                              </td>
+                              <td className="px-4 py-3 text-[var(--color-text-secondary)]">{spec.value}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  );
-                })}
-              </div>
-              {study.highlightsImage ? (
-                <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-                  <Image
-                    src={resolveImageSrc(study.highlightsImage, DEFAULT_STUDY_IMAGE)}
-                    alt="亮点配图"
-                    fill
-                    className="object-cover"
-                    sizes="(min-width: 1024px) 30vw, 100vw"
-                  />
-                </figure>
+                  ) : null}
+                </div>
               ) : null}
-            </div>
-          </section>
-        ) : null}
 
-        {study.deliverablesI18n?.length ? (
-          <section className="rounded-2xl border border-[var(--color-border)] bg-white p-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">交付成果</h2>
-              <button
-                type="button"
-                onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "deliverables_i18n")}
-                className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-              >
-                交付（多语言）
-              </button>
-            </div>
-            <div className="mt-4 space-y-6">
-              <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
-                {(study.deliverablesI18n || []).map((item: any, idx: number) => {
-                  const text = typeof item === "string" ? item : getLocaleText(item, undefined, "");
-                  return (
-                    <p key={`${text}-${idx}`} className="flex items-start gap-2">
-                      <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
-                      <span>{text}</span>
-                    </p>
-                  );
-                })}
-              </div>
-              {study.deliverablesImage ? (
-                <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-                  <Image
-                    src={resolveImageSrc(study.deliverablesImage, DEFAULT_STUDY_IMAGE)}
-                    alt="交付成果配图"
-                    fill
-                    className="object-cover"
-                    sizes="(min-width: 1024px) 35vw, 100vw"
-                  />
-                </figure>
+              {deliverableTexts.length ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">交付成果</h2>
+                    <button
+                      type="button"
+                      onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "deliverables_i18n")}
+                      className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                    >
+                      交付（多语言）
+                    </button>
+                  </div>
+                  <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
+                    {deliverableTexts.map((text, idx) => (
+                      <p key={`${text}-${idx}`} className="flex items-start gap-2">
+                        <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
+                        <span>{text}</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
               ) : null}
             </div>
           </section>
