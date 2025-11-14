@@ -6,13 +6,13 @@ import Image from "next/image";
 interface CaseHeroCarouselProps {
   slides: ReadonlyArray<string>;
   title: string;
-  category: string;
   year?: string | number;
   location?: string;
   summary?: string;
+  overlayEnabled?: boolean;
 }
 
-export function CaseHeroCarousel({ slides, title, category, year, location, summary }: CaseHeroCarouselProps) {
+export function CaseHeroCarousel({ slides, title, year, location, summary, overlayEnabled = true }: CaseHeroCarouselProps) {
   const validSlides = useMemo(() => slides.filter(Boolean), [slides]);
   const [index, setIndex] = useState(0);
   const [autoplay, setAutoplay] = useState(true);
@@ -36,7 +36,8 @@ export function CaseHeroCarousel({ slides, title, category, year, location, summ
     return null;
   }
 
-  const showOverlay = index === 0;
+  const showText = index === 0;
+  const showOverlay = showText && overlayEnabled;
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
@@ -54,15 +55,35 @@ export function CaseHeroCarousel({ slides, title, category, year, location, summ
           className="object-cover transition-opacity duration-300"
         />
         {showOverlay ? <div className="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/35 to-transparent" /> : null}
-        {showOverlay ? (
+        {showText ? (
           <div className="absolute inset-0 flex flex-col justify-end gap-4 px-4 py-10 text-white sm:px-6 lg:px-8">
             <div className="flex flex-wrap items-center gap-3 text-xs text-white/80">
-              {year ? <span>{year}</span> : null}
-              {location ? <span>{location}</span> : null}
+              {year ? (
+                <span className={overlayEnabled ? "" : "rounded-full bg-black/40 px-3 py-1 backdrop-blur"}>{year}</span>
+              ) : null}
+              {location ? (
+                <span className={overlayEnabled ? "" : "rounded-full bg-black/40 px-3 py-1 backdrop-blur"}>{location}</span>
+              ) : null}
             </div>
-            <h1 className="text-3xl font-semibold md:text-4xl">{title}</h1>
-            {summary ? <p className="max-w-3xl text-sm text-white/85 md:text-base">{summary}</p> : null}
-          </div>
+              <div className="space-y-2">
+                <h1
+                  className={`text-3xl font-semibold md:text-4xl ${
+                    overlayEnabled ? "" : "drop-shadow-[0_6px_24px_rgba(0,0,0,0.6)]"
+                  }`}
+                >
+                  {title}
+                </h1>
+                {summary ? (
+                  <p
+                    className={`max-w-3xl text-sm md:text-base ${
+                      overlayEnabled ? "text-white/85" : "text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.65)]"
+                    }`}
+                  >
+                    {summary}
+                  </p>
+                ) : null}
+              </div>
+            </div>
         ) : null}
         {validSlides.length > 1 ? (
           <>

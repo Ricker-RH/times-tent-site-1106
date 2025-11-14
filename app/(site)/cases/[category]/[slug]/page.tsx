@@ -205,10 +205,10 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
               <CaseHeroCarousel
                 slides={heroSlides}
                 title={t(study.title)}
-                category={t(category.name)}
                 year={study.year}
                 location={t(study.location)}
                 summary={t(study.summary)}
+                overlayEnabled={study.heroOverlayEnabled !== false}
               />
             )}
 

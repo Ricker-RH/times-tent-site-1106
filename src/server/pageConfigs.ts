@@ -46,6 +46,7 @@ export type CaseStudy = CaseCategory["studies"][number] & {
     columns?: string[] | readonly string[];
     rows?: string[][] | ReadonlyArray<ReadonlyArray<string>>;
   };
+  heroOverlayEnabled?: boolean;
 };
 
 export interface ProductCenterProduct {

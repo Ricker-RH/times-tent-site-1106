@@ -51,6 +51,7 @@ interface CaseStudyConfig {
   metrics: CaseStudyMetric[];
   image: string;
   gallery: string[];
+  heroOverlayEnabled?: boolean;
   highlightsI18n?: LocalizedValue[];
   metricsI18n?: CaseStudyMetricI18n[];
   technicalSection?: TechnicalSectionConfig;
@@ -309,12 +310,16 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
         "https://images.unsplash.com/photo-1516035069371-29a6bab2f01e?auto=format&w=1600&q=80",
         "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80",
       ],
+      heroOverlayEnabled: true,
       highlightsI18n: [],
       metricsI18n: [],
       technicalSection: normalizeTechnicalSection({}),
     };
   }
   const record = raw as Record<string, unknown>;
+  const overlayFlagRaw = (record as Record<string, unknown>).heroOverlayEnabled;
+  const heroOverlayEnabled = typeof overlayFlagRaw === "boolean" ? overlayFlagRaw : true;
+
   return {
     slug: toStringValue(record.slug, `case-${index + 1}`),
     title: ensureLocalized(record.title, ""),
@@ -325,6 +330,7 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
     metrics: asMetricArray(record.metrics),
     image: resolveImageSrc(toStringValue(record.image), ""),
     gallery: asStringArray(record.gallery),
+    heroOverlayEnabled,
     highlightsI18n: Array.isArray((record as any).highlightsI18n)
       ? ((record as any).highlightsI18n as Array<unknown>)
           .map((item) => ensureLocalized(item, ""))
@@ -473,6 +479,9 @@ function serializeStudy(study: CaseStudyConfig): Record<string, unknown> {
 
   if (study.image.trim()) result.image = study.image.trim();
   if (study.gallery.length) result.gallery = study.gallery;
+  if (study.heroOverlayEnabled === false) {
+    result.heroOverlayEnabled = false;
+  }
 
   if (Array.isArray(study.highlightsI18n)) {
     const highlightsI18n = study.highlightsI18n
@@ -1204,7 +1213,9 @@ function CasesPreviewSurface({
     const activeSlideSrc = heroSlides.length
       ? heroSlides[safeSlideIndex]
       : sanitizeImageSrc(study.image) ?? DEFAULT_STUDY_IMAGE;
-    const showOverlay = safeSlideIndex === 0;
+    const showText = safeSlideIndex === 0;
+    const heroOverlayEnabled = study.heroOverlayEnabled !== false;
+    const showOverlay = showText && heroOverlayEnabled;
     const resolvedActiveSlide = resolveImageSrc(activeSlideSrc, DEFAULT_STUDY_IMAGE);
 
     const handlePrevSlide = () => {
@@ -1261,7 +1272,7 @@ function CasesPreviewSurface({
             {showOverlay ? (
               <div className="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/35 to-transparent" />
             ) : null}
-            {showOverlay ? (
+            {showText ? (
               <div className="absolute inset-0 flex flex-col justify-end gap-4 px-4 py-10 text-white sm:px-6 lg:px-8">
                 <div className="absolute top-4 right-4 flex flex-wrap gap-2">
                   <button
@@ -1280,18 +1291,31 @@ function CasesPreviewSurface({
                   </button>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-white/80">
-                  {study.year ? <span>{study.year}</span> : null}
+                  {study.year ? (
+                    <span className={heroOverlayEnabled ? "" : "rounded-full bg-black/40 px-3 py-1 backdrop-blur"}>{study.year}</span>
+                  ) : null}
                   {study.year && study.location ? <span>{"·"}</span> : null}
-                  {study.location ? <span>{getLocaleText(study.location)}</span> : null}
-                  <span className="rounded-full bg-white/20 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.3em]">
-                    {getLocaleText(category.name)}
-                  </span>
+                  {study.location ? (
+                    <span className={heroOverlayEnabled ? "" : "rounded-full bg-black/40 px-3 py-1 backdrop-blur"}>{getLocaleText(study.location)}</span>
+                  ) : null}
                 </div>
                 {getLocaleText(study.title) ? (
-                  <h1 className="text-3xl font-semibold md:text-4xl">{getLocaleText(study.title)}</h1>
+                  <h1
+                    className={`text-3xl font-semibold md:text-4xl ${
+                      heroOverlayEnabled ? "" : "drop-shadow-[0_6px_24px_rgba(0,0,0,0.6)]"
+                    }`}
+                  >
+                    {getLocaleText(study.title)}
+                  </h1>
                 ) : null}
                 {study.summary ? (
-                  <p className="max-w-3xl text-sm text-white/85 md:text-base">{getLocaleText(study.summary)}</p>
+                  <p
+                    className={`max-w-3xl text-sm md:text-base ${
+                      heroOverlayEnabled ? "text-white/85" : "text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.65)]"
+                    }`}
+                  >
+                    {getLocaleText(study.summary)}
+                  </p>
                 ) : null}
               </div>
             ) : null}
@@ -2438,6 +2462,17 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
             onChange={(next) => setDraft((prev) => ({ ...prev, image: next }))}
             helper="最佳尺寸 1200×400"
           />
+        )}
+        {(!scope || scope === "basic") && (
+          <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand-secondary)]">
+            <input
+              type="checkbox"
+              checked={draft.heroOverlayEnabled !== false}
+              onChange={(event) => setDraft((prev) => ({ ...prev, heroOverlayEnabled: event.target.checked }))}
+              className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+            />
+            启用背景蒙版
+          </label>
         )}
 
         {(!scope || scope === "highlights_i18n") && (
