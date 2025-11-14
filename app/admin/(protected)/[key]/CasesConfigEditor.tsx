@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 
@@ -29,25 +29,31 @@ interface CaseStudyMetricI18n {
   value: LocalizedValue;
 }
 
+interface TechnicalSectionConfig {
+  title?: string;
+  subtitle?: string;
+  columns: string[];
+  rows: string[][];
+}
+
+interface CaseBodyBlockConfig {
+  title: LocalizedValue;
+  subtitle: LocalizedValue;
+}
+
 interface CaseStudyConfig {
   slug: string;
   title: LocalizedValue;
   year: string;
   location: LocalizedValue;
   summary: LocalizedValue;
-  background: LocalizedValue;
-  backgroundImage?: string;
-  deliverables: string[];
+  bodyBlocks: CaseBodyBlockConfig[];
   metrics: CaseStudyMetric[];
   image: string;
   gallery: string[];
-  highlightsImage?: string;
-  deliverablesImage?: string;
   highlightsI18n?: LocalizedValue[];
-  deliverablesI18n?: LocalizedValue[];
   metricsI18n?: CaseStudyMetricI18n[];
-  technicalDescription?: LocalizedValue;
-  technicalSpecs?: CaseStudyMetricI18n[];
+  technicalSection?: TechnicalSectionConfig;
 }
 
 interface CaseCategoryConfig {
@@ -70,13 +76,6 @@ interface SectionHeadingConfig {
   description: string;
 }
 
-interface RecommendationsConfig {
-  eyebrow: string;
-  title: string;
-  description: string;
-  linkLabel: string;
-}
-
 // 新增：案例详情页底部咨询配置
 interface ConsultationConfig {
   title: LocalizedValue;
@@ -85,14 +84,6 @@ interface ConsultationConfig {
   primaryHref: string;
   phoneLabel: LocalizedValue;
   phoneNumber: string;
-}
-
-interface GalleryLightboxConfig {
-  openHint: LocalizedValue;
-  nextLabel: LocalizedValue;
-  prevLabel: LocalizedValue;
-  closeLabel: LocalizedValue;
-  counterPattern: LocalizedValue;
 }
 
 interface BreadcrumbItem {
@@ -105,10 +96,7 @@ interface CasesConfig {
   breadcrumb: BreadcrumbItem[];
   sectionHeading: SectionHeadingConfig;
   categories: CaseCategoryConfig[];
-  recommendations: RecommendationsConfig;
-  // 新增：底部咨询 CTA
   consultation?: ConsultationConfig;
-  galleryLightbox?: GalleryLightboxConfig;
   sidebarTitle: string;
   categoryCaseCountSuffix: string;
   _meta?: Record<string, unknown>;
@@ -121,10 +109,9 @@ type PreviewPage =
 
 type StudyScope =
   | "basic"
-  | "background"
+  | "copy_blocks"
   | "gallery"
   | "highlights_i18n"
-  | "deliverables_i18n"
   | "metrics_i18n";
 
 const DEFAULT_HERO_IMAGE = "https://images.unsplash.com/photo-1542626991-cbc4e32524cc?auto=format&w=2000&q=80";
@@ -142,6 +129,97 @@ function toStringValue(value: unknown, fallback = ""): string {
   if (typeof value === "string") return value;
   if (typeof value === "number") return String(value);
   return fallback;
+}
+
+function hasLocalizedContent(value?: LocalizedValue): boolean {
+  if (!value) return false;
+  return Object.values(value).some((entry) => typeof entry === "string" && entry.trim().length > 0);
+}
+
+function createEmptyBodyBlock(): CaseBodyBlockConfig {
+  return {
+    title: ensureLocalized(undefined, ""),
+    subtitle: ensureLocalized(undefined, ""),
+  };
+}
+
+function createDefaultBodyBlocks(): CaseBodyBlockConfig[] {
+  return [
+    {
+      title: ensureLocalized(undefined, "项目背景"),
+      subtitle: ensureLocalized(undefined, "在此补充项目背景，描述客户与挑战。"),
+    },
+    {
+      title: ensureLocalized(undefined, "交付成果"),
+      subtitle: ensureLocalized(undefined, "在此补充交付亮点或客户价值。"),
+    },
+  ];
+}
+
+function aggregateLocalizedList(values?: LocalizedValue[]): LocalizedValue | null {
+  if (!values?.length) return null;
+  const aggregated = ensureLocalized(undefined, "");
+  let hasContent = false;
+  (SUPPORTED_LOCALES as LocaleKey[]).forEach((localeKey) => {
+    const parts = values
+      .map((item) => (ensureLocalizedRecord(item)[localeKey] || "").trim())
+      .filter(Boolean);
+    if (parts.length) {
+      aggregated[localeKey] = parts.join("\n");
+      hasContent = true;
+    }
+  });
+  return hasContent ? aggregated : null;
+}
+
+function fromStringArrayToLocalized(value: unknown): LocalizedValue | null {
+  if (!Array.isArray(value) || !value.length) return null;
+  const lines = value.map((item) => toStringValue(item).trim()).filter(Boolean);
+  if (!lines.length) return null;
+  const text = lines.join("\n");
+  const localized = ensureLocalized(undefined, "");
+  (SUPPORTED_LOCALES as LocaleKey[]).forEach((localeKey) => {
+    localized[localeKey] = text;
+  });
+  return localized;
+}
+
+function normalizeBodyBlocks(raw: unknown, record: Record<string, unknown>): CaseBodyBlockConfig[] {
+  if (Array.isArray(raw) && raw.length) {
+    const normalized = raw
+      .map((item) => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+        const rec = item as Record<string, unknown>;
+        const title = ensureLocalized(rec.title, "");
+        const subtitle = ensureLocalized(rec.subtitle, "");
+        if (!hasLocalizedContent(title) && !hasLocalizedContent(subtitle)) {
+          return null;
+        }
+        return { title, subtitle } satisfies CaseBodyBlockConfig;
+      })
+      .filter((block): block is CaseBodyBlockConfig => Boolean(block));
+    if (normalized.length) {
+      return normalized;
+    }
+  }
+
+  const blocks: CaseBodyBlockConfig[] = [];
+  const legacyBackgroundHeading = ensureLocalized((record as any).backgroundHeading, "项目背景");
+  const legacyBackground = ensureLocalized(record.background, "");
+  if (hasLocalizedContent(legacyBackgroundHeading) || hasLocalizedContent(legacyBackground)) {
+    blocks.push({ title: legacyBackgroundHeading, subtitle: legacyBackground });
+  }
+
+  const legacyDeliverablesHeading = ensureLocalized((record as any).deliverablesHeading, "交付成果");
+  const deliverablesI18nRaw = Array.isArray((record as any).deliverablesI18n)
+    ? ((record as any).deliverablesI18n as LocalizedValue[])
+    : undefined;
+  const legacyDeliverables = aggregateLocalizedList(deliverablesI18nRaw) ?? fromStringArrayToLocalized((record as any).deliverables);
+  if (legacyDeliverables && (hasLocalizedContent(legacyDeliverablesHeading) || hasLocalizedContent(legacyDeliverables))) {
+    blocks.push({ title: legacyDeliverablesHeading, subtitle: legacyDeliverables });
+  }
+
+  return blocks.length ? blocks : createDefaultBodyBlocks();
 }
 
 function asStringArray(value: unknown): string[] {
@@ -165,6 +243,54 @@ function asMetricArray(value: unknown): CaseStudyMetric[] {
     .filter(Boolean) as CaseStudyMetric[];
 }
 
+function normalizeTechnicalSection(raw: Record<string, unknown>): TechnicalSectionConfig {
+  const titleValue = toStringValue(raw.title).trim();
+  const subtitleValue = toStringValue(raw.subtitle).trim();
+  const title = titleValue;
+  const subtitle = subtitleValue;
+  const rawColumns = Array.isArray(raw.columns) ? raw.columns : [];
+  const columns = rawColumns
+    .map((item) => toStringValue(item).trim())
+    .filter((item) => item.length);
+  const safeColumns = columns.length ? columns : ["参数", "数值"];
+  const rawRows = Array.isArray(raw.rows) ? raw.rows : [];
+  const rows = rawRows
+    .map((row) => (Array.isArray(row) ? row : []))
+    .map((row) => safeColumns.map((_, idx) => toStringValue(row[idx]).trim()))
+    .filter((row) => row.some((cell) => cell.length));
+  return {
+    title,
+    subtitle,
+    columns: safeColumns,
+    rows,
+  } satisfies TechnicalSectionConfig;
+}
+
+function serializeTechnicalSection(section?: TechnicalSectionConfig): TechnicalSectionConfig | undefined {
+  if (!section) return undefined;
+  const title = section.title?.trim() ?? "";
+  const subtitle = section.subtitle?.trim() ?? "";
+  const rawColumns = Array.isArray(section.columns) ? section.columns : [];
+  const columns = rawColumns.map((item) => item.trim()).filter((item) => item.length);
+  const safeColumns = columns.length ? columns : ["参数", "数值"];
+  const rawRows = Array.isArray(section.rows) ? section.rows : [];
+  const rows = rawRows
+    .map((row) => Array.isArray(row) ? row : [])
+    .map((row) => safeColumns.map((_, idx) => (row[idx] ?? "").trim()))
+    .filter((row) => row.some((cell) => cell.length));
+
+  if (!title && !subtitle && !rows.length) {
+    return undefined;
+  }
+
+  return {
+    title,
+    subtitle,
+    columns: safeColumns,
+    rows,
+  } satisfies TechnicalSectionConfig;
+}
+
 function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return {
@@ -173,9 +299,7 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
       year: "",
       location: ensureLocalized(undefined, ""),
       summary: ensureLocalized(undefined, "在此补充案例摘要，概述关键成效。"),
-      background: ensureLocalized(undefined, "在此补充项目背景，描述客户与挑战。"),
-      backgroundImage: "",
-      deliverables: [],
+      bodyBlocks: createDefaultBodyBlocks(),
       metrics: [],
       image: DEFAULT_STUDY_IMAGE,
       gallery: [
@@ -183,30 +307,9 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
         "https://images.unsplash.com/photo-1516035069371-29a6bab2f01e?auto=format&w=1600&q=80",
         "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80",
       ],
-      highlightsI18n: [
-        ensureLocalized("专业团队现场执行", ""),
-        ensureLocalized("供电与网络保障", ""),
-        ensureLocalized("安全风控与秩序维护", ""),
-      ],
-      deliverablesI18n: [
-        ensureLocalized("方案设计文档", ""),
-        ensureLocalized("项目实施计划", ""),
-        ensureLocalized("设备采购清单", ""),
-        ensureLocalized("现场安装与调试", ""),
-        ensureLocalized("验收与培训", ""),
-      ],
-      metricsI18n: [
-        { label: ensureLocalized("覆盖面积", ""), value: ensureLocalized("10,000㎡+", "") },
-        { label: ensureLocalized("参与人数", ""), value: ensureLocalized("5,000+", "") },
-        { label: ensureLocalized("设备数量", ""), value: ensureLocalized("100+", "") },
-      ],
-      highlightsImage: "",
-      deliverablesImage: "",
-      technicalDescription: ensureLocalized(undefined, "在此补充技术参数说明。"),
-      technicalSpecs: [
-        { label: ensureLocalized("结构跨度", ""), value: ensureLocalized("30m", "") },
-        { label: ensureLocalized("檐口高度", ""), value: ensureLocalized("8m", "") },
-      ],
+      highlightsI18n: [],
+      metricsI18n: [],
+      technicalSection: normalizeTechnicalSection({}),
     };
   }
   const record = raw as Record<string, unknown>;
@@ -216,21 +319,12 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
     year: toStringValue(record.year),
     location: ensureLocalized(record.location, ""),
     summary: ensureLocalized(record.summary, ""),
-    background: ensureLocalized(record.background, ""),
-    backgroundImage: resolveImageSrc(toStringValue((record as any).backgroundImage), ""),
-    deliverables: asStringArray(record.deliverables),
+    bodyBlocks: normalizeBodyBlocks((record as any).bodyBlocks, record),
     metrics: asMetricArray(record.metrics),
     image: resolveImageSrc(toStringValue(record.image), ""),
     gallery: asStringArray(record.gallery),
-    highlightsImage: resolveImageSrc(toStringValue((record as any).highlightsImage), ""),
-    deliverablesImage: resolveImageSrc(toStringValue((record as any).deliverablesImage), ""),
     highlightsI18n: Array.isArray((record as any).highlightsI18n)
       ? ((record as any).highlightsI18n as Array<unknown>)
-          .map((item) => ensureLocalized(item, ""))
-          .filter((v) => Object.keys(v).length > 0)
-      : undefined,
-    deliverablesI18n: Array.isArray((record as any).deliverablesI18n)
-      ? ((record as any).deliverablesI18n as Array<unknown>)
           .map((item) => ensureLocalized(item, ""))
           .filter((v) => Object.keys(v).length > 0)
       : undefined,
@@ -248,21 +342,7 @@ function normalizeStudy(raw: unknown, index: number): CaseStudyConfig {
           })
           .filter((metric): metric is CaseStudyMetricI18n => Boolean(metric))
       : undefined,
-    technicalDescription: ensureLocalized((record as any).technicalDescription, ""),
-    technicalSpecs: Array.isArray((record as any).technicalSpecs)
-      ? ((record as any).technicalSpecs as Array<unknown>)
-          .map((item) => {
-            if (!item || typeof item !== "object" || Array.isArray(item)) return null;
-            const rec = item as Record<string, unknown>;
-            const label = ensureLocalized(rec.label, "");
-            const value = ensureLocalized(rec.value, "");
-            if (Object.keys(label).length === 0 && Object.keys(value).length === 0) {
-              return null;
-            }
-            return { label, value } satisfies CaseStudySpecI18n;
-          })
-          .filter((spec): spec is CaseStudySpecI18n => Boolean(spec))
-      : undefined,
+    technicalSection: normalizeTechnicalSection(((record as any).technicalSection ?? {}) as Record<string, unknown>),
   } satisfies CaseStudyConfig;
 }
 
@@ -295,9 +375,7 @@ function normalizeCategory(raw: unknown, index: number): CaseCategoryConfig {
 function normalizeConfig(raw: Record<string, unknown>): CasesConfig {
   const heroRaw = (raw.hero ?? {}) as Record<string, unknown>;
   const sectionHeadingRaw = (raw.sectionHeading ?? {}) as Record<string, unknown>;
-  const recommendationsRaw = (raw.recommendations ?? {}) as Record<string, unknown>;
   const consultationRaw = (raw.consultation ?? {}) as Record<string, unknown>;
-  const galleryLightboxRaw = (raw.galleryLightbox ?? {}) as Record<string, unknown>;
   const categoriesRaw = Array.isArray(raw.categories) ? raw.categories : [];
   const breadcrumbRaw = Array.isArray(raw.breadcrumb) ? raw.breadcrumb : [];
 
@@ -343,12 +421,6 @@ function normalizeConfig(raw: Record<string, unknown>): CasesConfig {
       description: toStringValue(sectionHeadingRaw.description),
     },
     categories: mergedCategories,
-    recommendations: {
-      eyebrow: toStringValue(recommendationsRaw.eyebrow),
-      title: toStringValue(recommendationsRaw.title),
-      description: toStringValue(recommendationsRaw.description),
-      linkLabel: toStringValue(recommendationsRaw.linkLabel),
-    },
     consultation: {
       title: ensureLocalized(consultationRaw.title, ""),
       description: ensureLocalized(consultationRaw.description, ""),
@@ -356,13 +428,6 @@ function normalizeConfig(raw: Record<string, unknown>): CasesConfig {
       primaryHref: toStringValue(consultationRaw.primaryHref),
       phoneLabel: ensureLocalized(consultationRaw.phoneLabel, ""),
       phoneNumber: toStringValue(consultationRaw.phoneNumber),
-    },
-    galleryLightbox: {
-      openHint: ensureLocalized(galleryLightboxRaw.openHint, "点击查看大图"),
-      nextLabel: ensureLocalized(galleryLightboxRaw.nextLabel, "下一张"),
-      prevLabel: ensureLocalized(galleryLightboxRaw.prevLabel, "上一张"),
-      closeLabel: ensureLocalized(galleryLightboxRaw.closeLabel, "关闭"),
-      counterPattern: ensureLocalized(galleryLightboxRaw.counterPattern, "图 {{current}} / {{total}}"),
     },
     sidebarTitle: toStringValue(raw.sidebarTitle),
     categoryCaseCountSuffix: toStringValue(raw.categoryCaseCountSuffix),
@@ -383,13 +448,28 @@ function serializeStudy(study: CaseStudyConfig): Record<string, unknown> {
   if (Object.keys(locationClean).length) result.location = locationClean;
   const summaryClean = cleanLocalized(study.summary);
   if (Object.keys(summaryClean).length) result.summary = summaryClean;
-  const backgroundClean = cleanLocalized(study.background);
-  if (Object.keys(backgroundClean).length) result.background = backgroundClean;
+  if (Array.isArray(study.bodyBlocks)) {
+    const bodyBlocks = study.bodyBlocks
+      .map((block) => {
+        const title = cleanLocalized(block.title);
+        const subtitle = cleanLocalized(block.subtitle);
+        const hasTitle = hasLocalizedContent(title);
+        const hasSubtitle = hasLocalizedContent(subtitle);
+        if (!hasTitle && !hasSubtitle) {
+          return null;
+        }
+        const payload: Record<string, LocalizedValue> = {};
+        if (hasTitle) payload.title = title;
+        if (hasSubtitle) payload.subtitle = subtitle;
+        return payload;
+      })
+      .filter((block): block is Record<string, LocalizedValue> => Boolean(block));
+    if (bodyBlocks.length) {
+      result.bodyBlocks = bodyBlocks;
+    }
+  }
 
   if (study.image.trim()) result.image = study.image.trim();
-  if (study.backgroundImage?.trim()) result.backgroundImage = study.backgroundImage.trim();
-  if (study.highlightsImage?.trim()) result.highlightsImage = study.highlightsImage.trim();
-  if (study.deliverablesImage?.trim()) result.deliverablesImage = study.deliverablesImage.trim();
   if (study.gallery.length) result.gallery = study.gallery;
 
   if (Array.isArray(study.highlightsI18n)) {
@@ -397,12 +477,6 @@ function serializeStudy(study: CaseStudyConfig): Record<string, unknown> {
       .map((item) => cleanLocalized(item))
       .filter((v) => Object.keys(v).length > 0);
     if (highlightsI18n.length) result.highlightsI18n = highlightsI18n;
-  }
-  if (Array.isArray(study.deliverablesI18n)) {
-    const deliverablesI18n = study.deliverablesI18n
-      .map((item) => cleanLocalized(item))
-      .filter((v) => Object.keys(v).length > 0);
-    if (deliverablesI18n.length) result.deliverablesI18n = deliverablesI18n;
   }
   if (Array.isArray(study.metricsI18n)) {
     const metricsI18n = study.metricsI18n
@@ -415,20 +489,10 @@ function serializeStudy(study: CaseStudyConfig): Record<string, unknown> {
       .filter((metric): metric is CaseStudyMetricI18n => Boolean(metric));
     if (metricsI18n.length) result.metricsI18n = metricsI18n;
   }
-  const technicalDescription = study.technicalDescription ? cleanLocalized(study.technicalDescription) : undefined;
-  if (technicalDescription && Object.keys(technicalDescription).length) {
-    result.technicalDescription = technicalDescription;
-  }
-  if (Array.isArray(study.technicalSpecs)) {
-    const technicalSpecs = study.technicalSpecs
-      .map((item) => {
-        const label = cleanLocalized(item.label);
-        const value = cleanLocalized(item.value);
-        if (Object.keys(label).length === 0 && Object.keys(value).length === 0) return null;
-        return { label, value } as CaseStudySpecI18n;
-      })
-      .filter((spec): spec is CaseStudySpecI18n => Boolean(spec));
-    if (technicalSpecs.length) result.technicalSpecs = technicalSpecs;
+
+  const technicalSectionClean = serializeTechnicalSection(study.technicalSection);
+  if (technicalSectionClean) {
+    result.technicalSection = technicalSectionClean;
   }
 
   return result;
@@ -459,12 +523,6 @@ function serializeConfig(config: CasesConfig): Record<string, unknown> {
   if (config.sectionHeading.title.trim()) sectionHeading.title = config.sectionHeading.title.trim();
   if (config.sectionHeading.description.trim()) sectionHeading.description = config.sectionHeading.description.trim();
 
-  const recommendations: Record<string, unknown> = {};
-  if (config.recommendations.eyebrow.trim()) recommendations.eyebrow = config.recommendations.eyebrow.trim();
-  if (config.recommendations.title.trim()) recommendations.title = config.recommendations.title.trim();
-  if (config.recommendations.description.trim()) recommendations.description = config.recommendations.description.trim();
-  if (config.recommendations.linkLabel.trim()) recommendations.linkLabel = config.recommendations.linkLabel.trim();
-
   // 新增：序列化咨询 CTA
   const consultation: Record<string, unknown> = {};
   if (config.consultation) {
@@ -481,21 +539,6 @@ function serializeConfig(config: CasesConfig): Record<string, unknown> {
     if (toStringValue(c.phoneNumber).trim()) consultation.phoneNumber = toStringValue(c.phoneNumber).trim();
   }
 
-  const galleryLightbox: Record<string, unknown> = {};
-  if (config.galleryLightbox) {
-    const gl = config.galleryLightbox;
-    const openHint = cleanLocalized(gl.openHint);
-    if (Object.keys(openHint).length) galleryLightbox.openHint = openHint;
-    const nextLabel = cleanLocalized(gl.nextLabel);
-    if (Object.keys(nextLabel).length) galleryLightbox.nextLabel = nextLabel;
-    const prevLabel = cleanLocalized(gl.prevLabel);
-    if (Object.keys(prevLabel).length) galleryLightbox.prevLabel = prevLabel;
-    const closeLabel = cleanLocalized(gl.closeLabel);
-    if (Object.keys(closeLabel).length) galleryLightbox.closeLabel = closeLabel;
-    const counterPattern = cleanLocalized(gl.counterPattern);
-    if (Object.keys(counterPattern).length) galleryLightbox.counterPattern = counterPattern;
-  }
-
   const breadcrumb = config.breadcrumb
     .map((item) => ({ label: item.label.trim(), href: item.href.trim() }))
     .filter((item) => item.label || item.href);
@@ -504,12 +547,13 @@ function serializeConfig(config: CasesConfig): Record<string, unknown> {
     hero,
     sectionHeading,
     categories: config.categories.map(serializeCategory),
-    recommendations,
-    consultation,
-    galleryLightbox,
     sidebarTitle: config.sidebarTitle,
     categoryCaseCountSuffix: config.categoryCaseCountSuffix,
   };
+
+  if (Object.keys(consultation).length) {
+    result.consultation = consultation;
+  }
 
   if (breadcrumb.length) {
     result.breadcrumb = breadcrumb;
@@ -545,22 +589,24 @@ function cloneCategory(category: CaseCategoryConfig): CaseCategoryConfig {
       year: study.year,
       location: ensureLocalizedRecord(study.location) as LocalizedValue,
       summary: ensureLocalizedRecord(study.summary) as LocalizedValue,
-      background: ensureLocalizedRecord(study.background) as LocalizedValue,
-      backgroundImage: study.backgroundImage,
-      deliverables: [...study.deliverables],
+      bodyBlocks: study.bodyBlocks?.length
+        ? study.bodyBlocks.map((block) => ({
+            title: ensureLocalizedRecord(block.title) as LocalizedValue,
+            subtitle: ensureLocalizedRecord(block.subtitle) as LocalizedValue,
+          }))
+        : createDefaultBodyBlocks(),
       metrics: study.metrics.map((metric) => ({ ...metric })),
       image: study.image,
       gallery: [...study.gallery],
-      highlightsImage: study.highlightsImage,
-      deliverablesImage: study.deliverablesImage,
       highlightsI18n: study.highlightsI18n ? [...study.highlightsI18n] : undefined,
-      deliverablesI18n: study.deliverablesI18n ? [...study.deliverablesI18n] : undefined,
       metricsI18n: study.metricsI18n ? study.metricsI18n.map((m) => ({ label: m.label, value: m.value })) : undefined,
-      technicalDescription: study.technicalDescription
-        ? (ensureLocalizedRecord(study.technicalDescription) as LocalizedValue)
-        : undefined,
-      technicalSpecs: study.technicalSpecs
-        ? study.technicalSpecs.map((spec) => ({ label: spec.label, value: spec.value }))
+      technicalSection: study.technicalSection
+        ? {
+            title: study.technicalSection.title,
+            subtitle: study.technicalSection.subtitle,
+            columns: [...(study.technicalSection.columns ?? [])],
+            rows: study.technicalSection.rows ? study.technicalSection.rows.map((row) => [...row]) : [],
+          }
         : undefined,
     })),
   };
@@ -741,9 +787,8 @@ interface PreviewProps {
   onEditHero: () => void;
   onEditSectionHeading: () => void;
   onEditGeneral: () => void;
-  onEditRecommendations: () => void;
   onEditConsultation: () => void;
-  onEditGalleryLightbox: () => void;
+  onEditTechnicalSection: (categoryIndex: number, studyIndex: number) => void;
   onEditCategory: (index: number) => void;
   onEditStudy: (categoryIndex: number, studyIndex: number, scope?: StudyScope) => void;
   onAddCategory: () => void;
@@ -765,9 +810,8 @@ function CasesPreviewSurface({
   onEditHero,
   onEditSectionHeading,
   onEditGeneral,
-  onEditRecommendations,
   onEditConsultation,
-  onEditGalleryLightbox,
+  onEditTechnicalSection,
   onEditCategory,
   onEditStudy,
   onAddCategory,
@@ -783,6 +827,11 @@ function CasesPreviewSurface({
   // 案例级拖拽状态
   const studyDragSourceRef = useRef<number | null>(null);
   const [studyDragTargetIndex, setStudyDragTargetIndex] = useState<number | null>(null);
+  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveSlideIndex(0);
+  }, [previewPage.categoryIndex, previewPage.studyIndex]);
 
   const handleDragStart = (event: DragEvent<HTMLDivElement>, index: number) => {
     dragSourceRef.current = index;
@@ -882,13 +931,6 @@ function CasesPreviewSurface({
             className="rounded-full border border-[var(--color-border)] px-4 py-2 text-xs font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
           >
             通用设置
-          </button>
-          <button
-            type="button"
-            onClick={onEditRecommendations}
-            className="rounded-full border border-[var(--color-border)] px-4 py-2 text-xs font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-          >
-            推荐模块
           </button>
         </div>
       </div>
@@ -997,27 +1039,8 @@ function CasesPreviewSurface({
         ) : null}
       </div>
 
-      <section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-8 text-center">
-        {config.recommendations.eyebrow ? (
-          <span className="inline-flex rounded-full bg-white px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-brand-primary)]">
-            {config.recommendations.eyebrow}
-          </span>
-        ) : null}
-        {config.recommendations.title ? (
-          <h3 className="mt-4 text-2xl font-semibold text-[var(--color-brand-secondary)]">
-            {config.recommendations.title}
-          </h3>
-        ) : null}
-        {config.recommendations.description ? (
-          <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-            {config.recommendations.description}
-          </p>
-        ) : null}
-        {config.recommendations.linkLabel ? (
-          <div className="mt-6 inline-flex items-center rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-sm font-semibold text-white">
-            {config.recommendations.linkLabel}
-          </div>
-        ) : null}
+      <section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-8 text-center text-sm text-[var(--color-text-secondary)]">
+        页面底部 CTA 在下方“咨询 CTA”分区配置。
       </section>
     </div>
   );
@@ -1125,24 +1148,71 @@ function CasesPreviewSurface({
 
     const relatedStudies = category.studies.filter((_, idx) => idx !== previewPage.studyIndex);
     const featuredStudies = relatedStudies.slice(0, 3);
-    const backgroundText = getLocaleText(study.background, undefined, "");
+    const resolveText = (value: unknown) => {
+      if (typeof value === "string") return value;
+      return value ? getLocaleText(value as LocalizedValue, undefined, "") : "";
+    };
+    const bodyBlocks = (Array.isArray(study.bodyBlocks) ? study.bodyBlocks : [])
+      .map((block) => {
+        const title = block?.title ? getLocaleText(block.title, undefined, "") : "";
+        const subtitle = block?.subtitle ? getLocaleText(block.subtitle, undefined, "") : "";
+        const safeTitle = title?.trim() ?? "";
+        const safeSubtitle = subtitle?.trim() ?? "";
+        if (!safeTitle && !safeSubtitle) {
+          return null;
+        }
+        return { title: safeTitle, subtitle: safeSubtitle };
+      })
+      .filter((block): block is { title: string; subtitle: string } => Boolean(block));
     const highlightTexts = (study.highlightsI18n ?? [])
-      .map((item: any) => getLocaleText(item, undefined, ""))
+      .map((item: unknown) => resolveText(item))
       .filter(Boolean);
-    const deliverableTexts = (study.deliverablesI18n ?? [])
-      .map((item: any) => getLocaleText(item, undefined, ""))
-      .filter(Boolean);
-    const technicalDescription = study.technicalDescription ? getLocaleText(study.technicalDescription, undefined, "") : "";
-    const technicalSpecsPreview = (study.technicalSpecs ?? study.metricsI18n ?? [])
-      .map((spec: any) => ({
-        label: typeof spec.label === "string" ? spec.label : getLocaleText(spec.label, undefined, ""),
-        value: typeof spec.value === "string" ? spec.value : getLocaleText(spec.value, undefined, ""),
-      }))
-      .filter((spec) => spec.label || spec.value);
-    const fallbackTechnicalText = technicalDescription || highlightTexts.join(" / ") || deliverableTexts.join(" / ");
-    const showDetailsSection = Boolean(
-      backgroundText || fallbackTechnicalText || technicalSpecsPreview.length || deliverableTexts.length || study.backgroundImage,
+    const metricsDisplay = (study.metricsI18n && study.metricsI18n.length
+      ? study.metricsI18n.map((metric) => ({
+          label: resolveText(metric.label),
+          value: resolveText(metric.value),
+        }))
+      : (study.metrics ?? []).map((metric) => ({
+          label: metric.label ?? "",
+          value: metric.value ?? "",
+        })))
+      .filter((metric) => metric.label || metric.value);
+    const technicalSectionConfig = study.technicalSection ?? normalizeTechnicalSection({});
+    const technicalTitle = technicalSectionConfig.title?.trim() ?? "";
+    const technicalSubtitle = technicalSectionConfig.subtitle?.trim() ?? "";
+    const technicalTitleDisplay = technicalTitle || "技术参数";
+    const technicalSubtitleDisplay = technicalSubtitle || "参数表";
+    const technicalColumns = (technicalSectionConfig.columns ?? []).map((col) => col.trim()).filter(Boolean);
+    const technicalRows = (technicalSectionConfig.rows ?? [])
+      .map((row) => (Array.isArray(row) ? row : []))
+      .map((row) => technicalColumns.map((_, idx) => (row[idx] ?? "").trim()))
+      .filter((row) => row.some((cell) => cell.length));
+    const hasCustomTechnicalTable = technicalColumns.length > 0 && technicalRows.length > 0;
+    const showTechnicalTable = hasCustomTechnicalTable || metricsDisplay.length > 0;
+    const showDetailsSection = Boolean(bodyBlocks.length || showTechnicalTable);
+    const heroSlides = Array.from(
+      new Set(
+        [study.image, ...(study.gallery ?? [])]
+          .map((item) => sanitizeImageSrc(item))
+          .filter((src): src is string => Boolean(src)),
+      ),
     );
+    const safeSlideIndex = heroSlides.length ? Math.min(activeSlideIndex, heroSlides.length - 1) : 0;
+    const activeSlideSrc = heroSlides.length
+      ? heroSlides[safeSlideIndex]
+      : sanitizeImageSrc(study.image) ?? DEFAULT_STUDY_IMAGE;
+    const showOverlay = safeSlideIndex === 0;
+    const resolvedActiveSlide = resolveImageSrc(activeSlideSrc, DEFAULT_STUDY_IMAGE);
+
+    const handlePrevSlide = () => {
+      if (!heroSlides.length) return;
+      setActiveSlideIndex((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+    };
+
+    const handleNextSlide = () => {
+      if (!heroSlides.length) return;
+      setActiveSlideIndex((prev) => (prev + 1) % heroSlides.length);
+    };
 
     return (
       <div className="space-y-8">
@@ -1172,197 +1242,181 @@ function CasesPreviewSurface({
         </div>
 
         <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white">
-          <div className="relative h-[360px] w-full">
-            {(() => {
-              const studyImage = sanitizeImageSrc(study.image);
-              return studyImage ? (
-                <Image
-                  src={studyImage}
-                  alt={getLocaleText(study.title) || ""}
-                  fill
-                  className="object-cover"
-                  sizes="100vw"
-                  priority
-                />
-              ) : null;
-            })()}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            <div className="absolute inset-0 flex flex-col justify-end gap-3 p-8 text-white">
-              <div className="absolute top-4 right-4 flex flex-wrap gap-2">
+          <div className="relative h-[420px] w-full bg-black sm:h-[520px]">
+            {resolvedActiveSlide ? (
+              <Image
+                src={resolvedActiveSlide}
+                alt={getLocaleText(study.title) || "案例主图"}
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-white/70">暂无主图</div>
+            )}
+            {showOverlay ? (
+              <div className="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/35 to-transparent" />
+            ) : null}
+            {showOverlay ? (
+              <div className="absolute inset-0 flex flex-col justify-end gap-4 px-4 py-10 text-white sm:px-6 lg:px-8">
+                <div className="absolute top-4 right-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "basic")}
+                    className="rounded-full border border-white/50 bg-black/20 px-3 py-1 text-[10px] font-semibold text-white transition hover:border-white hover:bg-black/30"
+                  >
+                    编辑基础信息
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "gallery")}
+                    className="rounded-full border border-white/50 bg-black/20 px-3 py-1 text-[10px] font-semibold text-white transition hover:border-white hover:bg-black/30"
+                  >
+                    管理图库
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-white/80">
+                  {study.year ? <span>{study.year}</span> : null}
+                  {study.year && study.location ? <span>{"·"}</span> : null}
+                  {study.location ? <span>{getLocaleText(study.location)}</span> : null}
+                  <span className="rounded-full bg-white/20 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.3em]">
+                    {getLocaleText(category.name)}
+                  </span>
+                </div>
+                {getLocaleText(study.title) ? (
+                  <h1 className="text-3xl font-semibold md:text-4xl">{getLocaleText(study.title)}</h1>
+                ) : null}
+                {study.summary ? (
+                  <p className="max-w-3xl text-sm text-white/85 md:text-base">{getLocaleText(study.summary)}</p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {heroSlides.length > 1 ? (
+              <>
                 <button
                   type="button"
-                  onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "basic")}
-                  className="rounded-full border border-white/50 bg-black/20 px-3 py-1 text-[10px] font-semibold text-white transition hover:border-white hover:bg-black/30"
+                  aria-label="上一张"
+                  onClick={handlePrevSlide}
+                  className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[var(--color-brand-secondary)] shadow-lg transition hover:bg-white"
                 >
-                  编辑基础信息
+                  ‹
                 </button>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-white/80">
-                {study.year ? <span>{study.year}</span> : null}
-                {study.year && study.location ? <span>·</span> : null}
-                {study.location ? <span>{getLocaleText(study.location)}</span> : null}
-                <span className="rounded-full bg-white/20 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.3em]">
-                  {getLocaleText(category.name)}
-                </span>
-              </div>
-              {getLocaleText(study.title) ? (
-                <h1 className="text-3xl font-semibold md:text-4xl">{getLocaleText(study.title)}</h1>
-              ) : null}
-              {study.summary ? (
-                <p className="max-w-3xl text-sm text-white/80">{getLocaleText(study.summary)}</p>
-              ) : null}
-            </div>
+                <button
+                  type="button"
+                  aria-label="下一张"
+                  onClick={handleNextSlide}
+                  className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[var(--color-brand-secondary)] shadow-lg transition hover:bg-white"
+                >
+                  ›
+                </button>
+                <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2">
+                  {heroSlides.map((slide, dotIndex) => (
+                    <button
+                      key={`${slide}-${dotIndex}`}
+                      type="button"
+                      aria-label={`跳转到第 ${dotIndex + 1} 张`}
+                      onClick={() => setActiveSlideIndex(dotIndex)}
+                      className={`h-2.5 w-2.5 rounded-full transition ${
+                        dotIndex === safeSlideIndex
+                          ? "bg-[var(--color-brand-primary)]"
+                          : "bg-white/40 hover:bg-white/70"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            ) : null}
           </div>
         </section>
 
         {showDetailsSection ? (
-          <section className="rounded-2xl border border-[var(--color-border)] bg-white p-8">
+          <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
             <div className="space-y-8">
-              {(backgroundText || (study.metricsI18n?.length ?? 0) > 0 || study.backgroundImage) ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目背景</h2>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "background")}
-                        className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-                      >
-                        编辑项目背景
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "metrics_i18n")}
-                        className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-                      >
-                        指标（多语言）
-                      </button>
-                    </div>
+              {bodyBlocks.length ? (
+                <div className="space-y-2">
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "copy_blocks")}
+                      className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                    >
+                      编辑正文文案
+                    </button>
                   </div>
-                  {backgroundText ? (
-                    <p className="text-sm text-[var(--color-text-secondary)]">{backgroundText}</p>
-                  ) : null}
-                  {(study.metricsI18n?.length ?? 0) > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      {(study.metricsI18n ?? []).map((metric: any) => {
-                        const label = typeof metric.label === "string" ? metric.label : getLocaleText(metric.label, undefined, "");
-                        const value = typeof metric.value === "string" ? metric.value : getLocaleText(metric.value, undefined, "");
-                        return (
-                          <div key={`${label}-${value}`} className="rounded-md border border-[var(--color-border)] bg-white p-4 text-center">
-                            <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{value}</p>
-                            <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                  {study.backgroundImage ? (
-                    <figure className="relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-                      <Image
-                        src={resolveImageSrc(study.backgroundImage, DEFAULT_STUDY_IMAGE)}
-                        alt="项目背景配图"
-                        fill
-                        className="object-cover"
-                        sizes="(min-width: 1024px) 40vw, 100vw"
-                      />
-                    </figure>
-                  ) : null}
+                  {bodyBlocks.map((block, index) => (
+                    <article key={`body-block-preview-${index}`} className="space-y-2 rounded-2xl bg-white/80 p-4 sm:p-5">
+                      {block.title ? (
+                        <p className="text-lg font-semibold text-[var(--color-brand-secondary)]">{block.title}</p>
+                      ) : null}
+                      {block.subtitle ? (
+                        <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] whitespace-pre-line">{block.subtitle}</p>
+                      ) : null}
+                    </article>
+                  ))}
                 </div>
               ) : null}
 
-              {(fallbackTechnicalText || technicalSpecsPreview.length) ? (
-                <div className="space-y-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]/40 p-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-base font-semibold text-[var(--color-brand-secondary)]">技术参数</h2>
+
+
+              {showTechnicalTable ? (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{technicalTitleDisplay}</h2>
                     <button
                       type="button"
-                      onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex)}
+                      onClick={() => onEditTechnicalSection(previewPage.categoryIndex, previewPage.studyIndex)}
                       className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
                     >
-                      编辑参数
+                      编辑技术参数
                     </button>
                   </div>
-                  {fallbackTechnicalText ? (
-                    <p className="text-sm text-[var(--color-text-secondary)]">{fallbackTechnicalText}</p>
+                  {technicalSubtitleDisplay ? (
+                    <p className="text-xs text-[var(--color-text-secondary)]">{technicalSubtitleDisplay}</p>
                   ) : null}
-                  {technicalSpecsPreview.length ? (
-                    <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
-                      <table className="w-full text-sm">
+                  <div className="overflow-hidden rounded-lg border border-[var(--color-border)]">
+                    <table className="w-full text-sm">
+                      {hasCustomTechnicalTable ? (
+                        <>
+                          <thead className="bg-[var(--color-surface-muted)]">
+                            <tr>
+                              {technicalColumns.map((column) => (
+                                <th key={column} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--color-brand-secondary)]">
+                                  {column}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {technicalRows.map((row, rowIdx) => (
+                              <tr key={`tech-row-${rowIdx}`} className="border-b border-[var(--color-border)] last:border-b-0">
+                                {row.map((cell, cellIdx) => (
+                                  <td key={`tech-cell-${rowIdx}-${cellIdx}`} className="px-4 py-3 text-[var(--color-text-secondary)]">
+                                    {cell || "-"}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </>
+                      ) : (
                         <tbody>
-                          {technicalSpecsPreview.map((spec, idx) => (
+                          {metricsDisplay.map((spec, idx) => (
                             <tr key={`${spec.label}-${idx}`} className="border-b border-[var(--color-border)] last:border-b-0">
                               <td className="w-1/3 bg-[var(--color-surface-muted)] px-4 py-3 font-semibold text-[var(--color-brand-secondary)]">
-                                {spec.label}
+                                {spec.label || "-"}
                               </td>
-                              <td className="px-4 py-3 text-[var(--color-text-secondary)]">{spec.value}</td>
+                              <td className="px-4 py-3 text-[var(--color-text-secondary)]">{spec.value || "-"}</td>
                             </tr>
                           ))}
                         </tbody>
-                      </table>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {deliverableTexts.length ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">交付成果</h2>
-                    <button
-                      type="button"
-                      onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "deliverables_i18n")}
-                      className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-                    >
-                      交付（多语言）
-                    </button>
-                  </div>
-                  <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
-                    {deliverableTexts.map((text, idx) => (
-                      <p key={`${text}-${idx}`} className="flex items-start gap-2">
-                        <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
-                        <span>{text}</span>
-                      </p>
-                    ))}
+                      )}
+                    </table>
                   </div>
                 </div>
               ) : null}
-            </div>
-          </section>
-        ) : null}
 
-        {study.gallery?.length ? (
-          <section className="rounded-2xl border border-[var(--color-border)] bg-white p-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目实景图库</h2>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => onEditStudy(previewPage.categoryIndex, previewPage.studyIndex, "gallery")}
-                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-                >
-                  编辑项目图库
-                </button>
-                <button
-                  type="button"
-                  onClick={onEditGalleryLightbox}
-                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-[10px] font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
-                >
-                  图库交互文案
-                </button>
-              </div>
-            </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {study.gallery.map((item, index) => (
-                <figure key={`${item}-${index}`} className="relative aspect-[16/9] overflow-hidden rounded-lg">
-                  <Image
-                    src={resolveImageSrc(item, DEFAULT_STUDY_IMAGE)}
-                    alt={`${getLocaleText(study.title, undefined, study.slug || "案例")} 图集 ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 100vw"
-                  />
-                </figure>
-              ))}
             </div>
           </section>
         ) : null}
@@ -1852,71 +1906,6 @@ function GeneralSettingsDialog({ value, onSave, onCancel }: GeneralDialogProps) 
   );
 }
 
-interface RecommendationsDialogProps {
-  value: RecommendationsConfig;
-  onSave: (next: RecommendationsConfig) => void;
-  onCancel: () => void;
-}
-
-function RecommendationsEditorDialog({ value, onSave, onCancel }: RecommendationsDialogProps) {
-  const [draft, setDraft] = useState<RecommendationsConfig>({ ...value });
-
-  useEffect(() => {
-    setDraft({ ...value });
-  }, [value]);
-
-  return (
-    <EditorDialog
-      title="推荐模块"
-      subtitle="更新页面底部的案例咨询模块"
-      onSave={() => onSave({ ...draft })}
-      onCancel={onCancel}
-    >
-      <div className="space-y-4 text-sm">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <span className="font-medium text-[var(--color-brand-secondary)]">眉头（可选）</span>
-            <input
-              value={draft.eyebrow}
-              onChange={(event) => setDraft((prev) => ({ ...prev, eyebrow: event.target.value }))}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-              placeholder="专业顾问"
-            />
-          </div>
-          <div className="space-y-2">
-            <span className="font-medium text-[var(--color-brand-secondary)]">按钮文案</span>
-            <input
-              value={draft.linkLabel}
-              onChange={(event) => setDraft((prev) => ({ ...prev, linkLabel: event.target.value }))}
-              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-              placeholder="联系顾问"
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <span className="font-medium text-[var(--color-brand-secondary)]">标题</span>
-          <input
-            value={draft.title}
-            onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
-            className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-base font-medium text-[var(--color-brand-secondary)]"
-            placeholder="获取定制化案例报告"
-          />
-        </div>
-        <div className="space-y-2">
-          <span className="font-medium text-[var(--color-brand-secondary)]">描述</span>
-          <textarea
-            value={draft.description}
-            onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))}
-            rows={4}
-            className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm leading-relaxed"
-            placeholder="说明联系我们可以获得哪些支持"
-          />
-        </div>
-      </div>
-    </EditorDialog>
-  );
-}
-
 interface ConsultationDialogProps {
   value: ConsultationConfig;
   onSave: (next: ConsultationConfig) => void;
@@ -1998,59 +1987,224 @@ function ConsultationEditorDialog({ value, onSave, onCancel }: ConsultationDialo
   );
 }
 
-interface GalleryLightboxDialogProps {
-  value: GalleryLightboxConfig;
-  onSave: (next: GalleryLightboxConfig) => void;
+interface TechnicalSectionDialogProps {
+  value: TechnicalSectionConfig;
+  onSave: (next: TechnicalSectionConfig) => void;
   onCancel: () => void;
 }
 
-function GalleryLightboxDialog({ value, onSave, onCancel }: GalleryLightboxDialogProps) {
-  const [draft, setDraft] = useState<GalleryLightboxConfig>({ ...value });
+function TechnicalSectionEditorDialog({ value, onSave, onCancel }: TechnicalSectionDialogProps) {
+  const normalizeDraft = useCallback((input: TechnicalSectionConfig): TechnicalSectionConfig => {
+    const columns = (input.columns ?? []).map((item) => item.trim()).filter((item) => item.length) || ["参数", "数值"];
+    const rows = (input.rows ?? [])
+      .map((row) => (Array.isArray(row) ? row : []))
+      .map((row) => {
+        const next = [...row];
+        while (next.length < columns.length) next.push("");
+        if (next.length > columns.length) next.length = columns.length;
+        return next;
+      });
+    return {
+      title: input.title ?? "技术参数",
+      subtitle: input.subtitle ?? "",
+      columns,
+      rows,
+    };
+  }, []);
+
+  const [draft, setDraft] = useState<TechnicalSectionConfig>(() => normalizeDraft(value));
 
   useEffect(() => {
-    setDraft({ ...value });
-  }, [value]);
+    setDraft(normalizeDraft(value));
+  }, [value, normalizeDraft]);
+
+  const syncRows = (rows: string[][], columnCount: number) =>
+    rows.map((row) => {
+      const next = [...row];
+      while (next.length < columnCount) next.push("");
+      if (next.length > columnCount) next.length = columnCount;
+      return next;
+    });
+
+  const handleColumnChange = (index: number, nextValue: string) => {
+    setDraft((prev) => {
+      const columns = prev.columns.map((col, idx) => (idx === index ? nextValue : col));
+      return { ...prev, columns, rows: syncRows(prev.rows, columns.length) };
+    });
+  };
+
+  const handleAddColumn = () => {
+    setDraft((prev) => {
+      const nextColumns = [...prev.columns, `列 ${prev.columns.length + 1}`];
+      return { ...prev, columns: nextColumns, rows: syncRows(prev.rows, nextColumns.length) };
+    });
+  };
+
+  const handleRemoveColumn = (index: number) => {
+    setDraft((prev) => {
+      if (prev.columns.length <= 1) return prev;
+      const nextColumns = prev.columns.filter((_, idx) => idx !== index);
+      const nextRows = prev.rows.map((row) => row.filter((_, idx) => idx !== index));
+      return { ...prev, columns: nextColumns, rows: syncRows(nextRows, nextColumns.length) };
+    });
+  };
+
+  const handleCellChange = (rowIndex: number, columnIndex: number, value: string) => {
+    setDraft((prev) => {
+      const rows = prev.rows.map((row, idx) => {
+        if (idx !== rowIndex) return row;
+        const nextRow = [...row];
+        nextRow[columnIndex] = value;
+        return nextRow;
+      });
+      return { ...prev, rows };
+    });
+  };
+
+  const handleAddRow = () => {
+    setDraft((prev) => ({
+      ...prev,
+      rows: [...prev.rows, Array(prev.columns.length).fill("")],
+    }));
+  };
+
+  const handleRemoveRow = (index: number) => {
+    setDraft((prev) => ({
+      ...prev,
+      rows: prev.rows.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const handleSave = () => {
+    const title = draft.title?.trim() ?? "";
+    const subtitle = draft.subtitle?.trim() ?? "";
+    const columns = draft.columns.map((col) => col.trim()).filter((col) => col.length) || ["参数", "数值"];
+    const rows = draft.rows
+      .map((row) => columns.map((_, idx) => (row[idx] ?? "").trim()))
+      .filter((row) => row.some((cell) => cell.length));
+    onSave({ title, subtitle, columns, rows });
+  };
 
   return (
     <EditorDialog
-      title="编辑图库交互文案"
-      subtitle="配置点击查看大图提示与弹窗操作按钮文案"
-      onSave={() => onSave({ ...draft })}
+      title="编辑技术参数"
+      subtitle="配置详情页技术参数模块的标题、描述与表格"
+      onSave={handleSave}
       onCancel={onCancel}
     >
       <div className="space-y-4 text-sm">
-        <LocalizedTextField
-          label="卡片悬浮提示"
-          value={draft.openHint}
-          onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, openHint: next }))}
-          placeholder="点击查看大图"
-        />
         <div className="grid gap-4 md:grid-cols-2">
-          <LocalizedTextField
-            label="上一张按钮文案"
-            value={draft.prevLabel}
-            onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, prevLabel: next }))}
-            placeholder="上一张"
-          />
-          <LocalizedTextField
-            label="下一张按钮文案"
-            value={draft.nextLabel}
-            onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, nextLabel: next }))}
-            placeholder="下一张"
-          />
+          <div className="space-y-2">
+            <span className="font-medium text-[var(--color-brand-secondary)]">标题</span>
+            <input
+              value={draft.title}
+              onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))}
+              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2"
+              placeholder="技术参数"
+            />
+          </div>
+          <div className="space-y-2">
+            <span className="font-medium text-[var(--color-brand-secondary)]">副标题（可选）</span>
+            <input
+              value={draft.subtitle}
+              onChange={(event) => setDraft((prev) => ({ ...prev, subtitle: event.target.value }))}
+              className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2"
+              placeholder="参数表"
+            />
+          </div>
         </div>
-        <LocalizedTextField
-          label="关闭按钮文案"
-          value={draft.closeLabel}
-          onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, closeLabel: next }))}
-          placeholder="关闭大图"
-        />
-        <LocalizedTextField
-          label="计数文案（支持 {{current}} / {{total}} 占位符）"
-          value={draft.counterPattern}
-          onChange={(next: LocalizedValue) => setDraft((prev) => ({ ...prev, counterPattern: next }))}
-          placeholder="图 {{current}} / {{total}}"
-        />
+
+        <div className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-white/80 p-4">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-[var(--color-brand-secondary)]">表格列</span>
+            <button
+              type="button"
+              onClick={handleAddColumn}
+              className="rounded-full border border-dashed border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)]/10"
+            >
+              新增列
+            </button>
+          </div>
+          <div className="space-y-2">
+            {draft.columns.map((column, index) => (
+              <div key={`column-${index}`} className="flex items-center gap-3">
+                <input
+                  value={column}
+                  onChange={(event) => handleColumnChange(index, event.target.value)}
+                  className="flex-1 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                  placeholder={`列 ${index + 1}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveColumn(index)}
+                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-tertiary)] transition hover:border-rose-300 hover:text-rose-500"
+                  disabled={draft.columns.length <= 1}
+                >
+                  删除
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-white/80 p-4">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-[var(--color-brand-secondary)]">表格内容</span>
+            <button
+              type="button"
+              onClick={handleAddRow}
+              className="rounded-full border border-dashed border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)]/10"
+            >
+              新增行
+            </button>
+          </div>
+          <div className="overflow-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-[var(--color-surface-muted)]">
+                <tr>
+                  {draft.columns.map((column, index) => (
+                    <th key={`header-${index}`} className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-[var(--color-brand-secondary)]">
+                      {column || `列 ${index + 1}`}
+                    </th>
+                  ))}
+                  {draft.rows.length ? <th className="px-3 py-2 text-xs text-[var(--color-text-tertiary)]">操作</th> : null}
+                </tr>
+              </thead>
+              <tbody>
+                {draft.rows.length ? (
+                  draft.rows.map((row, rowIndex) => (
+                    <tr key={`row-${rowIndex}`} className="border-b border-[var(--color-border)] last:border-b-0">
+                      {row.map((cell, columnIndex) => (
+                        <td key={`cell-${rowIndex}-${columnIndex}`} className="px-3 py-2">
+                          <input
+                            value={cell}
+                            onChange={(event) => handleCellChange(rowIndex, columnIndex, event.target.value)}
+                            className="w-full rounded border border-[var(--color-border)] bg-white px-2 py-1 text-sm"
+                          />
+                        </td>
+                      ))}
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveRow(rowIndex)}
+                          className="rounded-full border border-rose-200 px-2 py-1 text-xs text-rose-500 transition hover:bg-rose-50"
+                        >
+                          删除
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={draft.columns.length} className="px-3 py-4 text-center text-xs text-[var(--color-text-tertiary)]">
+                      暂无数据，请新增行。
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </EditorDialog>
   );
@@ -2088,50 +2242,49 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
     setDraft((prev) => ({ ...prev, metrics: prev.metrics.filter((_, idx) => idx !== index) }));
   };
 
-  const handleArrayChange = (key: "deliverables" | "gallery", index: number, nextValue: string) => {
+  const handleGalleryChange = (index: number, nextValue: string) => {
     setDraft((prev) => {
-      const list = [...(prev[key] as string[])];
+      const list = [...prev.gallery];
       list[index] = nextValue;
-      return { ...prev, [key]: list };
+      return { ...prev, gallery: list };
     });
   };
 
-  const handleArrayAdd = (key: "deliverables" | "gallery") => {
-    setDraft((prev) => ({ ...prev, [key]: [...(prev[key] as string[]), ""] }));
+  const handleGalleryAdd = () => {
+    setDraft((prev) => ({ ...prev, gallery: [...prev.gallery, ""] }));
   };
 
-  const handleArrayRemove = (key: "deliverables" | "gallery", index: number) => {
-    setDraft((prev) => ({ ...prev, [key]: (prev[key] as string[]).filter((_, idx) => idx !== index) }));
+  const handleGalleryRemove = (index: number) => {
+    setDraft((prev) => ({ ...prev, gallery: prev.gallery.filter((_, idx) => idx !== index) }));
   };
 
-  // i18n arrays: highlightsI18n & deliverablesI18n
-  const handleI18nArrayChange = (key: "highlightsI18n" | "deliverablesI18n", index: number, nextValue: LocalizedValue) => {
+  const handleI18nArrayChange = (index: number, nextValue: LocalizedValue) => {
     setDraft((prev) => {
-      const existing: LocalizedValue[] = Array.isArray((prev as any)[key])
-        ? ([...(prev as any)[key]] as LocalizedValue[])
+      const existing: LocalizedValue[] = Array.isArray(prev.highlightsI18n)
+        ? [...prev.highlightsI18n]
         : [];
       existing[index] = nextValue;
-      return { ...prev, [key]: existing } as CaseStudyConfig;
+      return { ...prev, highlightsI18n: existing } as CaseStudyConfig;
     });
   };
 
-  const handleI18nArrayAdd = (key: "highlightsI18n" | "deliverablesI18n") => {
+  const handleI18nArrayAdd = () => {
     setDraft((prev) => {
-      const existing: LocalizedValue[] = Array.isArray((prev as any)[key])
-        ? ([...(prev as any)[key]] as LocalizedValue[])
+      const existing: LocalizedValue[] = Array.isArray(prev.highlightsI18n)
+        ? [...prev.highlightsI18n]
         : [];
       existing.push(ensureLocalized(undefined, ""));
-      return { ...prev, [key]: existing } as CaseStudyConfig;
+      return { ...prev, highlightsI18n: existing } as CaseStudyConfig;
     });
   };
 
-  const handleI18nArrayRemove = (key: "highlightsI18n" | "deliverablesI18n", index: number) => {
+  const handleI18nArrayRemove = (index: number) => {
     setDraft((prev) => {
-      const existing: LocalizedValue[] = Array.isArray((prev as any)[key])
-        ? ([...(prev as any)[key]] as LocalizedValue[])
+      const existing: LocalizedValue[] = Array.isArray(prev.highlightsI18n)
+        ? [...prev.highlightsI18n]
         : [];
       const next = existing.filter((_, idx) => idx !== index);
-      return { ...prev, [key]: next.length ? next : undefined } as CaseStudyConfig;
+      return { ...prev, highlightsI18n: next.length ? next : undefined } as CaseStudyConfig;
     });
   };
 
@@ -2162,29 +2315,35 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
     });
   };
 
-  const handleTechnicalSpecChange = (index: number, field: keyof CaseStudySpecI18n, nextValue: LocalizedValue) => {
+  const handleBodyBlockChange = (index: number, field: "title" | "subtitle", nextValue: LocalizedValue) => {
     setDraft((prev) => {
-      const specs: CaseStudySpecI18n[] = Array.isArray(prev.technicalSpecs)
-        ? prev.technicalSpecs.map((spec) => ({ label: spec.label, value: spec.value }))
-        : [];
-      const current = specs[index] ?? { label: ensureLocalized(undefined, ""), value: ensureLocalized(undefined, "") };
+      const list: CaseBodyBlockConfig[] = Array.isArray(prev.bodyBlocks) && prev.bodyBlocks.length
+        ? prev.bodyBlocks.map((block) => ({ title: block.title, subtitle: block.subtitle }))
+        : [createEmptyBodyBlock()];
+      const current = list[index] ?? {
+        title: ensureLocalized(undefined, ""),
+        subtitle: ensureLocalized(undefined, ""),
+      };
       current[field] = nextValue;
-      specs[index] = current;
-      return { ...prev, technicalSpecs: specs };
+      list[index] = current;
+      return { ...prev, bodyBlocks: list };
     });
   };
 
-  const handleAddTechnicalSpec = () => {
+  const handleAddBodyBlock = () => {
     setDraft((prev) => ({
       ...prev,
-      technicalSpecs: [...(prev.technicalSpecs ?? []), { label: ensureLocalized(undefined, ""), value: ensureLocalized(undefined, "") }],
+      bodyBlocks: [
+        ...(Array.isArray(prev.bodyBlocks) && prev.bodyBlocks.length ? prev.bodyBlocks : []),
+        createEmptyBodyBlock(),
+      ],
     }));
   };
 
-  const handleRemoveTechnicalSpec = (index: number) => {
+  const handleRemoveBodyBlock = (index: number) => {
     setDraft((prev) => {
-      const specs = (prev.technicalSpecs ?? []).filter((_, idx) => idx !== index);
-      return { ...prev, technicalSpecs: specs.length ? specs : undefined };
+      const list = (prev.bodyBlocks ?? []).filter((_, idx) => idx !== index);
+      return { ...prev, bodyBlocks: list.length ? list : [createEmptyBodyBlock()] };
     });
   };
 
@@ -2192,25 +2351,22 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
     <EditorDialog
       title={
         scope === "basic" ? "编辑基础信息" :
-        scope === "background" ? "编辑项目背景" :
+        scope === "copy_blocks" ? "编辑正文文案" :
         scope === "gallery" ? "编辑项目图库" :
         scope === "highlights_i18n" ? "编辑亮点（多语言）" :
-        scope === "deliverables_i18n" ? "编辑交付成果（多语言）" :
         scope === "metrics_i18n" ? "编辑项目指标（多语言）" :
         "编辑案例详情"
       }
       subtitle={
         scope === "basic" ? "维护标题、Slug、年份、地点、摘要与主图" :
-        scope === "background" ? "更新项目背景描述" :
+        scope === "copy_blocks" ? "更新正文文案块，支持主副标题数量自由调整" :
         scope === "gallery" ? "维护案例图库" :
         scope === "highlights_i18n" ? "维护亮点（多语言）" :
-        scope === "deliverables_i18n" ? "维护交付（多语言）" :
         scope === "metrics_i18n" ? "维护指标（多语言）" :
         "维护案例信息、亮点与图库"
       }
       onSave={() => onSave({
         ...draft,
-        deliverables: [],
         gallery: draft.gallery.map((item) => item.trim()).filter((item) => item),
         metrics: [],
       })}
@@ -2264,22 +2420,13 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
             multiline
           />
         )}
-        {(!scope || scope === "background") && (
-          <div className="space-y-4">
-            <LocalizedTextField
-              label="项目背景"
-              value={draft.background}
-              onChange={(next) => setDraft((prev) => ({ ...prev, background: next }))}
-              placeholder="描述项目需求、挑战或整体背景"
-              multiline
-            />
-            <ImageInput
-              label="项目背景配图（可选）"
-              value={draft.backgroundImage ?? ""}
-              onChange={(next) => setDraft((prev) => ({ ...prev, backgroundImage: next }))}
-              helper="最佳尺寸 1200×675（16:9），留空则仅展示文字"
-            />
-          </div>
+        {(!scope || scope === "copy_blocks") && (
+          <BodyBlocksEditor
+            blocks={draft.bodyBlocks}
+            onChange={handleBodyBlockChange}
+            onAdd={handleAddBodyBlock}
+            onRemove={handleRemoveBodyBlock}
+          />
         )}
         {(!scope || scope === "basic") && (
           <ImageInput
@@ -2290,44 +2437,18 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
           />
         )}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {(!scope || scope === "highlights_i18n") && (
-            <div className="space-y-4">
-              <LocalizedArrayEditor
-                title="亮点（多语言）"
-                values={draft.highlightsI18n}
-                placeholder="亮点描述（不同语言）"
-                onChange={(index, next) => handleI18nArrayChange("highlightsI18n", index, next)}
-                onAdd={() => handleI18nArrayAdd("highlightsI18n")}
-                onRemove={(index) => handleI18nArrayRemove("highlightsI18n", index)}
-              />
-              <ImageInput
-                label="亮点配图（可选）"
-                value={draft.highlightsImage ?? ""}
-                onChange={(next) => setDraft((prev) => ({ ...prev, highlightsImage: next }))}
-                helper="最佳尺寸 1200×675（16:9），留空则不展示"
-              />
-            </div>
-          )}
-          {(!scope || scope === "deliverables_i18n") && (
-            <div className="space-y-4">
-              <LocalizedArrayEditor
-                title="交付成果（多语言）"
-                values={draft.deliverablesI18n}
-                placeholder="交付内容（不同语言）"
-                onChange={(index, next) => handleI18nArrayChange("deliverablesI18n", index, next)}
-                onAdd={() => handleI18nArrayAdd("deliverablesI18n")}
-                onRemove={(index) => handleI18nArrayRemove("deliverablesI18n", index)}
-              />
-              <ImageInput
-                label="交付成果配图（可选）"
-                value={draft.deliverablesImage ?? ""}
-                onChange={(next) => setDraft((prev) => ({ ...prev, deliverablesImage: next }))}
-                helper="最佳尺寸 1200×675（16:9），留空则不展示"
-              />
-            </div>
-          )}
-        </div>
+        {(!scope || scope === "highlights_i18n") && (
+          <div className="space-y-4">
+            <LocalizedArrayEditor
+              title="亮点（多语言）"
+              values={draft.highlightsI18n}
+              placeholder="亮点描述（不同语言）"
+              onChange={(index, next) => handleI18nArrayChange(index, next)}
+              onAdd={handleI18nArrayAdd}
+              onRemove={(index) => handleI18nArrayRemove(index)}
+            />
+          </div>
+        )}
 
         {(!scope || scope === "metrics_i18n") && (
           <div className="space-y-3">
@@ -2379,66 +2500,13 @@ function CaseStudyEditorDialog({ value, scope, onSave, onRemove, onCancel, disab
             </div>
           </div>
         )}
-        <div className="space-y-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]/60 p-4">
-          <LocalizedTextField
-            label="技术参数说明"
-            value={draft.technicalDescription ?? ensureLocalized(undefined, "")}
-            onChange={(next) => setDraft((prev) => ({ ...prev, technicalDescription: next }))}
-            multiline
-            placeholder="补充技术要点、系统搭配等说明"
-          />
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-[var(--color-brand-secondary)]">技术参数表</span>
-              <button
-                type="button"
-                onClick={handleAddTechnicalSpec}
-                className="rounded-full border border-dashed border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)]/10"
-              >
-                新增参数
-              </button>
-            </div>
-            <div className="space-y-2">
-              {(draft.technicalSpecs ?? []).map((spec, index) => (
-                <div key={index} className="grid gap-2 rounded-xl border border-[var(--color-border)] bg-white p-3 md:grid-cols-[1fr_auto_1fr] md:items-center">
-                  <LocalizedTextField
-                    label="参数名称"
-                    value={spec.label}
-                    onChange={(next) => handleTechnicalSpecChange(index, "label", next)}
-                    placeholder="如：结构跨度"
-                  />
-                  <div className="flex justify-center py-2 md:py-0">
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTechnicalSpec(index)}
-                      className="rounded-full border border-rose-200 px-3 py-1 text-xs text-rose-500 transition hover:bg-rose-50"
-                    >
-                      删除
-                    </button>
-                  </div>
-                  <LocalizedTextField
-                    label="参数值"
-                    value={spec.value}
-                    onChange={(next) => handleTechnicalSpecChange(index, "value", next)}
-                    placeholder="如：36 米"
-                  />
-                </div>
-              ))}
-              {!((draft.technicalSpecs ?? []).length) ? (
-                <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-white/60 p-4 text-xs text-[var(--color-text-tertiary)]">
-                  暂无技术参数，请新增。
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
         {(!scope || scope === "gallery") && (
           <GalleryEditor
             title="项目图库"
             values={draft.gallery}
-            onChange={(index, value) => handleArrayChange("gallery", index, value)}
-            onAdd={() => handleArrayAdd("gallery")}
-            onRemove={(index) => handleArrayRemove("gallery", index)}
+            onChange={handleGalleryChange}
+            onAdd={handleGalleryAdd}
+            onRemove={handleGalleryRemove}
           />
         )}
         <div className="flex justify-between border-t border-[var(--color-border)] pt-4 text-xs">
@@ -2610,6 +2678,64 @@ function LocalizedArrayEditor({ title, values = [], placeholder, onChange, onAdd
   );
 }
 
+interface BodyBlocksEditorProps {
+  blocks?: CaseBodyBlockConfig[];
+  onChange: (index: number, field: "title" | "subtitle", next: LocalizedValue) => void;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+}
+
+function BodyBlocksEditor({ blocks = [], onChange, onAdd, onRemove }: BodyBlocksEditorProps) {
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="rounded-full border border-dashed border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)]/10"
+        >
+          新增文案块
+        </button>
+      </div>
+      <div className="space-y-2">
+        {blocks.length ? (
+          blocks.map((block, index) => (
+            <article key={index} className="space-y-3 rounded-2xl bg-white/80 p-4 sm:p-5">
+              <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">
+                <span>文案块 {index + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => onRemove(index)}
+                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-rose-500 hover:border-rose-200"
+                >
+                  删除
+                </button>
+              </div>
+              <LocalizedTextField
+                label="主标题"
+                value={block.title ?? ensureLocalized(undefined, "")}
+                onChange={(next) => onChange(index, "title", next)}
+                placeholder="如：赛事交付总览"
+              />
+              <LocalizedTextField
+                label="副标题 / 描述"
+                value={block.subtitle ?? ensureLocalized(undefined, "")}
+                onChange={(next) => onChange(index, "subtitle", next)}
+                placeholder="补充正文段落"
+                multiline
+              />
+            </article>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white/60 p-4 text-xs text-[var(--color-text-secondary)]">
+            暂未添加正文文案块，可用于扩展多段主标题+副标题内容。
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface CaseCategoryDialogProps {
   value: CaseCategoryConfig;
   onSave: (next: CaseCategoryConfig) => void;
@@ -2669,7 +2795,6 @@ function CaseCategoryEditorDialog({ value, onSave, onRemove, onCancel, disableRe
         slug: draft.slug.trim() || `category-${Date.now()}`,
         studies: draft.studies.map((study) => ({
           ...study,
-          deliverables: [],
           gallery: study.gallery.map((item) => item.trim()).filter((item) => item),
           metrics: [],
         })),
@@ -2826,9 +2951,8 @@ type EditingTarget =
   | { type: "hero" }
   | { type: "sectionHeading" }
   | { type: "general" }
-  | { type: "recommendations" }
   | { type: "consultation" }
-  | { type: "galleryLightbox" }
+  | { type: "technicalSection"; categoryIndex: number; studyIndex: number }
   | { type: "category"; index: number }
   | { type: "study"; categoryIndex: number; studyIndex: number; scope?: StudyScope };
 
@@ -3045,23 +3169,23 @@ export function CasesConfigEditor({ configKey, initialConfig }: CasesConfigEdito
   };
 
   // 目录内案例增删与排序处理
-const handleAddStudyConfig = (categoryIndex: number) => {
-  const next = cloneConfig(config);
-  const cat = next.categories[categoryIndex];
-  if (!cat) return;
-  const newStudyIndex = (cat.studies?.length ?? 0);
-  const newStudy = normalizeStudy(undefined, newStudyIndex);
-  cat.studies = [...(cat.studies ?? []), newStudy];
+  const handleAddStudyConfig = (categoryIndex: number) => {
+    const next = cloneConfig(config);
+    const cat = next.categories[categoryIndex];
+    if (!cat) return;
+    const newStudyIndex = cat.studies?.length ?? 0;
+    const newStudy = normalizeStudy(undefined, newStudyIndex);
+    cat.studies = [...(cat.studies ?? []), newStudy];
 
-  setConfig(next);
-  setSelectedCategoryIndex(categoryIndex);
-  setPreviewPage({ view: "study", categoryIndex, studyIndex: newStudyIndex });
+    setConfig(next);
+    setSelectedCategoryIndex(categoryIndex);
+    setPreviewPage({ view: "study", categoryIndex, studyIndex: newStudyIndex });
 
-  const fd = new FormData();
-  fd.append("key", configKey);
-  fd.append("payload", JSON.stringify(serializeConfig(next)));
-  dispatch(fd);
-};
+    const fd = new FormData();
+    fd.append("key", configKey);
+    fd.append("payload", JSON.stringify(serializeConfig(next)));
+    dispatch(fd);
+  };
 
   const handleRemoveStudyConfig = (categoryIndex: number, studyIndex: number) => {
     const cat = config.categories[categoryIndex];
@@ -3186,22 +3310,6 @@ const handleAddStudyConfig = (categoryIndex: number) => {
         onCancel={() => setEditing(null)}
       />
     );
-  } else if (editing?.type === "recommendations") {
-    dialog = (
-      <RecommendationsEditorDialog
-        value={config.recommendations}
-        onSave={(next) => {
-          const nextConfig = { ...config, recommendations: next };
-          setConfig(nextConfig);
-          const fd = new FormData();
-          fd.append("key", configKey);
-          fd.append("payload", JSON.stringify(serializeConfig(nextConfig)));
-          dispatch(fd);
-          setEditing(null);
-        }}
-        onCancel={() => setEditing(null)}
-      />
-    );
   } else if (editing?.type === "consultation") {
     dialog = (
       <ConsultationEditorDialog
@@ -3225,30 +3333,30 @@ const handleAddStudyConfig = (categoryIndex: number) => {
         onCancel={() => setEditing(null)}
       />
     );
-  } else if (editing?.type === "galleryLightbox") {
-    dialog = (
-      <GalleryLightboxDialog
-        value={
-          config.galleryLightbox ?? {
-            openHint: ensureLocalized(undefined, "点击查看大图"),
-            nextLabel: ensureLocalized(undefined, "下一张"),
-            prevLabel: ensureLocalized(undefined, "上一张"),
-            closeLabel: ensureLocalized(undefined, "关闭"),
-            counterPattern: ensureLocalized(undefined, "图 {{current}} / {{total}}"),
-          }
-        }
-        onSave={(next) => {
-          const nextConfig = { ...config, galleryLightbox: { ...next } };
-          setConfig(nextConfig);
-          setEditing(null);
-          const fd = new FormData();
-          fd.append("key", configKey);
-          fd.append("payload", JSON.stringify(serializeConfig(nextConfig)));
-          dispatch(fd);
-        }}
-        onCancel={() => setEditing(null)}
-      />
-    );
+  } else if (editing?.type === "technicalSection") {
+    const category = config.categories[editing.categoryIndex];
+    const study = category?.studies?.[editing.studyIndex];
+    if (category && study) {
+      dialog = (
+        <TechnicalSectionEditorDialog
+          value={study.technicalSection ?? normalizeTechnicalSection({})}
+          onSave={(next) => {
+            const nextConfig = cloneConfig(config);
+            const targetCategory = nextConfig.categories[editing.categoryIndex];
+            if (targetCategory) {
+              targetCategory.studies[editing.studyIndex].technicalSection = next;
+            }
+            setConfig(nextConfig);
+            const fd = new FormData();
+            fd.append("key", configKey);
+            fd.append("payload", JSON.stringify(serializeConfig(nextConfig)));
+            dispatch(fd);
+            setEditing(null);
+          }}
+          onCancel={() => setEditing(null)}
+        />
+      );
+    }
   } else if (editing?.type === "category") {
     const category = config.categories[editing.index];
     if (category) {
@@ -3359,9 +3467,10 @@ const handleAddStudyConfig = (categoryIndex: number) => {
         onEditHero={() => setEditing({ type: "hero" })}
         onEditSectionHeading={() => setEditing({ type: "sectionHeading" })}
         onEditGeneral={() => setEditing({ type: "general" })}
-        onEditRecommendations={() => setEditing({ type: "recommendations" })}
         onEditConsultation={() => setEditing({ type: "consultation" })}
-        onEditGalleryLightbox={() => setEditing({ type: "galleryLightbox" })}
+        onEditTechnicalSection={(categoryIndex, studyIndex) =>
+          setEditing({ type: "technicalSection", categoryIndex, studyIndex })
+        }
         onEditCategory={(index) => setEditing({ type: "category", index })}
         onEditStudy={(categoryIndex, studyIndex, scope) =>
           setEditing({ type: "study", categoryIndex, studyIndex, scope })

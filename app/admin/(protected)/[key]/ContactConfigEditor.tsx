@@ -87,6 +87,7 @@ interface HeroState {
   title: LocalizedValue;
   description: LocalizedValue;
   metrics: MetricState[];
+  overlayEnabled: boolean;
 }
 
 interface ContactSectionState {
@@ -160,6 +161,7 @@ function normalizeHero(raw: unknown): HeroState {
     title: ensureLocalized(hero.title, "与模块化团队直接沟通"),
     description: ensureLocalized(hero.description, "留下项目要素，我们将在 24 小时内响应。"),
     metrics,
+    overlayEnabled: hero.overlayEnabled !== false,
   } satisfies HeroState;
 }
 
@@ -328,6 +330,7 @@ function serializeConfig(config: ContactConfigState): ContactConfig {
         eyebrow: cleanLocalized(config.hero.eyebrow),
         title: cleanLocalized(config.hero.title),
         description: cleanLocalized(config.hero.description),
+        overlayEnabled: config.hero.overlayEnabled !== false,
         metrics: heroMetrics,
       },
       contactSection: {
@@ -586,12 +589,28 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
         ) : null}
 
         {showVisual ? (
-          <ImageUploadField
-            label="背景图片"
-            value={draft.backgroundImage}
-            onChange={(next) => setDraft((prev) => ({ ...prev, backgroundImage: next }))}
-            helper="最佳尺寸 1200×420"
-          />
+          <div className="space-y-4">
+            <ImageUploadField
+              label="背景图片"
+              value={draft.backgroundImage}
+              onChange={(next) => setDraft((prev) => ({ ...prev, backgroundImage: next }))}
+              helper="最佳尺寸 1200×420"
+            />
+            <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand-secondary)]">
+              <input
+                type="checkbox"
+                checked={draft.overlayEnabled !== false}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    overlayEnabled: event.target.checked,
+                  }))
+                }
+                className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+              />
+              启用背景蒙版
+            </label>
+          </div>
         ) : null}
 
         {showMetrics ? (

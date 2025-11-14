@@ -43,6 +43,7 @@ interface AboutHeroState {
   eyebrow: Record<string, string>;
   title: Record<string, string>;
   description: Record<string, string>;
+  overlayEnabled: boolean;
 }
 
 interface IntroStatState {
@@ -190,6 +191,7 @@ function normalizeAboutConfig(raw: Record<string, unknown>): AboutConfigState {
     eyebrow: ensureLocalized(heroRaw.eyebrow, "关于时代"),
     title: ensureLocalized(heroRaw.title, "设计制造一体化"),
     description: ensureLocalized(heroRaw.description, "时代篷房提供从方案到交付的全流程服务"),
+    overlayEnabled: heroRaw.overlayEnabled !== false,
   };
 
   const intro: AboutIntroState = {
@@ -291,6 +293,7 @@ function serializeAboutConfig(config: AboutConfigState): AboutConfig {
       eyebrow: serializeLocalized(config.hero.eyebrow),
       title: serializeLocalized(config.hero.title),
       description: serializeLocalized(config.hero.description),
+      overlayEnabled: config.hero.overlayEnabled !== false,
     },
     introSection: {
       eyebrow: serializeLocalized(config.intro.eyebrow),
@@ -616,6 +619,20 @@ function HeroDialog({ value, onSave, onCancel }: { value: AboutHeroState; onSave
           multiline
           rows={4}
         />
+        <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand-secondary)]">
+          <input
+            type="checkbox"
+            checked={draft.overlayEnabled !== false}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                overlayEnabled: event.target.checked,
+              }))
+            }
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+          />
+          启用背景蒙版
+        </label>
       </div>
     </EditorDialog>
   );

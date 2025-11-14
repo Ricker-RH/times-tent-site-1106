@@ -46,6 +46,7 @@ interface HeroConfig {
   title: LocalizedValue;
   description: LocalizedValue;
   image: string;
+  overlayEnabled: boolean;
 }
 
 
@@ -170,6 +171,7 @@ function normalizeConfig(raw: Record<string, unknown>): ProductCenterConfig {
       title: cleanLocalized(heroRaw.title, "模块化产品矩阵"),
       description: cleanLocalized(heroRaw.description, ""),
       image: resolveImageSrc(toStringValue(heroRaw.image), DEFAULT_PRODUCT_IMAGE),
+      overlayEnabled: heroRaw.overlayEnabled !== false,
     },
     products: productsRaw.map((product, index) => normalizeProduct(product, index)),
     sidebarTitle: cleanLocalized(raw.sidebarTitle, "产品"),
@@ -221,6 +223,7 @@ function serializeConfig(config: ProductCenterConfig): Record<string, unknown> {
   if (hasAny(heroEyebrow)) hero.eyebrow = heroEyebrow;
   if (hasAny(heroTitle)) hero.title = heroTitle;
   if (hasAny(heroDescription)) hero.description = heroDescription;
+  hero.overlayEnabled = config.hero.overlayEnabled !== false;
 
 
 
@@ -411,6 +414,7 @@ function ProductPreviewSurface({
   onReorderProduct,
 }: PreviewProps) {
   const products = config.products ?? [];
+  const heroOverlayEnabled = config.hero.overlayEnabled !== false;
   const dragSourceRef = useRef<number | null>(null);
   const [dragTargetIndex, setDragTargetIndex] = useState<number | null>(null);
 
@@ -546,17 +550,35 @@ function ProductPreviewSurface({
                   className="object-cover"
                   priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/55 to-black/30" />
+                {heroOverlayEnabled ? (
+                  <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/55 to-black/30" />
+                ) : null}
                 <div className="absolute inset-0 flex flex-col justify-end gap-5 p-10">
                   {config.hero.eyebrow ? (
-                    <span className="inline-flex w-fit items-center rounded-full bg-white/15 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
+                    <span
+                      className={`inline-flex w-fit items-center rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] ${
+                        heroOverlayEnabled ? "bg-white/15" : "bg-black/45 backdrop-blur"
+                      }`}
+                    >
                       {getLocaleText(config.hero.eyebrow)}
-                </span>
-              ) : null}
-              <h1 className="text-3xl font-semibold md:text-4xl">{getLocaleText(config.hero.title, undefined, "模块化产品矩阵")}</h1>
-              {getLocaleText(config.hero.description) ? (
-                <p className="max-w-2xl text-sm text-white/80 md:text-base">{getLocaleText(config.hero.description)}</p>
-              ) : null}
+                    </span>
+                  ) : null}
+                  <h1
+                    className={`text-3xl font-semibold md:text-4xl ${
+                      heroOverlayEnabled ? "" : "drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
+                    }`}
+                  >
+                    {getLocaleText(config.hero.title, undefined, "模块化产品矩阵")}
+                  </h1>
+                  {getLocaleText(config.hero.description) ? (
+                    <p
+                      className={`max-w-2xl text-sm md:text-base ${
+                        heroOverlayEnabled ? "text-white/80" : "text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.65)]"
+                      }`}
+                    >
+                      {getLocaleText(config.hero.description)}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </section>
@@ -710,6 +732,20 @@ function HeroEditorDialog({ value, onSave, onCancel }: HeroEditorProps) {
           placeholder="支持粘贴外链或上传"
           helper="最佳尺寸 908×360"
         />
+        <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand-secondary)]">
+          <input
+            type="checkbox"
+            checked={draft.overlayEnabled !== false}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                overlayEnabled: event.target.checked,
+              }))
+            }
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+          />
+          启用背景蒙版
+        </label>
       </div>
     </EditorDialog>
   );

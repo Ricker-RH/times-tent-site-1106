@@ -48,6 +48,7 @@ export interface HomeApplicationSection {
   heading?: LocalizedOrString;
   description?: LocalizedOrString;
   actionLabel?: LocalizedOrString;
+  overlayEnabled?: boolean;
 }
 
 export interface HomeHeroData {
@@ -56,6 +57,7 @@ export interface HomeHeroData {
   description?: LocalizedOrString;
   highlights?: string[];
   slides: HomeHeroSlide[];
+  overlayEnabled?: boolean;
   primaryCta?: { label?: LocalizedOrString; href: string };
   secondaryCta?: { label?: LocalizedOrString; href: string };
 }
@@ -175,11 +177,13 @@ export default function HomeClient({
   const activeHero = slides[normalizedHeroIndex] ?? slides[0];
 
   const isPrimarySlide = normalizedHeroIndex === 0;
+  const heroOverlayEnabled = hero.overlayEnabled !== false;
 
   const applicationTab = applicationTabs[tabIndex] ?? applicationTabs[0] ?? null;
   const applicationHeading = resolveText(applicationSection?.heading, "五大核心应用场景");
   const applicationDescription = resolveText(applicationSection?.description);
   const applicationActionLabel = resolveText(applicationSection?.actionLabel, "查看详情");
+  const applicationOverlayEnabled = applicationSection?.overlayEnabled !== false;
 
   const primaryCta = hero.primaryCta
     ? {
@@ -231,7 +235,7 @@ export default function HomeClient({
                     className="object-cover"
                     priority={slidesCount > 1 ? idx === 1 : idx === 0}
                   />
-                  {isPrimaryImage ? (
+                  {isPrimaryImage && heroOverlayEnabled ? (
                     <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/5" />
                   ) : null}
                 </Link>
@@ -372,6 +376,9 @@ export default function HomeClient({
                     fill
                     className="object-cover"
                   />
+                  {applicationOverlayEnabled ? (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/35 to-black/10" aria-hidden />
+                  ) : null}
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center text-white md:px-12">
                     {resolveText(applicationTab.highlight) ? (
                       <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">{resolveText(applicationTab.highlight)}</span>

@@ -10,8 +10,8 @@ function toStringValue(value: unknown, fallback = ""): string {
 }
 
 function readLocalized(value: unknown, fallback = ""): string {
-  if (!value) return fallback;
   if (typeof value === "string") return value;
+  if (!value) return fallback;
   if (typeof value === "number") return String(value);
   if (typeof value !== "object" || Array.isArray(value)) return fallback;
   const record = value as Record<string, unknown>;
@@ -85,10 +85,12 @@ function asPairMatrix(value: unknown, fallback: DetailMetricGroup[] = []): Detai
 }
 
 export interface DetailHeroConfig {
+  heading?: string;
   badge?: string;
   description?: string;
   scenarios?: string;
   image?: string;
+  overlayEnabled?: boolean;
 }
 
 export interface DetailMetricItem {
@@ -110,6 +112,43 @@ export interface DetailGalleryItem {
   alt: string;
 }
 
+export type ProductDetailTabTarget = "intro" | "specs" | "accessories";
+
+export interface ProductDetailTabConfig {
+  id: string;
+  label: string;
+  target: ProductDetailTabTarget;
+  visible: boolean;
+}
+
+export interface ProductIntroBlock {
+  id: string;
+  title: string;
+  subtitle: string;
+  image?: string;
+}
+
+export interface ProductIntroConfig {
+  blocks: ProductIntroBlock[];
+}
+
+export interface ProductSpecsConfig {
+  columns: string[];
+  rows: string[][];
+  caption?: string;
+}
+
+export interface ProductAccessoryItem {
+  id: string;
+  title: string;
+  description: string;
+  image?: string;
+}
+
+export interface ProductAccessoriesConfig {
+  items: ProductAccessoryItem[];
+}
+
 export interface DetailCtaConfig {
   title: string;
   description?: string;
@@ -126,6 +165,10 @@ export interface ProductDetailConfig {
   breadcrumb: string[];
   sections: DetailSectionConfig[];
   gallery: DetailGalleryItem[];
+  tabs: ProductDetailTabConfig[];
+  intro: ProductIntroConfig;
+  specs: ProductSpecsConfig;
+  accessories: ProductAccessoriesConfig;
   cta?: DetailCtaConfig;
 }
 
@@ -150,8 +193,233 @@ function cloneDetail(detail: ProductDetailConfig): ProductDetailConfig {
       pairs: section.pairs.map((group) => group.map((item) => ({ ...item }))),
     })),
     gallery: detail.gallery.map((item) => ({ ...item })),
+    tabs: detail.tabs.map((tab) => ({ ...tab })),
+    intro: {
+      blocks: detail.intro.blocks.map((block) => ({ ...block })),
+    },
+    specs: {
+      columns: [...detail.specs.columns],
+      rows: detail.specs.rows.map((row) => [...row]),
+      caption: detail.specs.caption,
+    },
+    accessories: {
+      items: detail.accessories.items.map((item) => ({ ...item })),
+    },
     cta: detail.cta ? { ...detail.cta } : undefined,
   };
+}
+
+const TAB_TARGETS: ProductDetailTabTarget[] = ["intro", "specs", "accessories"];
+const DEFAULT_TAB_DEFINITIONS: ReadonlyArray<ProductDetailTabConfig> = [
+  { id: "tab-intro", label: "产品介绍", target: "intro", visible: true },
+  { id: "tab-specs", label: "产品参数", target: "specs", visible: true },
+  { id: "tab-accessories", label: "可选配件", target: "accessories", visible: true },
+];
+const DEFAULT_SPEC_COLUMNS = ["参数项", "内容"];
+
+function cloneTabsConfig(tabs: ProductDetailTabConfig[]): ProductDetailTabConfig[] {
+  return tabs.map((tab, index) => ({
+    id: tab.id && tab.id.trim() ? tab.id : `${tab.target}-${index + 1}`,
+    label: tab.label ?? DEFAULT_TAB_DEFINITIONS[index]?.label ?? tab.target,
+    target: tab.target,
+    visible: tab.visible !== false,
+  }));
+}
+
+function cloneIntroConfig(intro: ProductIntroConfig): ProductIntroConfig {
+  return {
+    blocks: intro.blocks.map((block, index) => ({
+      id: block.id && block.id.trim() ? block.id : `intro-${index + 1}`,
+      title: block.title ?? "",
+      subtitle: block.subtitle ?? "",
+      image: block.image,
+    })),
+  };
+}
+
+function cloneSpecsConfig(specs: ProductSpecsConfig): ProductSpecsConfig {
+  return {
+    columns: specs.columns.length ? [...specs.columns] : [...DEFAULT_SPEC_COLUMNS],
+    rows: specs.rows.map((row) => [...row]),
+    caption: specs.caption,
+  };
+}
+
+function cloneAccessoriesConfig(accessories: ProductAccessoriesConfig): ProductAccessoriesConfig {
+  return {
+    items: accessories.items.map((item, index) => ({
+      id: item.id && item.id.trim() ? item.id : `accessory-${index + 1}`,
+      title: item.title ?? "",
+      description: item.description ?? "",
+      image: item.image,
+    })),
+  };
+}
+
+function normalizeTabsConfig(raw: unknown, fallback: ProductDetailTabConfig[]): ProductDetailTabConfig[] {
+  if (!Array.isArray(raw)) {
+    return cloneTabsConfig(fallback);
+  }
+  const seen = new Set<string>();
+  const normalized: ProductDetailTabConfig[] = [];
+  raw.forEach((item, index) => {
+    if (!isRecord(item)) return;
+    const targetRaw = typeof item.target === "string" ? item.target.trim().toLowerCase() : "";
+    if (!TAB_TARGETS.includes(targetRaw as ProductDetailTabTarget)) {
+      return;
+    }
+    const target = targetRaw as ProductDetailTabTarget;
+    const fallbackLabel = fallback[index]?.label ?? DEFAULT_TAB_DEFINITIONS.find((tab) => tab.target === target)?.label ?? target;
+    const label = readLocalized(item.label, fallbackLabel).trim() || fallbackLabel;
+    const idRaw = toStringValue(item.id ?? (item as Record<string, unknown>)._id, "").trim();
+    const id = idRaw || `${target}-${index + 1}`;
+    if (seen.has(id)) {
+      return;
+    }
+    seen.add(id);
+    const visible = item.visible === false || item.hidden === true ? false : true;
+    normalized.push({ id, label, target, visible });
+  });
+  if (!normalized.length) {
+    return cloneTabsConfig(fallback);
+  }
+  return normalized;
+}
+
+function normalizeIntroConfig(raw: unknown, fallback: ProductIntroConfig): ProductIntroConfig {
+  if (!isRecord(raw)) {
+    return cloneIntroConfig(fallback);
+  }
+  const blocksRaw = Array.isArray((raw as Record<string, unknown>).blocks) ? ((raw as Record<string, unknown>).blocks as unknown[]) : [];
+  if (!blocksRaw.length) {
+    return cloneIntroConfig(fallback);
+  }
+  const blocks: ProductIntroBlock[] = [];
+  blocksRaw.forEach((entry, index) => {
+    if (!isRecord(entry)) return;
+    const fallbackBlock = fallback.blocks[index];
+    const id = toStringValue(entry.id, `intro-${index + 1}`).trim() || `intro-${index + 1}`;
+    const title = readLocalized(entry.title, fallbackBlock?.title ?? "");
+    const subtitle = readLocalized(entry.subtitle, fallbackBlock?.subtitle ?? "");
+    const image = resolveImageSrc(toStringValue(entry.image, ""), "") || undefined;
+    blocks.push({ id, title: title.trim(), subtitle: subtitle.trim(), image });
+  });
+  return blocks.length ? { blocks } : cloneIntroConfig(fallback);
+}
+
+function normalizeSpecsConfig(raw: unknown, fallback: ProductSpecsConfig): ProductSpecsConfig {
+  if (!isRecord(raw)) {
+    return cloneSpecsConfig(fallback);
+  }
+  const columnsRaw = Array.isArray((raw as Record<string, unknown>).columns)
+    ? ((raw as Record<string, unknown>).columns as unknown[])
+    : [];
+  const rowsRaw = Array.isArray((raw as Record<string, unknown>).rows)
+    ? ((raw as Record<string, unknown>).rows as unknown[])
+    : [];
+  const columns = columnsRaw.length
+    ? columnsRaw.map((item, index) => readLocalized(item, fallback.columns[index] ?? DEFAULT_SPEC_COLUMNS[index] ?? `列${index + 1}`).trim())
+    : [...fallback.columns];
+  const rows = rowsRaw.length
+    ? rowsRaw
+        .map((row) => (Array.isArray(row) ? row : []))
+        .map((row, rowIndex) =>
+          row.map((cell, cellIndex) => toStringValue(cell, fallback.rows[rowIndex]?.[cellIndex] ?? "").trim()),
+        )
+    : fallback.rows.map((row) => [...row]);
+  const captionRaw = (raw as Record<string, unknown>).caption;
+  const caption = captionRaw !== undefined ? readLocalized(captionRaw, "").trim() : fallback.caption;
+  return {
+    columns: columns.length ? columns : [...fallback.columns],
+    rows,
+    caption,
+  };
+}
+
+function normalizeAccessoriesConfig(raw: unknown, fallback: ProductAccessoriesConfig): ProductAccessoriesConfig {
+  if (!isRecord(raw)) {
+    return cloneAccessoriesConfig(fallback);
+  }
+  const itemsRaw = Array.isArray((raw as Record<string, unknown>).items)
+    ? ((raw as Record<string, unknown>).items as unknown[])
+    : [];
+  if (!itemsRaw.length) {
+    return cloneAccessoriesConfig(fallback);
+  }
+  const items: ProductAccessoryItem[] = [];
+  itemsRaw.forEach((entry, index) => {
+    if (!isRecord(entry)) return;
+    const fallbackItem = fallback.items[index];
+    const id = toStringValue(entry.id, `accessory-${index + 1}`).trim() || `accessory-${index + 1}`;
+    const title = readLocalized(entry.title, fallbackItem?.title ?? "");
+    const description = readLocalized(entry.description, fallbackItem?.description ?? "");
+    const image = resolveImageSrc(toStringValue(entry.image, ""), "") || undefined;
+    items.push({ id, title: title.trim(), description: description.trim(), image });
+  });
+  return items.length ? { items } : cloneAccessoriesConfig(fallback);
+}
+
+function createFallbackTabs(): ProductDetailTabConfig[] {
+  return cloneTabsConfig(DEFAULT_TAB_DEFINITIONS as ProductDetailTabConfig[]);
+}
+
+function createFallbackIntro(
+  sections: DetailSectionConfig[],
+  mediaHero: string,
+  seed?: ProductDetailSeed,
+  slug?: string,
+): ProductIntroConfig {
+  if (!sections.length) {
+    return {
+      blocks: [
+        {
+          id: "intro-1",
+          title: seed?.title ?? slug ?? "产品介绍",
+          subtitle: seed?.summary ?? "请在此补充产品概览，说明结构特点与交付能力。",
+          image: mediaHero,
+        },
+      ],
+    };
+  }
+  const blocks = sections.slice(0, 4).map((section, index) => ({
+    id: `intro-${index + 1}`,
+    title: section.heading,
+    subtitle: section.paragraphs[0] ?? "",
+    image: undefined,
+  }));
+  return { blocks };
+}
+
+function createFallbackSpecs(sections: DetailSectionConfig[]): ProductSpecsConfig {
+  const rows: string[][] = [];
+  sections.forEach((section) => {
+    section.pairs.forEach((group) => {
+      group.forEach((item) => {
+        if (item.label || item.value) {
+          rows.push([item.label, item.value]);
+        }
+      });
+    });
+  });
+  if (!rows.length) {
+    rows.push(["参数", "请在后台添加自定义参数表。"]);
+  }
+  return {
+    columns: [...DEFAULT_SPEC_COLUMNS],
+    rows,
+    caption: undefined,
+  };
+}
+
+function createFallbackAccessories(gallery: DetailGalleryItem[], hero: string): ProductAccessoriesConfig {
+  const source = gallery.length ? gallery : [{ src: hero, alt: "产品配图" }];
+  const items = source.slice(0, 6).map((item, index) => ({
+    id: `accessory-${index + 1}`,
+    title: item.alt || `配件 ${index + 1}`,
+    description: "",
+    image: item.src,
+  }));
+  return { items };
 }
 
 function buildDefaultSections(seed?: ProductDetailSeed): DetailSectionConfig[] {
@@ -185,17 +453,29 @@ function buildFallbackDetail(slug: string, seed?: ProductDetailSeed): ProductDet
   const media = PRODUCT_MEDIA[slug] ?? DEFAULT_MEDIA;
   if (!fallbackRaw || !isRecord(fallbackRaw)) {
     const derivedTitle = seed?.title ?? slug;
+    const sections = buildDefaultSections(seed);
+    const gallery = media.gallery.map((item) => ({ ...item }));
+    const tabs = createFallbackTabs();
+    const intro = createFallbackIntro(sections, media.hero, seed, slug);
+    const specs = createFallbackSpecs(sections);
+    const accessories = createFallbackAccessories(gallery, media.hero);
     return {
       title: derivedTitle,
       hero: {
+        heading: derivedTitle,
         image: media.hero,
         description: seed?.summary ?? "请在此补充该产品的简介与价值主张。",
         scenarios: seed?.tagline ?? "",
         badge: "PRODUCT",
+        overlayEnabled: true,
       },
       breadcrumb: ["首页", "产品", derivedTitle],
-      sections: buildDefaultSections(seed),
-      gallery: media.gallery.map((item) => ({ ...item })),
+      sections,
+      gallery,
+      tabs,
+      intro,
+      specs,
+      accessories,
       cta: {
         title: "需要定制方案？",
         description:
@@ -210,24 +490,39 @@ function buildFallbackDetail(slug: string, seed?: ProductDetailSeed): ProductDet
 
   const heroRaw = asRecord(fallbackRaw.hero);
   const sectionsRaw = Array.isArray(fallbackRaw.sections) ? [...fallbackRaw.sections] : [];
+  const baseSections = sectionsRaw.length
+    ? sectionsRaw.map((section, index) => normalizeDetailSection(section, index))
+    : buildDefaultSections(seed);
+  const gallery = media.gallery.map((item) => ({ ...item }));
+  const tabsFallback = createFallbackTabs();
+  const introFallback = createFallbackIntro(baseSections, media.hero, seed, slug);
+  const specsFallback = createFallbackSpecs(baseSections);
+  const accessoriesFallback = createFallbackAccessories(gallery, media.hero);
+  const tabs = normalizeTabsConfig((fallbackRaw as Record<string, unknown>).tabs, tabsFallback);
+  const intro = normalizeIntroConfig((fallbackRaw as Record<string, unknown>).intro, introFallback);
+  const specs = normalizeSpecsConfig((fallbackRaw as Record<string, unknown>).specs, specsFallback);
+  const accessories = normalizeAccessoriesConfig((fallbackRaw as Record<string, unknown>).accessories, accessoriesFallback);
 
   return {
     title: readLocalized(fallbackRaw.title, slug),
     hero: {
+      heading: readLocalized(heroRaw.heading, seed?.title ?? readLocalized(fallbackRaw.title, slug)),
       badge: toStringValue(heroRaw.badge),
       description: toStringValue(heroRaw.description),
       scenarios: toStringValue(heroRaw.scenarios),
       image: toStringValue(heroRaw.image, media.hero),
+      overlayEnabled: typeof heroRaw.overlayEnabled === "boolean" ? heroRaw.overlayEnabled : true,
     },
     breadcrumb:
       Array.isArray(fallbackRaw.breadcrumb) && fallbackRaw.breadcrumb.length
         ? fallbackRaw.breadcrumb.map((item) => readLocalized(item, slug) || slug)
         : ["首页", "产品", readLocalized(fallbackRaw.title, slug) || slug],
-    sections:
-      sectionsRaw.length
-        ? sectionsRaw.map((section, index) => normalizeDetailSection(section, index))
-        : buildDefaultSections(seed),
-    gallery: media.gallery.map((item) => ({ ...item })),
+    sections: baseSections,
+    gallery,
+    tabs,
+    intro,
+    specs,
+    accessories,
     cta: {
       title: "需要定制方案？",
       description:
@@ -272,10 +567,15 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
 
   const fallbackHeroImage = fallback.hero.image ?? DEFAULT_MEDIA.hero;
   const hero: DetailHeroConfig = {
+    heading: toStringValue(heroRaw.heading, fallback.hero.heading ?? fallback.title),
     badge: readLocalized(heroRaw.badge, fallback.hero.badge ?? ""),
     description: readLocalized(heroRaw.description, fallback.hero.description ?? ""),
     scenarios: readLocalized(heroRaw.scenarios, fallback.hero.scenarios ?? ""),
     image: resolveImageSrc(toStringValue(heroRaw.image), fallbackHeroImage),
+    overlayEnabled:
+      typeof heroRaw.overlayEnabled === "boolean"
+        ? heroRaw.overlayEnabled
+        : fallback.hero.overlayEnabled !== false,
   };
 
   const breadcrumb = Array.isArray(raw.breadcrumb)
@@ -313,6 +613,10 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
         })
         .filter(Boolean) as DetailGalleryItem[])
     : fallback.gallery.map((item) => ({ ...item }));
+  const tabs = normalizeTabsConfig((raw as Record<string, unknown>).tabs, fallback.tabs);
+  const intro = normalizeIntroConfig((raw as Record<string, unknown>).intro, fallback.intro);
+  const specs = normalizeSpecsConfig((raw as Record<string, unknown>).specs, fallback.specs);
+  const accessories = normalizeAccessoriesConfig((raw as Record<string, unknown>).accessories, fallback.accessories);
 
   const ctaRaw = asRecord(raw.cta);
   const fallbackCta = fallback.cta ?? {
@@ -339,6 +643,10 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
     breadcrumb: breadcrumb.length ? breadcrumb : [...fallback.breadcrumb],
     sections,
     gallery: gallery.length ? gallery : fallback.gallery.map((item) => ({ ...item })),
+    tabs,
+    intro,
+    specs,
+    accessories,
     cta,
   };
 }
@@ -381,10 +689,12 @@ export function serializeProductDetail(detail: ProductDetailConfig): Record<stri
   const result: Record<string, unknown> = {};
   if (detail.title.trim()) result.title = detail.title.trim();
   const hero: Record<string, string> = {};
-  if (detail.hero.badge?.trim()) hero.badge = detail.hero.badge.trim();
-  if (detail.hero.description?.trim()) hero.description = detail.hero.description.trim();
-  if (detail.hero.scenarios?.trim()) hero.scenarios = detail.hero.scenarios.trim();
+  if (typeof detail.hero.heading === "string") hero.heading = detail.hero.heading.trim();
+  if (typeof detail.hero.badge === "string") hero.badge = detail.hero.badge.trim();
+  if (typeof detail.hero.description === "string") hero.description = detail.hero.description.trim();
+  if (typeof detail.hero.scenarios === "string") hero.scenarios = detail.hero.scenarios.trim();
   if (detail.hero.image?.trim()) hero.image = detail.hero.image.trim();
+  if (typeof detail.hero.overlayEnabled === "boolean") hero.overlayEnabled = detail.hero.overlayEnabled;
   if (Object.keys(hero).length) {
     result.hero = hero;
   }
@@ -417,6 +727,53 @@ export function serializeProductDetail(detail: ProductDetailConfig): Record<stri
     .filter((item) => item.src);
   if (gallery.length) {
     result.gallery = gallery;
+  }
+
+  if (detail.tabs?.length) {
+    const tabs = detail.tabs
+      .map((tab, index) => ({
+        id: (tab.id ?? `tab-${index + 1}`).trim(),
+        label: (tab.label ?? "").trim(),
+        target: tab.target,
+        visible: tab.visible !== false,
+      }))
+      .filter((tab) => tab.id && TAB_TARGETS.includes(tab.target));
+    if (tabs.length) {
+      result.tabs = tabs;
+    }
+  }
+
+  if (detail.intro?.blocks?.length) {
+    const blocks = detail.intro.blocks.map((block, index) => ({
+      id: (block.id ?? `intro-${index + 1}`).trim(),
+      title: (block.title ?? "").trim(),
+      subtitle: (block.subtitle ?? "").trim(),
+      image: block.image?.trim(),
+    }));
+    result.intro = { blocks };
+  }
+
+  if (detail.specs) {
+    const columns = detail.specs.columns.map((column) => (column ?? "").trim());
+    const rows = detail.specs.rows.map((row) => row.map((cell) => (cell ?? "").trim()));
+    const specPayload: Record<string, unknown> = {
+      columns,
+      rows,
+    };
+    if (detail.specs.caption && detail.specs.caption.trim()) {
+      specPayload.caption = detail.specs.caption.trim();
+    }
+    result.specs = specPayload;
+  }
+
+  if (detail.accessories?.items?.length) {
+    const items = detail.accessories.items.map((item, index) => ({
+      id: (item.id ?? `accessory-${index + 1}`).trim(),
+      title: (item.title ?? "").trim(),
+      description: (item.description ?? "").trim(),
+      image: item.image?.trim(),
+    }));
+    result.accessories = { items };
   }
 
   if (detail.cta) {

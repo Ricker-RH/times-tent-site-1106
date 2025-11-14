@@ -140,6 +140,7 @@ function cloneApplicationAreasState(value: ApplicationAreasState): ApplicationAr
     heading: cloneLocalized(value.heading),
     description: cloneLocalized(value.description),
     actionLabel: cloneLocalized(value.actionLabel),
+    overlayEnabled: value.overlayEnabled !== false,
     selectedCategorySlugs: [...value.selectedCategorySlugs],
     items: value.items.map((item) => ({
       ...item,
@@ -188,6 +189,7 @@ function cloneHeroState(value: HeroState): HeroState {
     ctaSecondary: cloneLocalized(value.ctaSecondary),
     ctaSecondaryHref: value.ctaSecondaryHref ?? "",
     highlights: cloneLocalized(value.highlights),
+    overlayEnabled: value.overlayEnabled !== false,
     slides: value.slides.map((slide) => ({
       ...slide,
       eyebrow: cloneLocalized(slide.eyebrow),
@@ -221,6 +223,7 @@ interface HeroState {
   ctaSecondaryHref: string;
   highlights: LocalizedText;
   slides: HeroSlideState[];
+  overlayEnabled: boolean;
 }
 
 interface CompanyHeroState {
@@ -306,6 +309,7 @@ interface ApplicationAreasState {
   heading: LocalizedText;
   description: LocalizedText;
   actionLabel: LocalizedText;
+  overlayEnabled: boolean;
   selectedCategorySlugs: string[];
   items: ApplicationItemState[];
 }
@@ -521,6 +525,10 @@ function normalizeHero(raw: unknown): HeroState {
     (fallbackHero as Record<string, unknown>).ctaSecondary,
     "更多案例",
   ) as LocalizedText;
+  const fallbackOverlayEnabled =
+    typeof (fallbackHero as Record<string, unknown>)?.overlayEnabled === "boolean"
+      ? Boolean((fallbackHero as Record<string, unknown>).overlayEnabled)
+      : true;
   const badgeLegacy: Partial<Record<LocaleKey, unknown>> = {
     en: hero.badgeEn,
     "zh-TW": (hero as Record<string, unknown>)["badgeZhTw"],
@@ -560,6 +568,7 @@ function normalizeHero(raw: unknown): HeroState {
     ctaSecondary: normalizeLocalizedText(hero.ctaSecondary, fallbackSecondary, secondaryLegacy),
     ctaSecondaryHref: ensureString(hero.ctaSecondaryHref),
     highlights,
+    overlayEnabled: typeof hero.overlayEnabled === "boolean" ? hero.overlayEnabled : fallbackOverlayEnabled,
     slides: slidesNormalized,
   } satisfies HeroState;
 }
@@ -783,6 +792,10 @@ function normalizeApplicationAreas(raw: unknown): ApplicationAreasState {
     (fallback as Record<string, unknown>).actionLabel,
     "查看详情",
   ) as LocalizedText;
+  const fallbackOverlayEnabled =
+    typeof (fallback as Record<string, unknown>).overlayEnabled === "boolean"
+      ? Boolean((fallback as Record<string, unknown>).overlayEnabled)
+      : true;
   const fallbackItems = new Map(
     ensureArray(fallback.items)
       .map((item) => {
@@ -809,6 +822,10 @@ function normalizeApplicationAreas(raw: unknown): ApplicationAreasState {
       en: application.actionLabelEn,
       "zh-TW": (application as Record<string, unknown>)["actionLabelZhTw"],
     }),
+    overlayEnabled:
+      typeof application.overlayEnabled === "boolean"
+        ? application.overlayEnabled
+        : fallbackOverlayEnabled,
     selectedCategorySlugs: ensureArray<string>(application.selectedCategorySlugs)
       .map((slug) => ensureString(slug))
       .filter(Boolean),
@@ -1034,6 +1051,7 @@ function serializeConfig(config: HomeConfigState): HomeConfig {
     slides: config.hero.slides
       .map((slide) => serializeHeroSlide({ ...slide, highlights: config.hero.highlights }))
       .filter((slide) => Object.keys(slide).length > 0),
+    overlayEnabled: config.hero.overlayEnabled !== false,
   };
 
   if (heroBadgeField) {
@@ -1293,6 +1311,7 @@ function serializeConfig(config: HomeConfigState): HomeConfig {
   }
 
   const applicationAreas: HomeApplicationAreasConfig = {
+    overlayEnabled: config.applicationAreas.overlayEnabled !== false,
     selectedCategorySlugs: config.applicationAreas.selectedCategorySlugs.filter(Boolean),
     items: config.applicationAreas.items
       .map((item) => {
@@ -1926,6 +1945,7 @@ function HomePreview({
       heading: hasHeading && isEmptyHeading ? null : mergedConfig.applicationAreas?.heading,
       description: hasDescription && isEmptyDescription ? null : mergedConfig.applicationAreas?.description,
       actionLabel: mergedConfig.applicationAreas?.actionLabel,
+      overlayEnabled: mergedConfig.applicationAreas?.overlayEnabled !== false,
     };
   }, [mergedConfig, previewConfig]);
   const productShowcase = useMemo<ProductMatrixSectionProps["productShowcase"]>(
@@ -2035,6 +2055,7 @@ function buildPreviewHeroData(homeConfig: HomeConfig, casesConfig: { categories:
     description: heroConfig.description,
     highlights: slides[0]?.highlights ?? [],
     slides,
+    overlayEnabled: heroConfig.overlayEnabled !== false,
     primaryCta: heroConfig.ctaPrimary
       ? { label: heroConfig.ctaPrimary, href: primaryHref }
       : slides[0]
@@ -2424,6 +2445,20 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
               onChange={(next) => setDraft((prev) => ({ ...prev, highlights: next }))}
               helper="例如：大型 活动 遮阳"
             />
+            <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand-secondary)]">
+              <input
+                type="checkbox"
+                checked={draft.overlayEnabled !== false}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    overlayEnabled: event.target.checked,
+                  }))
+                }
+                className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+              />
+              启用背景蒙版
+            </label>
           </div>
         ) : null}
 
@@ -3336,6 +3371,20 @@ function ApplicationAreasDialog({
               value={draft.actionLabel}
               onChange={(next) => setDraft((prev) => ({ ...prev, actionLabel: cloneLocalized(next) }))}
             />
+            <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand-secondary)]">
+              <input
+                type="checkbox"
+                checked={draft.overlayEnabled}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    overlayEnabled: event.target.checked,
+                  }))
+                }
+                className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+              />
+              启用背景蒙版
+            </label>
           </div>
         ) : null}
 

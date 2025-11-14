@@ -25,13 +25,6 @@ import { getRequestLocale } from "@/server/locale";
 
 export type CasesConfig = (typeof cases_config) & {
   breadcrumbI18n?: Array<{ href?: string; label?: string | LocalizedField }>;
-  galleryLightbox?: {
-    openHint?: string | LocalizedField;
-    nextLabel?: string | LocalizedField;
-    prevLabel?: string | LocalizedField;
-    closeLabel?: string | LocalizedField;
-    counterPattern?: string | LocalizedField;
-  };
 };
 export type InventoryConfig = typeof inventory_config;
 export type NewsConfig = typeof news_config;
@@ -41,14 +34,18 @@ type ProductDetailMap = ProductDetailConfigMap;
 
 export type CaseCategory = CasesConfig["categories"][number];
 export type CaseStudy = CaseCategory["studies"][number] & {
+  backgroundHeading?: string | LocalizedField;
+  bodyBlocks?: Array<{ title?: string | LocalizedField; subtitle?: string | LocalizedField }>;
+  deliverablesHeading?: string | LocalizedField;
   highlightsI18n?: Array<string | LocalizedField>;
   deliverablesI18n?: Array<string | LocalizedField>;
   metricsI18n?: Array<{ label: string | LocalizedField; value: string | LocalizedField }>;
-  backgroundImage?: string;
-  highlightsImage?: string;
-  deliverablesImage?: string;
-  technicalDescription?: string | LocalizedField;
-  technicalSpecs?: Array<{ label: string | LocalizedField; value: string | LocalizedField }>;
+  technicalSection?: {
+    title?: string;
+    subtitle?: string;
+    columns?: string[];
+    rows?: string[][];
+  };
 };
 
 export interface ProductCenterProduct {
@@ -74,6 +71,7 @@ export interface ProductCenterConfig {
     eyebrowEn?: string;
     description?: string | LocalizedField;
     descriptionEn?: string;
+    overlayEnabled?: boolean;
   };
 
   products: ProductCenterProduct[];
@@ -91,6 +89,7 @@ export interface HomeConfig {
     titleEn?: string; // legacy
     description?: string | LocalizedField;
     descriptionEn?: string; // legacy
+    overlayEnabled?: boolean;
     ctaPrimary?: string | LocalizedField;
     ctaPrimaryEn?: string; // legacy
     ctaPrimaryHref?: string;
@@ -165,6 +164,7 @@ export interface HomeConfig {
     descriptionEn?: string; // legacy
     actionLabel?: string | LocalizedField;
     actionLabelEn?: string; // legacy
+    overlayEnabled?: boolean;
     selectedCategorySlugs?: string[];
     items?: Array<{
       areaKey?: string;

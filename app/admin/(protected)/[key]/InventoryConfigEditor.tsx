@@ -37,6 +37,7 @@ interface HeroState {
   title: LocalizedValue;
   description: LocalizedValue;
   badges: HeroBadgeState[];
+  overlayEnabled: boolean;
 }
 
 interface PosterState {
@@ -159,6 +160,7 @@ function asHeroState(raw: unknown): HeroState {
     badges: ensureArray<unknown>(hero.badges).map((badge) => ({
       label: ensureLocalizedNoFallback(badge),
     })),
+    overlayEnabled: hero.overlayEnabled !== false,
   } satisfies HeroState;
 }
 
@@ -197,6 +199,7 @@ function serializeConfig(config: InventoryConfigState): InventoryConfig {
         title: serializeLocalizedAllowEmpty(config.hero.title),
         description: serializeLocalizedAllowEmpty(config.hero.description),
         badges: config.hero.badges.map((badge) => serializeLocalizedAllowEmpty(badge.label)),
+        overlayEnabled: config.hero.overlayEnabled !== false,
       },
       showcaseSections: config.sections.map((section) => {
         const gallery = section.gallery.map((poster) => ({
@@ -647,12 +650,28 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
         ) : null}
 
         {showVisual ? (
+          <div className="space-y-4">
             <ImageUploadField
               label="背景图片"
               value={draft.backgroundImage}
               onChange={(next) => setDraft((prev) => ({ ...prev, backgroundImage: next }))}
               helper="最佳尺寸 1200×420"
             />
+            <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand-secondary)]">
+              <input
+                type="checkbox"
+                checked={draft.overlayEnabled !== false}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    overlayEnabled: event.target.checked,
+                  }))
+                }
+                className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+              />
+              启用背景蒙版
+            </label>
+          </div>
         ) : null}
       </div>
     </EditorDialog>
@@ -822,6 +841,7 @@ function SectionDialog({
 function InventoryPreview({ config, onEdit, onAddSection }: { config: InventoryConfigState; onEdit: (target: EditingTarget) => void; onAddSection: () => void }) {
   const previewConfig = useMemo(() => serializeConfig(config), [config]);
   const heroBackground = sanitizeImageSrc(previewConfig.hero?.backgroundImage);
+  const overlayEnabled = previewConfig.hero?.overlayEnabled !== false;
 
   return (
     <ConfigPreviewFrame
@@ -852,18 +872,38 @@ function InventoryPreview({ config, onEdit, onAddSection }: { config: InventoryC
               ) : (
                 <div className="h-full w-full bg-slate-200" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/45 to-black/25" />
-              <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/45 to-black/25" />
+              {overlayEnabled ? <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/45 to-black/25" /> : null}
             </div>
             <div className="relative z-10 mx-auto flex min-h-[360px] w-full max-w-[1100px] flex-col justify-center gap-4 px-6 py-14 text-white lg:px-10">
-              <span className="inline-flex w-fit items-center rounded-full bg-white/15 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
+              <span
+                className={`inline-flex w-fit items-center rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] ${
+                  overlayEnabled ? "bg-white/15" : "bg-black/35 backdrop-blur"
+                }`}
+              >
                 {getLocaleText(previewConfig.hero?.eyebrow)}
               </span>
-              <h1 className="text-3xl font-semibold md:text-4xl">{getLocaleText(previewConfig.hero?.title)}</h1>
-              <p className="max-w-2xl text-sm text-white/80 md:text-base">{getLocaleText(previewConfig.hero?.description)}</p>
+              <h1
+                className={`text-3xl font-semibold md:text-4xl ${
+                  overlayEnabled ? "" : "drop-shadow-[0_6px_20px_rgba(0,0,0,0.55)]"
+                }`}
+              >
+                {getLocaleText(previewConfig.hero?.title)}
+              </h1>
+              <p
+                className={`max-w-2xl text-sm md:text-base ${
+                  overlayEnabled ? "text-white/80" : "text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.6)]"
+                }`}
+              >
+                {getLocaleText(previewConfig.hero?.description)}
+              </p>
               <div className="flex flex-wrap gap-2 text-xs text-white/80">
                 {ensureArray(previewConfig.hero?.badges).map((badge, index) => (
-                  <span key={index} className="inline-flex items-center rounded-full bg-white/15 px-3 py-1">
+                  <span
+                    key={index}
+                    className={`inline-flex items-center rounded-full px-3 py-1 ${
+                      overlayEnabled ? "bg-white/15" : "bg-black/35 backdrop-blur"
+                    }`}
+                  >
                     {getLocaleText(badge as Record<string, unknown>)}
                   </span>
                 ))}

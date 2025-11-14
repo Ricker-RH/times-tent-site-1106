@@ -26,6 +26,7 @@ export const FALLBACK_HOME_CONFIG: HomeConfig = {
       "zh-TW": "撐起每個重要時刻 — 專業鋁合金篷房設計・製造・方案交付。",
       "en": "Powering every headline moment with engineered aluminium structures and end-to-end delivery.",
     },
+    overlayEnabled: true,
     ctaPrimary: {
       "zh-CN": "查看详情",
       "zh-TW": "查看詳情",
@@ -357,6 +358,7 @@ export const FALLBACK_HOME_CONFIG: HomeConfig = {
       "zh-TW": "查看詳情",
       "en": "View More",
     },
+    overlayEnabled: true,
     selectedCategorySlugs: [
       "sports-events",
       "sports-venues",
@@ -453,6 +455,7 @@ export const FALLBACK_PRODUCT_CENTER_CONFIG: ProductCenterConfig = {
       "zh-TW": "從賽事營運到旅遊營地，涵蓋人字形、弧形、彎柱、錐頂與雙層篷房等多種結構，快速回應搭建與長期營運需求。",
       "en": "From global events to destination resorts, the lineup spans gable, arch, curved beam, cone, and double-deck tents for rapid deployment and long-term operations.",
     },
+    overlayEnabled: true,
   },
 
   products: products_cards.map((product) => ({

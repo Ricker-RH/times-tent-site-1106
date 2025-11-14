@@ -25,7 +25,14 @@ import {
   type DetailMetricGroup,
   type ProductDetailConfig,
   type ProductDetailConfigMap,
+  type ProductDetailTabConfig,
+  type ProductDetailTabTarget,
+  type ProductIntroConfig,
+  type ProductSpecsConfig,
+  type ProductAccessoriesConfig,
 } from "@/types/productDetails";
+import { ProductHeroCarousel } from "@/components/products/ProductHeroCarousel";
+import { ProductTabsSection } from "@/components/products/ProductTabsSection";
 import { PRODUCT_MEDIA, DEFAULT_MEDIA } from "@/data/productMedia";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureLocalizedRecord } from "./editorUtils";
 import type { LocaleKey } from "@/i18n/locales";
@@ -52,6 +59,10 @@ interface PreviewProps {
   onRemoveSection: (index: number) => void;
   onEditGallery: () => void;
   onEditCta: () => void;
+  onEditTabs: () => void;
+  onEditIntro: () => void;
+  onEditSpecs: () => void;
+  onEditAccessories: () => void;
 }
 
 function toStringValue(value: unknown): string {
@@ -241,7 +252,7 @@ type LocalizedOverridesMap = Record<
   string,
   {
     title?: LocalizedValue;
-    hero?: { badge?: LocalizedValue; scenarios?: LocalizedValue; description?: LocalizedValue };
+    hero?: { heading?: LocalizedValue; badge?: LocalizedValue; scenarios?: LocalizedValue; description?: LocalizedValue };
     sections?: Array<{
       heading?: LocalizedValue;
       paragraphs?: LocalizedValue[];
@@ -250,6 +261,10 @@ type LocalizedOverridesMap = Record<
     }>;
     gallery?: Array<{ alt?: LocalizedValue }>;
     cta?: { title?: LocalizedValue; description?: LocalizedValue; primaryLabel?: LocalizedValue; phoneLabel?: LocalizedValue };
+    tabs?: Array<{ label?: LocalizedValue }>;
+    intro?: { blocks?: Array<{ title?: LocalizedValue; subtitle?: LocalizedValue } | undefined> };
+    specs?: { columns?: Array<LocalizedValue | undefined>; caption?: LocalizedValue };
+    accessories?: { items?: Array<{ title?: LocalizedValue; description?: LocalizedValue } | undefined> };
   }
 >;
 
@@ -269,11 +284,13 @@ function extractLocalizedOverrides(rawMap: Record<string, unknown>, slugs: strin
 
     // hero
     const heroRaw = asRecord(raw.hero);
+    const heroHeading = cleanLocalized(heroRaw.heading);
     const heroBadge = cleanLocalized(heroRaw.badge);
     const heroScenarios = cleanLocalized(heroRaw.scenarios);
     const heroDescription = cleanLocalized(heroRaw.description);
-    if (hasAnyLv(heroBadge) || hasAnyLv(heroScenarios) || hasAnyLv(heroDescription)) {
+    if (hasAnyLv(heroHeading) || hasAnyLv(heroBadge) || hasAnyLv(heroScenarios) || hasAnyLv(heroDescription)) {
       entry.hero = {};
+      if (hasAnyLv(heroHeading)) entry.hero.heading = heroHeading;
       if (hasAnyLv(heroBadge)) entry.hero.badge = heroBadge;
       if (hasAnyLv(heroScenarios)) entry.hero.scenarios = heroScenarios;
       if (hasAnyLv(heroDescription)) entry.hero.description = heroDescription;
@@ -349,6 +366,63 @@ function extractLocalizedOverrides(rawMap: Record<string, unknown>, slugs: strin
       if (hasAnyLv(ctaPhoneLabel)) entry.cta.phoneLabel = ctaPhoneLabel;
     }
 
+    // tabs
+    const tabsRaw = Array.isArray((raw as any).tabs) ? (((raw as any).tabs as any[]) ?? []) : [];
+    const tabsOv = tabsRaw.map((tab) => {
+      const t = asRecord(tab);
+      const label = cleanLocalized(t.label);
+      return hasAnyLv(label) ? { label } : {};
+    });
+    if (tabsOv.some((tab) => Object.keys(tab).length)) {
+      entry.tabs = tabsOv;
+    }
+
+    // intro blocks
+    const introRaw = asRecord((raw as any).intro);
+    const introBlocks = Array.isArray(introRaw.blocks) ? ((introRaw.blocks as unknown[]) ?? []) : [];
+    const introOv = introBlocks.map((block) => {
+      const b = asRecord(block);
+      const title = cleanLocalized(b.title);
+      const subtitle = cleanLocalized(b.subtitle);
+      const rec: { title?: LocalizedValue; subtitle?: LocalizedValue } = {};
+      if (hasAnyLv(title)) rec.title = title;
+      if (hasAnyLv(subtitle)) rec.subtitle = subtitle;
+      return Object.keys(rec).length ? rec : undefined;
+    });
+    if (introOv.some(Boolean)) {
+      entry.intro = { blocks: introOv };
+    }
+
+    // specs
+    const specsRaw = asRecord((raw as any).specs);
+    const columnsRaw = Array.isArray(specsRaw.columns) ? ((specsRaw.columns as unknown[]) ?? []) : [];
+    const columnsOv = columnsRaw.map((col) => {
+      const record = cleanLocalized(col);
+      return hasAnyLv(record) ? record : undefined;
+    });
+    const captionOv = cleanLocalized(specsRaw.caption);
+    if (columnsOv.some(Boolean) || hasAnyLv(captionOv)) {
+      entry.specs = {};
+      if (columnsOv.some(Boolean)) entry.specs.columns = columnsOv;
+      if (hasAnyLv(captionOv)) entry.specs.caption = captionOv;
+    }
+
+    // accessories
+    const accessoriesRaw = asRecord((raw as any).accessories);
+    const accessoryItems = Array.isArray(accessoriesRaw.items) ? ((accessoriesRaw.items as unknown[]) ?? []) : [];
+    const accessoriesOv = accessoryItems.map((item) => {
+      const r = asRecord(item);
+      const title = cleanLocalized(r.title);
+      const description = cleanLocalized(r.description);
+      const rec: { title?: LocalizedValue; description?: LocalizedValue } = {};
+      if (hasAnyLv(title)) rec.title = title;
+      if (hasAnyLv(description)) rec.description = description;
+      return Object.keys(rec).length ? rec : undefined;
+    });
+    if (accessoriesOv.some(Boolean)) {
+      entry.accessories = { items: accessoriesOv };
+    }
+
     if (Object.keys(entry).length) {
       result[slug] = entry;
     }
@@ -369,6 +443,9 @@ function mergeSerializedWithOverrides(
     }
 
     const heroRaw = asRecord(detailRaw.hero);
+    if (override.hero?.heading && hasAnyLv(override.hero.heading)) {
+      heroRaw.heading = mergeLocalized(heroRaw.heading, override.hero.heading);
+    }
     if (override.hero?.badge && hasAnyLv(override.hero.badge)) {
       heroRaw.badge = mergeLocalized(heroRaw.badge, override.hero.badge);
     }
@@ -459,6 +536,73 @@ function mergeSerializedWithOverrides(
       }
     }
 
+    if (override.tabs && Array.isArray(override.tabs)) {
+      const tabsRaw = Array.isArray((detailRaw as any).tabs)
+        ? ([...(((detailRaw as any).tabs as unknown[]) ?? [])])
+        : [];
+      override.tabs.forEach((tabOverride, index) => {
+        if (!tabOverride) return;
+        const tabRaw = asRecord(tabsRaw[index]);
+        if (tabOverride.label && hasAnyLv(tabOverride.label)) {
+          tabRaw.label = mergeLocalized(tabRaw.label, tabOverride.label);
+        }
+        tabsRaw[index] = tabRaw;
+      });
+      (detailRaw as any).tabs = tabsRaw;
+    }
+
+    if (override.intro?.blocks && Array.isArray(override.intro.blocks)) {
+      const introRaw = asRecord((detailRaw as any).intro);
+      const blocksRaw = Array.isArray(introRaw.blocks) ? ([...((introRaw.blocks as unknown[]) ?? [])]) : [];
+      override.intro.blocks.forEach((blockOverride, index) => {
+        if (!blockOverride) return;
+        const blockRaw = asRecord(blocksRaw[index]);
+        if (blockOverride.title && hasAnyLv(blockOverride.title)) {
+          blockRaw.title = mergeLocalized(blockRaw.title, blockOverride.title);
+        }
+        if (blockOverride.subtitle && hasAnyLv(blockOverride.subtitle)) {
+          blockRaw.subtitle = mergeLocalized(blockRaw.subtitle, blockOverride.subtitle);
+        }
+        blocksRaw[index] = blockRaw;
+      });
+      introRaw.blocks = blocksRaw;
+      (detailRaw as any).intro = introRaw;
+    }
+
+    if (override.specs) {
+      const specsRaw = asRecord((detailRaw as any).specs);
+      const columnsRaw = Array.isArray(specsRaw.columns) ? ([...((specsRaw.columns as unknown[]) ?? [])]) : [];
+      override.specs.columns?.forEach((columnOverride, index) => {
+        if (!columnOverride) return;
+        columnsRaw[index] = mergeLocalized(columnsRaw[index], columnOverride);
+      });
+      if (columnsRaw.length) {
+        specsRaw.columns = columnsRaw;
+      }
+      if (override.specs.caption && hasAnyLv(override.specs.caption)) {
+        specsRaw.caption = mergeLocalized(specsRaw.caption, override.specs.caption);
+      }
+      (detailRaw as any).specs = specsRaw;
+    }
+
+    if (override.accessories?.items && Array.isArray(override.accessories.items)) {
+      const accessoriesRaw = asRecord((detailRaw as any).accessories);
+      const itemsRaw = Array.isArray(accessoriesRaw.items) ? ([...((accessoriesRaw.items as unknown[]) ?? [])]) : [];
+      override.accessories.items.forEach((itemOverride, index) => {
+        if (!itemOverride) return;
+        const itemRaw = asRecord(itemsRaw[index]);
+        if (itemOverride.title && hasAnyLv(itemOverride.title)) {
+          itemRaw.title = mergeLocalized(itemRaw.title, itemOverride.title);
+        }
+        if (itemOverride.description && hasAnyLv(itemOverride.description)) {
+          itemRaw.description = mergeLocalized(itemRaw.description, itemOverride.description);
+        }
+        itemsRaw[index] = itemRaw;
+      });
+      accessoriesRaw.items = itemsRaw;
+      (detailRaw as any).accessories = accessoriesRaw;
+    }
+
     copy[slug] = detailRaw;
   }
   return copy;
@@ -498,6 +642,20 @@ function LocalizedTextField({
   );
 }
 
+function createLocalizedRecord(base: string, preset?: LocalizedValue): LocalizedValue {
+  const merged: Record<string, string> = {
+    ...(preset ?? {}),
+    [DEFAULT_LOCALE]: base ?? "",
+  } as Record<string, string>;
+  return cleanLocalized(merged);
+}
+
+const TAB_LABEL_FALLBACK: Record<ProductDetailTabTarget, string> = {
+  intro: "产品介绍",
+  specs: "产品参数",
+  accessories: "可选配件",
+};
+
 function SubmitButton({ disabled, highlight }: { disabled: boolean; highlight?: boolean }) {
   const { pending } = useFormStatus();
   const shouldPulse = Boolean(highlight && !disabled && !pending);
@@ -527,10 +685,25 @@ function ProductDetailPreview({
   onRemoveSection,
   onEditGallery,
   onEditCta,
+  onEditTabs,
+  onEditIntro,
+  onEditSpecs,
+  onEditAccessories,
 }: PreviewProps) {
   const media = PRODUCT_MEDIA[slug] ?? DEFAULT_MEDIA;
   const heroImage = resolveImageSrc(detail.hero.image, media.hero);
-  const galleryImages = (detail.gallery.length ? detail.gallery : media.gallery).slice(0, 3);
+  const heroSlidesSources = [
+    ...(heroImage ? [{ src: heroImage, alt: detail.title }] : []),
+    ...(detail.gallery.length ? detail.gallery : media.gallery),
+  ];
+  const heroSlides = heroSlidesSources.reduce<Array<{ src: string; alt: string }>>((acc, slide) => {
+    if (!slide?.src) return acc;
+    if (acc.some((existing) => existing.src === slide.src)) {
+      return acc;
+    }
+    acc.push({ src: slide.src, alt: slide.alt || detail.title });
+    return acc;
+  }, []);
 
   const normalizeHeading = (s: string) => {
     const base = (s || "").trim().toLowerCase();
@@ -601,12 +774,13 @@ function ProductDetailPreview({
   const highlightsIndex = findIndexByKeys(highlightsKeys);
   const galleryIndex = findIndexByKeys(galleryKeys);
 
-  const overviewSection = overviewIndex >= 0 ? detail.sections[overviewIndex] : null;
-  const highlightsSection = highlightsIndex >= 0 ? detail.sections[highlightsIndex] : null;
-  const gallerySection = galleryIndex >= 0 ? detail.sections[galleryIndex] : null;
   const otherSections = detail.sections.filter(
     (_, index) => ![overviewIndex, highlightsIndex, galleryIndex].includes(index),
   );
+  const heroHeading = detail.hero.heading || detail.title;
+  const heroBadge = detail.hero.badge || null;
+  const heroEyebrow = detail.hero.scenarios || undefined;
+  const heroOverlayEnabled = detail.hero.overlayEnabled !== false;
 
   return (
     <ConfigPreviewFrame
@@ -681,122 +855,71 @@ function ProductDetailPreview({
               </button>
             </div>
 
-            <section className="relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-black text-white">
-              <button
-                type="button"
-                onClick={onEditHero}
-                className="absolute right-4 top-4 z-10 rounded-full border border-white/60 bg-black/40 px-3 py-1 text-xs font-semibold text-white backdrop-blur transition hover:bg-white hover:text-[var(--color-brand-primary)]"
-              >
-                编辑英雄区
-              </button>
-              <div className="relative h-80 w-full">
-                <Image src={heroImage} alt={detail.title} fill sizes="100vw" className="object-cover" priority />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                <div className="absolute inset-0 flex flex-col justify-end gap-4 p-10">
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/80">
-                    {detail.hero.scenarios ? <span>{detail.hero.scenarios}</span> : null}
-                  </div>
-                  <h1 className="text-3xl font-semibold md:text-4xl">{detail.title}</h1>
-                  {detail.hero.description ? (
-                    <p className="max-w-3xl text-sm text-white/80 md:text-base">{detail.hero.description}</p>
-                  ) : null}
-                </div>
-              </div>
-            </section>
-
-            {overviewSection ? (
-              <section className="relative rounded-2xl border border-[var(--color-border)] bg-white p-8 shadow-md">
+            <div className="relative">
+        <ProductHeroCarousel
+          slides={heroSlides}
+          title={heroHeading}
+          description={detail.hero.description}
+          badge={heroBadge}
+          eyebrow={heroEyebrow}
+          overlayEnabled={heroOverlayEnabled}
+        />
+              <div className="absolute right-4 top-4 z-10 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => onEditSection(overviewIndex)}
-                  className="absolute right-4 top-4 rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/10"
+                  onClick={onEditHero}
+                  className="rounded-full border border-white/70 bg-black/50 px-3 py-1 text-xs font-semibold text-white shadow transition hover:bg-white hover:text-[var(--color-brand-primary)]"
                 >
-                  编辑概览
+                  编辑顶部轮播
                 </button>
-                <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{overviewSection.heading}</h2>
-                <div className="mt-4 space-y-4 text-sm leading-7 text-[var(--color-text-secondary)]">
-                  {overviewSection.paragraphs.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
-                </div>
-                {overviewSection.pairs.map((pair, index) => (
-                  <div key={index} className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {pair.map((item) => (
-                      <div
-                        key={`${item.label}-${item.value}`}
-                        className="rounded-xl border border-[var(--color-border)] bg-white p-5 text-center shadow-[0_14px_35px_rgba(15,23,42,0.12)] transition hover:-translate-y-1"
-                      >
-                        <p className="text-sm uppercase tracking-[0.2em] text-[var(--color-brand-primary)] font-semibold">{item.label}</p>
-                        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </section>
-            ) : null}
-
-            {highlightsSection ? (
-              <section className="relative rounded-2xl border border-[var(--color-border)] bg-white p-8">
-                <button
-                  type="button"
-                  onClick={() => onEditSection(highlightsIndex)}
-                  className="absolute right-4 top-4 rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/10"
-                >
-                  编辑亮点
-                </button>
-                <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{highlightsSection.heading}</h2>
-                <div className="mt-4 space-y-3 text-sm leading-7 text-[var(--color-text-secondary)]">
-                  {highlightsSection.paragraphs.map((paragraph) => (
-                    <p key={paragraph} className="flex items-start gap-2">
-                      <span className="mt-2 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]" />
-                      <span>{paragraph}</span>
-                    </p>
-                  ))}
-                </div>
-                {highlightsSection.lists.map((list, index) => (
-                  <ul key={index} className="mt-4 list-disc space-y-2 pl-5 text-sm text-[var(--color-text-secondary)]">
-                    {list.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                ))}
-              </section>
-            ) : null}
-
-            <section className="relative rounded-2xl border border-[var(--color-border)] bg-white p-8">
-              <div className="absolute right-4 top-4 flex gap-2">
-                {gallerySection ? (
-                  <button
-                    type="button"
-                    onClick={() => onEditSection(galleryIndex)}
-                    className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/10"
-                  >
-                    编辑标题
-                  </button>
-                ) : null}
                 <button
                   type="button"
                   onClick={onEditGallery}
-                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/10"
+                  className="rounded-full border border-white/70 bg-black/50 px-3 py-1 text-xs font-semibold text-white shadow transition hover:bg-white hover:text-[var(--color-brand-primary)]"
                 >
-                  编辑图库
+                  编辑图库资源
                 </button>
               </div>
-              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{gallerySection?.heading ?? "项目实景图库"}</h2>
-              <div className="mt-6 grid grid-cols-3 gap-4">
-                {galleryImages.slice(0, 3).map((item, index) => (
-                  <figure key={`${item.src}-${index}`} className="relative aspect-[16/9] overflow-hidden rounded-lg">
-                        <Image
-                          src={resolveImageSrc(item.src, media.gallery[0]?.src ?? heroImage)}
-                          alt={item.alt}
-                          fill
-                          className="object-cover"
-                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 45vw, 100vw"
-                        />
-                  </figure>
-                ))}
+            </div>
+
+            <div className="relative">
+              <ProductTabsSection
+                tabs={detail.tabs}
+                intro={detail.intro}
+                specs={detail.specs}
+                accessories={detail.accessories}
+              />
+              <div className="absolute right-4 top-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={onEditTabs}
+                  className="rounded-full border border-[var(--color-border)] bg-white/90 px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/10"
+                >
+                  编辑 Tab 排序
+                </button>
+                <button
+                  type="button"
+                  onClick={onEditIntro}
+                  className="rounded-full border border-[var(--color-border)] bg-white/90 px-3 py-1 text-xs font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                >
+                  编辑产品介绍
+                </button>
+                <button
+                  type="button"
+                  onClick={onEditSpecs}
+                  className="rounded-full border border-[var(--color-border)] bg-white/90 px-3 py-1 text-xs font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                >
+                  编辑产品参数
+                </button>
+                <button
+                  type="button"
+                  onClick={onEditAccessories}
+                  className="rounded-full border border-[var(--color-border)] bg-white/90 px-3 py-1 text-xs font-semibold text-[var(--color-brand-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                >
+                  编辑可选配件
+                </button>
               </div>
-            </section>
+            </div>
 
             {otherSections.map((section, index) => {
               const sectionIndex = detail.sections.findIndex((item) => item === section);
@@ -876,7 +999,7 @@ interface HeroDialogProps {
     next: ProductDetailConfig,
     localized: {
       title: LocalizedValue;
-      hero: { badge: LocalizedValue; scenarios: LocalizedValue; description: LocalizedValue };
+      hero: { heading: LocalizedValue; badge: LocalizedValue; scenarios: LocalizedValue; description: LocalizedValue };
     },
   ) => void;
   onCancel: () => void;
@@ -898,17 +1021,19 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
     return record;
   };
 
-  const [titleRecord, setTitleRecord] = useState<LocalizedValue>(() => createInitialLocalized(value.title, initialLocalized?.title));
+  const [titleRecord, setTitleRecord] = useState<LocalizedValue>(() => createInitialLocalized(value.hero.heading ?? value.title, initialLocalized?.hero?.heading ?? initialLocalized?.title));
   const [badgeRecord, setBadgeRecord] = useState<LocalizedValue>(() => createInitialLocalized(value.hero.badge ?? "", initialLocalized?.hero?.badge));
   const [scenariosRecord, setScenariosRecord] = useState<LocalizedValue>(() => createInitialLocalized(value.hero.scenarios ?? "", initialLocalized?.hero?.scenarios));
   const [descriptionRecord, setDescriptionRecord] = useState<LocalizedValue>(() => createInitialLocalized(value.hero.description ?? "", initialLocalized?.hero?.description));
+  const [overlayEnabled, setOverlayEnabled] = useState<boolean>(() => value.hero.overlayEnabled !== false);
 
   useEffect(() => {
     setDraft(cloneDetail(value));
-    setTitleRecord(createInitialLocalized(value.title, initialLocalized?.title));
+    setTitleRecord(createInitialLocalized(value.hero.heading ?? value.title, initialLocalized?.hero?.heading ?? initialLocalized?.title));
     setBadgeRecord(createInitialLocalized(value.hero.badge ?? "", initialLocalized?.hero?.badge));
     setScenariosRecord(createInitialLocalized(value.hero.scenarios ?? "", initialLocalized?.hero?.scenarios));
     setDescriptionRecord(createInitialLocalized(value.hero.description ?? "", initialLocalized?.hero?.description));
+    setOverlayEnabled(value.hero.overlayEnabled !== false);
   }, [value, initialLocalized]);
 
   return (
@@ -917,17 +1042,22 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
       subtitle="调整标题、概述及顶部背景"
       onSave={() => {
         const next = cloneDetail(draft);
-        // 默认语言直接写回快照，其他语言作为覆盖值
-        next.title = (titleRecord[DEFAULT_LOCALE] ?? next.title).trim();
+        const headingValue = (titleRecord[DEFAULT_LOCALE] ?? "").trim();
+        if (headingValue) {
+          next.title = headingValue;
+        }
         next.hero = {
           ...next.hero,
+          heading: headingValue,
           badge: (badgeRecord[DEFAULT_LOCALE] ?? "").trim(),
           scenarios: (scenariosRecord[DEFAULT_LOCALE] ?? "").trim(),
           description: (descriptionRecord[DEFAULT_LOCALE] ?? "").trim(),
+          overlayEnabled,
         };
         onSave(next, {
           title: cleanLocalized(titleRecord),
           hero: {
+            heading: cleanLocalized(titleRecord),
             badge: cleanLocalized(badgeRecord),
             scenarios: cleanLocalized(scenariosRecord),
             description: cleanLocalized(descriptionRecord),
@@ -972,6 +1102,15 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
           placeholder="支持上传或粘贴外链"
           helper="最佳尺寸 908×360"
         />
+        <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand-secondary)]">
+          <input
+            type="checkbox"
+            checked={overlayEnabled}
+            onChange={(event) => setOverlayEnabled(event.target.checked)}
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+          />
+          启用背景蒙版
+        </label>
       </div>
     </EditorDialog>
   );
@@ -1364,6 +1503,182 @@ function SectionEditorDialog({ value, slug, index, onSave, onCancel, initialLoca
   );
 }
 
+interface TabsEditorDialogProps {
+  value: ProductDetailTabConfig[];
+  onSave: (next: ProductDetailTabConfig[], localized?: Array<{ label?: LocalizedValue }>) => void;
+  onCancel: () => void;
+  initialLocalized?: Array<{ label?: LocalizedValue }>;
+}
+
+function TabsEditorDialog({ value, onSave, onCancel, initialLocalized }: TabsEditorDialogProps) {
+  type TabDraft = ProductDetailTabConfig;
+  const ensureDraft = (tab: ProductDetailTabConfig, index: number): TabDraft => ({
+    id: tab.id?.trim() || `tab-${index + 1}`,
+    label: tab.label?.trim() || TAB_LABEL_FALLBACK[tab.target],
+    target: tab.target,
+    visible: tab.visible !== false,
+  });
+  const initialTabs = (value.length
+    ? value
+    : [
+        { id: "tab-intro", label: TAB_LABEL_FALLBACK.intro, target: "intro", visible: true },
+        { id: "tab-specs", label: TAB_LABEL_FALLBACK.specs, target: "specs", visible: true },
+        { id: "tab-accessories", label: TAB_LABEL_FALLBACK.accessories, target: "accessories", visible: true },
+      ]).map(ensureDraft);
+  const [tabs, setTabs] = useState<TabDraft[]>(initialTabs);
+  const [labels, setLabels] = useState<LocalizedValue[]>(() =>
+    initialTabs.map((tab, index) => createLocalizedRecord(tab.label ?? TAB_LABEL_FALLBACK[tab.target], initialLocalized?.[index]?.label)),
+  );
+
+  const updateTab = (index: number, updater: (prev: TabDraft) => TabDraft) => {
+    setTabs((prev) => prev.map((tab, idx) => (idx === index ? updater(tab) : tab)));
+  };
+
+  const handleMove = (index: number, delta: number) => {
+    setTabs((prev) => {
+      const next = [...prev];
+      const target = index + delta;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+    setLabels((prev) => {
+      const next = [...prev];
+      const target = index + delta;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const handleRemove = (index: number) => {
+    if (tabs.length <= 1) return;
+    setTabs((prev) => prev.filter((_, idx) => idx !== index));
+    setLabels((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleAdd = () => {
+    setTabs((prev) => [...prev, { id: `tab-${Date.now()}`, label: TAB_LABEL_FALLBACK.intro, target: "intro", visible: true }]);
+    setLabels((prev) => [...prev, createLocalizedRecord(TAB_LABEL_FALLBACK.intro)]);
+  };
+
+  const handleSave = () => {
+    const nextTabs = tabs.map((tab, index) => {
+      const record = labels[index];
+      const defaultLabel = TAB_LABEL_FALLBACK[tab.target];
+      const labelText = (record?.[DEFAULT_LOCALE] ?? tab.label ?? defaultLabel).trim() || defaultLabel;
+      return {
+        id: tab.id.trim() || `tab-${index + 1}`,
+        label: labelText,
+        target: tab.target,
+        visible: tab.visible !== false,
+      } satisfies ProductDetailTabConfig;
+    });
+    const localized = labels.map((record) => ({ label: cleanLocalized(record) }));
+    onSave(nextTabs, localized);
+  };
+
+  return (
+    <EditorDialog
+      title="编辑 Tab 导航"
+      subtitle="自定义 Tab 顺序、命名与关联内容"
+      onSave={handleSave}
+      onCancel={onCancel}
+    >
+      <div className="space-y-4 text-sm">
+        {tabs.map((tab, index) => (
+          <div key={tab.id} className="rounded-2xl border border-[var(--color-border)] bg-white/80 p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">
+                Tab {index + 1}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleMove(index, -1)}
+                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs"
+                  disabled={index === 0}
+                >
+                  上移
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMove(index, 1)}
+                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs"
+                  disabled={index === tabs.length - 1}
+                >
+                  下移
+                </button>
+                {tabs.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(index)}
+                    className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-500"
+                  >
+                    删除
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              <LocalizedTextField
+                label="按钮文案"
+                value={labels[index]}
+                onChange={(next) => {
+                  const nextRecords = [...labels];
+                  nextRecords[index] = cleanLocalized(next);
+                  setLabels(nextRecords);
+                  updateTab(index, (prev) => ({ ...prev, label: (next[DEFAULT_LOCALE] ?? prev.label).trim() }));
+                }}
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block text-xs text-[var(--color-text-tertiary,#8690a3)]">关联内容类型</label>
+                  <select
+                    value={tab.target}
+                    onChange={(event) => {
+                      const target = event.target.value as ProductDetailTabTarget;
+                      updateTab(index, (prev) => ({ ...prev, target }));
+                      setLabels((prev) => {
+                        const nextRecords = [...prev];
+                        const record = nextRecords[index];
+                        const fallbackLabel = TAB_LABEL_FALLBACK[target];
+                        nextRecords[index] = createLocalizedRecord(record?.[DEFAULT_LOCALE] ?? fallbackLabel, record);
+                        return nextRecords;
+                      });
+                    }}
+                    className="mt-1 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="intro">产品介绍</option>
+                    <option value="specs">产品参数</option>
+                    <option value="accessories">可选配件</option>
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-brand-secondary)]">
+                  <input
+                    type="checkbox"
+                    checked={tab.visible !== false}
+                    onChange={(event) => updateTab(index, (prev) => ({ ...prev, visible: event.target.checked }))}
+                    className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+                  />
+                  在页面中显示
+                </label>
+              </div>
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="w-full rounded-2xl border border-dashed border-[var(--color-brand-primary)] bg-white/60 px-4 py-3 text-sm font-semibold text-[var(--color-brand-primary)]"
+        >
+          新增 Tab
+        </button>
+      </div>
+    </EditorDialog>
+  );
+}
+
 interface GalleryDialogProps {
   value: DetailGalleryItem[];
   onSave: (next: DetailGalleryItem[], localized?: Array<{ alt?: LocalizedValue }>) => void;
@@ -1384,11 +1699,17 @@ function GalleryEditorDialog({ value, onSave, onCancel, initialLocalized, slug }
   };
 
   const [items, setItems] = useState<Array<{ src: string; altRecord: LocalizedValue }>>(() =>
-    value.slice(0, 3).map((item, idx) => ({ src: item.src.trim(), altRecord: createInitialLocalized(item.alt, initialLocalized?.[idx]?.alt) })),
+    (value.length ? value : [{ src: "", alt: "" }]).map((item, idx) => ({
+      src: item.src.trim(),
+      altRecord: createInitialLocalized(item.alt, initialLocalized?.[idx]?.alt),
+    })),
   );
 
   useEffect(() => {
-    setItems(value.slice(0, 3).map((item, idx) => ({ src: item.src.trim(), altRecord: createInitialLocalized(item.alt, initialLocalized?.[idx]?.alt) })));
+    setItems((value.length ? value : [{ src: "", alt: "" }]).map((item, idx) => ({
+      src: item.src.trim(),
+      altRecord: createInitialLocalized(item.alt, initialLocalized?.[idx]?.alt),
+    })));
   }, [value, initialLocalized]);
 
   const handleSrcChange = (index: number, next: string) => {
@@ -1400,7 +1721,7 @@ function GalleryEditorDialog({ value, onSave, onCancel, initialLocalized, slug }
   };
 
   const handleAdd = () => {
-    setItems((prev) => (prev.length >= 3 ? prev : [...prev, { src: "", altRecord: createInitialLocalized("") }]));
+    setItems((prev) => [...prev, { src: "", altRecord: createInitialLocalized("") }]);
   };
 
   const handleRemove = (index: number) => {
@@ -1408,7 +1729,7 @@ function GalleryEditorDialog({ value, onSave, onCancel, initialLocalized, slug }
   };
 
   const handleSave = () => {
-    const trimmed = items.slice(0, 3);
+    const trimmed = items;
     const next = trimmed
       .map((it) => ({ src: it.src.trim(), alt: (it.altRecord[DEFAULT_LOCALE] ?? "").trim() || "产品图库" }))
       .filter((item) => item.src);
@@ -1454,14 +1775,445 @@ function GalleryEditorDialog({ value, onSave, onCancel, initialLocalized, slug }
         <button
           type="button"
           onClick={handleAdd}
-          disabled={items.length >= 3}
-          className={`rounded-full border border-dashed border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold transition hover:bg-[var(--color-brand-primary)]/10 ${items.length >= 3 ? "opacity-50 cursor-not-allowed text-[var(--color-muted)] hover:bg-transparent" : "text-[var(--color-brand-primary)]"}`}
+          className="rounded-full border border-dashed border-[var(--color-brand-primary)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)]/10"
         >
-          新增图片（最多 3 张）
+          新增图片
         </button>
-        {items.length >= 3 && (
-          <p className="mt-2 text-[11px] text-[var(--color-muted)]">已达上限：最多 3 张，建议尺寸 1200×675（16:9）。</p>
-        )}
+      </div>
+    </EditorDialog>
+  );
+}
+
+interface IntroEditorDialogProps {
+  value: ProductIntroConfig;
+  onSave: (next: ProductIntroConfig, localized?: { blocks?: Array<{ title?: LocalizedValue; subtitle?: LocalizedValue }> }) => void;
+  onCancel: () => void;
+  initialLocalized?: { blocks?: Array<{ title?: LocalizedValue; subtitle?: LocalizedValue }> };
+}
+
+function IntroBlocksEditorDialog({ value, onSave, onCancel, initialLocalized }: IntroEditorDialogProps) {
+  type BlockDraft = {
+    id: string;
+    image: string;
+    title: LocalizedValue;
+    subtitle: LocalizedValue;
+  };
+  const sourceBlocks = value.blocks.length
+    ? value.blocks
+    : [{ id: "intro-1", title: "", subtitle: "", image: "" }];
+  const [blocks, setBlocks] = useState<BlockDraft[]>(() =>
+    sourceBlocks.map((block, index) => ({
+      id: block.id?.trim() || `intro-${index + 1}`,
+      image: block.image ?? "",
+      title: createLocalizedRecord(block.title ?? "", initialLocalized?.blocks?.[index]?.title),
+      subtitle: createLocalizedRecord(block.subtitle ?? "", initialLocalized?.blocks?.[index]?.subtitle),
+    })),
+  );
+
+  const handleAdd = () => {
+    setBlocks((prev) => [
+      ...prev,
+      {
+        id: `intro-${Date.now()}`,
+        image: "",
+        title: createLocalizedRecord(""),
+        subtitle: createLocalizedRecord(""),
+      },
+    ]);
+  };
+
+  const handleRemove = (index: number) => {
+    setBlocks((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleMove = (index: number, delta: number) => {
+    setBlocks((prev) => {
+      const next = [...prev];
+      const target = index + delta;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const handleSave = () => {
+    const nextBlocks = blocks.map((block, index) => ({
+      id: block.id.trim() || `intro-${index + 1}`,
+      title: (block.title?.[DEFAULT_LOCALE] ?? "").trim(),
+      subtitle: (block.subtitle?.[DEFAULT_LOCALE] ?? "").trim(),
+      image: block.image.trim(),
+    }));
+    const localized = {
+      blocks: blocks.map((block) => ({
+        title: cleanLocalized(block.title),
+        subtitle: cleanLocalized(block.subtitle),
+      })),
+    };
+    onSave({ blocks: nextBlocks }, localized);
+  };
+
+  return (
+    <EditorDialog
+      title="编辑产品介绍"
+      subtitle="配置文案块的大标题、小标题与图片"
+      onSave={handleSave}
+      onCancel={onCancel}
+    >
+      <div className="space-y-2 text-sm">
+        {blocks.map((block, index) => (
+          <article key={block.id} className="rounded-2xl bg-white/80 p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">
+              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">
+                文案块 {index + 1}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleMove(index, -1)}
+                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs"
+                  disabled={index === 0}
+                >
+                  上移
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMove(index, 1)}
+                  className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs"
+                  disabled={index === blocks.length - 1}
+                >
+                  下移
+                </button>
+                {blocks.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(index)}
+                    className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-500"
+                  >
+                    删除
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              <LocalizedTextField
+                label="大标题"
+                value={block.title}
+                onChange={(next) =>
+                  setBlocks((prev) => prev.map((item, idx) => (idx === index ? { ...item, title: cleanLocalized(next) } : item)))}
+              />
+              <LocalizedTextField
+                label="小标题"
+                value={block.subtitle}
+                onChange={(next) =>
+                  setBlocks((prev) => prev.map((item, idx) => (idx === index ? { ...item, subtitle: cleanLocalized(next) } : item)))}
+                multiline
+                rows={3}
+              />
+              <ImageInput
+                label="配图（可选）"
+                value={block.image}
+                onChange={(next) =>
+                  setBlocks((prev) => prev.map((item, idx) => (idx === index ? { ...item, image: next } : item)))}
+                placeholder="https:// 或 /uploads/..."
+              />
+            </div>
+          </article>
+        ))}
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="w-full rounded-2xl border border-dashed border-[var(--color-brand-primary)] bg-white/60 px-4 py-3 text-sm font-semibold text-[var(--color-brand-primary)]"
+        >
+          新增文案块
+        </button>
+      </div>
+    </EditorDialog>
+  );
+}
+
+interface SpecsEditorDialogProps {
+  value: ProductSpecsConfig;
+  onSave: (next: ProductSpecsConfig, localized?: { columns?: Array<LocalizedValue | undefined>; caption?: LocalizedValue }) => void;
+  onCancel: () => void;
+  initialLocalized?: { columns?: Array<LocalizedValue | undefined>; caption?: LocalizedValue };
+}
+
+function SpecsEditorDialog({ value, onSave, onCancel, initialLocalized }: SpecsEditorDialogProps) {
+  const [columns, setColumns] = useState<string[]>(() => (value.columns.length ? [...value.columns] : ["参数项", "参数值"]));
+  const [rows, setRows] = useState<string[][]>(() => (value.rows.length ? value.rows.map((row) => [...row]) : [["", ""]]));
+  const [columnLocalized, setColumnLocalized] = useState<Array<LocalizedValue | undefined>>(() =>
+    columns.map((col, index) => createLocalizedRecord(col, initialLocalized?.columns?.[index])),
+  );
+  const [captionRecord, setCaptionRecord] = useState<LocalizedValue>(() => createLocalizedRecord(value.caption ?? "", initialLocalized?.caption));
+
+  useEffect(() => {
+    setRows((prev) => prev.map((row) => {
+      const next = [...row];
+      if (next.length < columns.length) {
+        return [...next, ...Array(columns.length - next.length).fill("")];
+      }
+      if (next.length > columns.length) {
+        return next.slice(0, columns.length);
+      }
+      return next;
+    }));
+  }, [columns.length]);
+
+  const handleAddColumn = () => {
+    setColumns((prev) => [...prev, `列 ${prev.length + 1}`]);
+    setRows((prev) => prev.map((row) => [...row, ""]));
+    setColumnLocalized((prev) => [...prev, createLocalizedRecord("")]);
+  };
+
+  const handleRemoveColumn = (index: number) => {
+    if (columns.length <= 1) return;
+    setColumns((prev) => prev.filter((_, idx) => idx !== index));
+    setRows((prev) => prev.map((row) => row.filter((_, idx) => idx !== index)));
+    setColumnLocalized((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleAddRow = () => {
+    setRows((prev) => [...prev, Array(columns.length).fill("")]);
+  };
+
+  const handleRemoveRow = (index: number) => {
+    if (rows.length <= 1) return;
+    setRows((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleSave = () => {
+    const sanitizedColumns = columns.map((col) => col.trim());
+    const sanitizedRows = rows.map((row) => row.map((cell) => cell.trim()));
+    const nextSpecs: ProductSpecsConfig = {
+      columns: sanitizedColumns,
+      rows: sanitizedRows,
+      caption: (captionRecord[DEFAULT_LOCALE] ?? "").trim(),
+    };
+    const localized = {
+      columns: columnLocalized.map((record) => (record ? cleanLocalized(record) : undefined)),
+      caption: cleanLocalized(captionRecord),
+    };
+    onSave(nextSpecs, localized);
+  };
+
+  return (
+    <EditorDialog title="编辑产品参数" subtitle="配置表头、行列与可选的表格说明" onSave={handleSave} onCancel={onCancel}>
+      <div className="space-y-4 text-sm">
+        <div className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-white/90 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">表头</span>
+            <button
+              type="button"
+              onClick={handleAddColumn}
+              className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)]"
+            >
+              新增列
+            </button>
+          </div>
+          <div className="space-y-3">
+            {columns.map((column, index) => (
+              <div key={`column-${index}`} className="rounded-xl border border-[var(--color-border)] bg-white/80 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-[var(--color-brand-secondary)]">列 {index + 1}</span>
+                  {columns.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveColumn(index)}
+                      className="rounded-full border border-rose-200 px-3 py-1 text-[11px] font-semibold text-rose-500"
+                    >
+                      删除
+                    </button>
+                  ) : null}
+                </div>
+                <LocalizedTextField
+                  label="列标题"
+                  value={columnLocalized[index] ?? createLocalizedRecord(column)}
+                  onChange={(next) => {
+                    setColumnLocalized((prev) => {
+                      const copy = [...prev];
+                      copy[index] = cleanLocalized(next);
+                      return copy;
+                    });
+                    setColumns((prev) => prev.map((col, idx) => (idx === index ? (next[DEFAULT_LOCALE] ?? col) : col)));
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[var(--color-border)] bg-white/90 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">参数行</span>
+            <button
+              type="button"
+              onClick={handleAddRow}
+              className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-secondary)]"
+            >
+              新增行
+            </button>
+          </div>
+          <div className="mt-4 space-y-3">
+            {rows.map((row, rowIndex) => (
+              <div key={`row-${rowIndex}`} className="rounded-xl border border-[var(--color-border)] bg-white/70 p-3">
+                <div className="flex items-center justify-between text-xs text-[var(--color-text-tertiary,#8690a3)]">
+                  <span>行 {rowIndex + 1}</span>
+                  {rows.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveRow(rowIndex)}
+                      className="rounded-full border border-rose-200 px-3 py-1 text-[11px] font-semibold text-rose-500"
+                    >
+                      删除
+                    </button>
+                  ) : null}
+                </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {row.map((cell, cellIndex) => (
+                    <input
+                      key={`cell-${rowIndex}-${cellIndex}`}
+                      value={cell}
+                      onChange={(event) =>
+                        setRows((prev) =>
+                          prev.map((r, idx) =>
+                            idx === rowIndex ? r.map((c, cIdx) => (cIdx === cellIndex ? event.target.value : c)) : r,
+                          ),
+                        )
+                      }
+                      className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                      placeholder={`列 ${cellIndex + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <LocalizedTextField
+          label="表格说明（可选）"
+          value={captionRecord}
+          onChange={(next) => setCaptionRecord(cleanLocalized(next))}
+          multiline
+          rows={2}
+        />
+      </div>
+    </EditorDialog>
+  );
+}
+
+interface AccessoriesEditorDialogProps {
+  value: ProductAccessoriesConfig;
+  onSave: (next: ProductAccessoriesConfig, localized?: { items?: Array<{ title?: LocalizedValue; description?: LocalizedValue }> }) => void;
+  onCancel: () => void;
+  initialLocalized?: { items?: Array<{ title?: LocalizedValue; description?: LocalizedValue }> };
+}
+
+function AccessoriesEditorDialog({ value, onSave, onCancel, initialLocalized }: AccessoriesEditorDialogProps) {
+  type AccessoryDraft = {
+    id: string;
+    image: string;
+    title: LocalizedValue;
+    description: LocalizedValue;
+  };
+  const sourceItems = value.items.length
+    ? value.items
+    : [{ id: "accessory-1", title: "", description: "", image: "" }];
+  const [items, setItems] = useState<AccessoryDraft[]>(() =>
+    sourceItems.map((item, index) => ({
+      id: item.id?.trim() || `accessory-${index + 1}`,
+      image: item.image ?? "",
+      title: createLocalizedRecord(item.title ?? "", initialLocalized?.items?.[index]?.title),
+      description: createLocalizedRecord(item.description ?? "", initialLocalized?.items?.[index]?.description),
+    })),
+  );
+
+  const handleAdd = () => {
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `accessory-${Date.now()}`,
+        image: "",
+        title: createLocalizedRecord(""),
+        description: createLocalizedRecord(""),
+      },
+    ]);
+  };
+
+  const handleRemove = (index: number) => {
+    setItems((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleSave = () => {
+    const nextItems = items.map((item, index) => ({
+      id: item.id.trim() || `accessory-${index + 1}`,
+      image: item.image.trim(),
+      title: (item.title?.[DEFAULT_LOCALE] ?? "").trim(),
+      description: (item.description?.[DEFAULT_LOCALE] ?? "").trim(),
+    }));
+    const localized = {
+      items: items.map((item) => ({
+        title: cleanLocalized(item.title),
+        description: cleanLocalized(item.description),
+      })),
+    };
+    onSave({ items: nextItems }, localized);
+  };
+
+  return (
+    <EditorDialog
+      title="编辑可选配件"
+      subtitle="设置配件卡片的标题、描述与图片"
+      onSave={handleSave}
+      onCancel={onCancel}
+    >
+      <div className="space-y-4 text-sm">
+        {items.map((item, index) => (
+          <div key={item.id} className="rounded-2xl border border-[var(--color-border)] bg-white/90 p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">
+                配件 {index + 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleRemove(index)}
+                className="rounded-full border border-rose-200 px-3 py-1 text-[11px] font-semibold text-rose-500"
+              >
+                删除
+              </button>
+            </div>
+            <div className="mt-3 space-y-3">
+              <LocalizedTextField
+                label="配件标题"
+                value={item.title}
+                onChange={(next) =>
+                  setItems((prev) => prev.map((entry, idx) => (idx === index ? { ...entry, title: cleanLocalized(next) } : entry)))}
+              />
+              <LocalizedTextField
+                label="配件描述"
+                value={item.description}
+                onChange={(next) =>
+                  setItems((prev) => prev.map((entry, idx) => (idx === index ? { ...entry, description: cleanLocalized(next) } : entry)))}
+                multiline
+                rows={2}
+              />
+              <ImageInput
+                label="配件图片"
+                value={item.image}
+                onChange={(next) =>
+                  setItems((prev) => prev.map((entry, idx) => (idx === index ? { ...entry, image: next } : entry)))}
+                placeholder="https:// 或 /uploads/..."
+              />
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="w-full rounded-2xl border border-dashed border-[var(--color-brand-primary)] bg-white/60 px-4 py-3 text-sm font-semibold text-[var(--color-brand-primary)]"
+        >
+          新增配件
+        </button>
       </div>
     </EditorDialog>
   );
@@ -1676,6 +2428,10 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
     | { type: "section"; index: number }
     | { type: "gallery" }
     | { type: "cta" }
+    | { type: "tabs" }
+    | { type: "intro" }
+    | { type: "specs" }
+    | { type: "accessories" }
     | null
   >(null);
 
@@ -1956,6 +2712,126 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
           onCancel={() => setEditing(null)}
         />
       );
+    } else if (editing?.type === "tabs") {
+      dialog = (
+        <TabsEditorDialog
+          value={detail.tabs}
+          initialLocalized={localizedOverrides[selectedSlug]?.tabs}
+          onSave={(next, localized) => {
+            const current = cloneDetail(details[selectedSlug]);
+            current.tabs = next;
+            const nextDetails = { ...details, [selectedSlug]: current };
+            let nextOverrides = localizedOverrides;
+            if (localized) {
+              nextOverrides = {
+                ...localizedOverrides,
+                [selectedSlug]: {
+                  ...(localizedOverrides[selectedSlug] ?? {}),
+                  tabs: localized,
+                },
+              };
+            }
+            setDetails(nextDetails);
+            setLocalizedOverrides(nextOverrides);
+            const fd = new FormData();
+            fd.set("key", configKey);
+            fd.set("payload", JSON.stringify(mergeSerializedWithOverrides(serializeProductDetailMap(nextDetails), nextOverrides)));
+            dispatch(fd);
+            setEditing(null);
+          }}
+          onCancel={() => setEditing(null)}
+        />
+      );
+    } else if (editing?.type === "intro") {
+      dialog = (
+        <IntroBlocksEditorDialog
+          value={detail.intro}
+          initialLocalized={localizedOverrides[selectedSlug]?.intro}
+          onSave={(next, localized) => {
+            const current = cloneDetail(details[selectedSlug]);
+            current.intro = next;
+            const nextDetails = { ...details, [selectedSlug]: current };
+            let nextOverrides = localizedOverrides;
+            if (localized) {
+              nextOverrides = {
+                ...localizedOverrides,
+                [selectedSlug]: {
+                  ...(localizedOverrides[selectedSlug] ?? {}),
+                  intro: localized,
+                },
+              };
+            }
+            setDetails(nextDetails);
+            setLocalizedOverrides(nextOverrides);
+            const fd = new FormData();
+            fd.set("key", configKey);
+            fd.set("payload", JSON.stringify(mergeSerializedWithOverrides(serializeProductDetailMap(nextDetails), nextOverrides)));
+            dispatch(fd);
+            setEditing(null);
+          }}
+          onCancel={() => setEditing(null)}
+        />
+      );
+    } else if (editing?.type === "specs") {
+      dialog = (
+        <SpecsEditorDialog
+          value={detail.specs}
+          initialLocalized={localizedOverrides[selectedSlug]?.specs}
+          onSave={(next, localized) => {
+            const current = cloneDetail(details[selectedSlug]);
+            current.specs = next;
+            const nextDetails = { ...details, [selectedSlug]: current };
+            let nextOverrides = localizedOverrides;
+            if (localized) {
+              nextOverrides = {
+                ...localizedOverrides,
+                [selectedSlug]: {
+                  ...(localizedOverrides[selectedSlug] ?? {}),
+                  specs: localized,
+                },
+              };
+            }
+            setDetails(nextDetails);
+            setLocalizedOverrides(nextOverrides);
+            const fd = new FormData();
+            fd.set("key", configKey);
+            fd.set("payload", JSON.stringify(mergeSerializedWithOverrides(serializeProductDetailMap(nextDetails), nextOverrides)));
+            dispatch(fd);
+            setEditing(null);
+          }}
+          onCancel={() => setEditing(null)}
+        />
+      );
+    } else if (editing?.type === "accessories") {
+      dialog = (
+        <AccessoriesEditorDialog
+          value={detail.accessories}
+          initialLocalized={localizedOverrides[selectedSlug]?.accessories}
+          onSave={(next, localized) => {
+            const current = cloneDetail(details[selectedSlug]);
+            current.accessories = next;
+            const nextDetails = { ...details, [selectedSlug]: current };
+            let nextOverrides = localizedOverrides;
+            if (localized) {
+              nextOverrides = {
+                ...localizedOverrides,
+                [selectedSlug]: {
+                  ...(localizedOverrides[selectedSlug] ?? {}),
+                  accessories: localized,
+                },
+              };
+            }
+            setDetails(nextDetails);
+            setLocalizedOverrides(nextOverrides);
+            const fd = new FormData();
+            fd.set("key", configKey);
+            fd.set("payload", JSON.stringify(mergeSerializedWithOverrides(serializeProductDetailMap(nextDetails), nextOverrides)));
+            dispatch(fd);
+            setEditing(null);
+          }}
+          onCancel={() => setEditing(null)}
+        />
+      );
     }
   }
 
@@ -2057,6 +2933,10 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
           onRemoveSection={handleRemoveSection}
           onEditGallery={() => setEditing({ type: "gallery" })}
           onEditCta={() => setEditing({ type: "cta" })}
+          onEditTabs={() => setEditing({ type: "tabs" })}
+          onEditIntro={() => setEditing({ type: "intro" })}
+          onEditSpecs={() => setEditing({ type: "specs" })}
+          onEditAccessories={() => setEditing({ type: "accessories" })}
         />
       ) : (
         <div className="rounded-2xl border border-[var(--color-border)] bg-white/80 p-10 text-sm text-[var(--color-text-secondary)]">

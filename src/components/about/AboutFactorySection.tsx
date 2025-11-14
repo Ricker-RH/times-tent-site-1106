@@ -20,7 +20,7 @@ export function AboutFactorySection({ manufacturingSection }: AboutFactorySectio
   return (
     <section className="bg-[var(--color-surface-muted)] py-16" id="about-factory">
       <div className="mx-auto w-full max-w-[1200px] space-y-9 px-4 sm:px-6 lg:px-8">
-        <div className="space-y-2 text-center md:text-left">
+        <div className="space-y-5 text-center md:text-left">
           <h2 className="text-2xl font-semibold text-[var(--color-brand-secondary)] md:text-3xl">
             {t(manufacturingSection.title)}
           </h2>

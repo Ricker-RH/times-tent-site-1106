@@ -1,5 +1,4 @@
 import type { SVGProps } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ensurePageVisible, getHiddenSections } from "@/server/visibility";
@@ -7,6 +6,9 @@ import { t, setCurrentLocale } from "@/data";
 import { getRequestLocale } from "@/server/locale";
 import { normalizeLocalizedField } from "@/i18n/locales";
 import { translateUi } from "@/i18n/dictionary";
+import { ProductHeroCarousel } from "@/components/products/ProductHeroCarousel";
+import { ProductTabsSection } from "@/components/products/ProductTabsSection";
+import type { ProductDetailTabTarget } from "@/types/productDetails";
 
 export const dynamic = "force-dynamic";
 
@@ -156,7 +158,18 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   const media = PRODUCT_MEDIA[params.slug] ?? DEFAULT_MEDIA;
   const heroImage = detail.hero.image || media.hero;
-  const galleryImages = (detail.gallery?.length ? detail.gallery : media.gallery.length ? media.gallery : DEFAULT_MEDIA.gallery).slice(0, 3);
+  const heroSlidesSources = [
+    ...(heroImage ? [{ src: heroImage, alt: detail.title }] : []),
+    ...(detail.gallery?.length ? detail.gallery : media.gallery).map((item) => ({ src: item.src, alt: item.alt || detail.title })),
+  ];
+  const carouselSlides = heroSlidesSources.reduce<Array<{ src: string; alt: string }>>((acc, slide) => {
+    if (!slide.src) return acc;
+    if (acc.some((existing) => existing.src === slide.src)) {
+      return acc;
+    }
+    acc.push(slide);
+    return acc;
+  }, []);
 
   const breadcrumbItems = detail.breadcrumb ?? [];
   const findIndexByKeys = (keys: string[]) =>
@@ -170,10 +183,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const overviewIndex = findIndexByKeys(OVERVIEW_KEYS);
   const highlightsIndex = findIndexByKeys(HIGHLIGHTS_KEYS);
   const galleryIndex = findIndexByKeys(GALLERY_KEYS);
-  const overviewSection = overviewIndex >= 0 ? detail.sections[overviewIndex] : undefined;
-  const highlightsSection = highlightsIndex >= 0 ? detail.sections[highlightsIndex] : undefined;
-  const gallerySection = galleryIndex >= 0 ? detail.sections[galleryIndex] : undefined;
   const otherSections = detail.sections.filter((_, index) => ![overviewIndex, highlightsIndex, galleryIndex].includes(index));
+  const heroHeading = (detail.hero.heading ?? detail.title)?.trim() || detail.title;
+  const heroBadge = (detail.hero.badge && detail.hero.badge.trim()) ? detail.hero.badge : null;
+  const heroEyebrow = detail.hero.scenarios || null;
+  const hiddenTabTargets: Partial<Record<ProductDetailTabTarget, boolean>> = {
+    intro: hideOverview,
+    specs: hideHighlights,
+    accessories: hideGallery,
+  };
+  const hasVisibleTabs = detail.tabs.some((tab) => tab.visible !== false && !hiddenTabTargets[tab.target]);
 
   return (
     <div className="bg-white pb-20 pt-10">
@@ -226,92 +245,24 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           </nav>
 
           {hideHero ? null : (
-            <div className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
-              <div className="relative h-[360px] w-full">
-                <Image
-                  src={heroImage}
-                  alt={detail.title}
-                  fill
-                  className="object-cover"
-                  sizes="100vw"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute inset-0 flex flex-col justify-end gap-3 p-8 text-white">
-
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/80">
-                    {listMetaTagline ? (
-                      <span className="rounded-full bg-white/20 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.3em]">
-                        {listMetaTagline}
-                      </span>
-                    ) : null}
-                  </div>
-                  <h1 className="text-3xl font-semibold md:text-4xl">{detail.title}</h1>
-                  {detail.hero.description ? <p className="max-w-3xl text-sm text-white/80">{detail.hero.description}</p> : null}
-                </div>
-              </div>
-            </div>
+            <ProductHeroCarousel
+              slides={carouselSlides}
+              title={heroHeading}
+              description={detail.hero.description}
+              badge={heroBadge}
+              eyebrow={heroEyebrow}
+              overlayEnabled={detail.hero.overlayEnabled !== false}
+            />
           )}
 
-          {overviewSection && !hideOverview ? (
-            <section className="rounded-lg border border-[var(--color-border)] bg-white p-8 shadow-md">
-              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{overviewSection.heading}</h2>
-              <div className="mt-4 space-y-4 text-sm leading-7 text-[var(--color-text-secondary)]">
-                {overviewSection.paragraphs?.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </div>
-              {overviewSection.pairs?.map((pair, index) => (
-                <div key={index} className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {pair.map((item) => (
-                    <div key={`${item.label}-${item.value}`} className="rounded-xl border border-[var(--color-border)] bg-white p-5 text-center shadow-[0_14px_35px_rgba(15,23,42,0.12)] transition hover:-translate-y-1">
-                      <p className="text-sm uppercase tracking-[0.2em] text-[var(--color-brand-primary)] font-semibold">{item.label}</p>
-                      <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{item.value}</p>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </section>
-          ) : null}
-
-          {highlightsSection && !hideHighlights ? (
-            <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
-              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{highlightsSection.heading}</h2>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-[var(--color-text-secondary)]">
-                {highlightsSection.paragraphs?.map((paragraph) => (
-                  <p key={paragraph} className="flex items-start gap-2">
-                    <span className="mt-2 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
-                    <span>{paragraph}</span>
-                  </p>
-                ))}
-              </div>
-              {highlightsSection.lists?.map((list, index) => (
-                <ul key={index} className="mt-4 list-disc space-y-2 pl-5 text-sm text-[var(--color-text-secondary)]">
-                  {list.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              ))}
-            </section>
-          ) : null}
-
-          {gallerySection && !hideGallery ? (
-            <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
-              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{gallerySection.heading}</h2>
-              <div className="mt-6 grid grid-cols-3 gap-4">
-                {galleryImages.map((item, index) => (
-                  <figure key={`${item.src}-${index}`} className="relative aspect-[16/9] overflow-hidden rounded-lg">
-                    <Image
-                      src={item.src}
-                      alt={item.alt}
-                      fill
-                      className="object-cover"
-                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 45vw, 100vw"
-                    />
-                  </figure>
-                ))}
-              </div>
-            </section>
+          {hasVisibleTabs ? (
+            <ProductTabsSection
+              tabs={detail.tabs}
+              intro={detail.intro}
+              specs={detail.specs}
+              accessories={detail.accessories}
+              hiddenTargets={hiddenTabTargets}
+            />
           ) : null}
 
           {hideExtraSections
@@ -360,11 +311,11 @@ function ProductAdvisorCTA({ cta }: { cta?: { title?: string; description?: stri
             {description}
           </p>
         </div>
-        <div className="flex flex-col items-start gap-3 text-sm">
-          <Link href={primaryHref} className={`${CTA_BUTTON_PRIMARY} w-full`}>
+        <div className="flex flex-col gap-3 text-sm sm:flex-row">
+          <Link href={primaryHref} className={`${CTA_BUTTON_PRIMARY} w-full sm:flex-1`}>
             {primaryLabel}
           </Link>
-          <Link href={`tel:${phoneNumber}`} className={`${CTA_BUTTON_PRIMARY} w-full`}>
+          <Link href={`tel:${phoneNumber}`} className={`${CTA_BUTTON_PRIMARY} w-full sm:flex-1`}>
             {`${phoneLabel} ${phoneNumber}`}
           </Link>
         </div>

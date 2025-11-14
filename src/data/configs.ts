@@ -31,38 +31,13 @@ export const cases_config = {
   },
   "sidebarTitle": "案例展示",
   "categoryCaseCountSuffix": "个案例",
-  "recommendations": {
-    "eyebrow": "更多案例",
-    "title": "获取定制化案例报告",
-    "description": "联系我们获取更多案例资料与项目对接方案。",
-    "linkLabel": "联系顾问"
-  },
-  "galleryLightbox": {
-    "openHint": {
-      "zh-CN": "点击查看大图",
-      "zh-TW": "點擊查看大圖",
-      "en": "View in fullscreen"
-    },
-    "nextLabel": {
-      "zh-CN": "下一张",
-      "zh-TW": "下一張",
-      "en": "Next"
-    },
-    "prevLabel": {
-      "zh-CN": "上一张",
-      "zh-TW": "上一張",
-      "en": "Previous"
-    },
-    "closeLabel": {
-      "zh-CN": "关闭大图",
-      "zh-TW": "關閉大圖",
-      "en": "Close"
-    },
-    "counterPattern": {
-      "zh-CN": "图 {{current}} / {{total}}",
-      "zh-TW": "圖 {{current}} / {{total}}",
-      "en": "Image {{current}} / {{total}}"
-    }
+  "consultation": {
+    "title": "需要定制方案？",
+    "description": "留下项目信息，24 小时内由行业顾问回电，为您提供方案设计、预算测算与现场勘查。",
+    "primaryLabel": "提交项目信息",
+    "primaryHref": "/contact",
+    "phoneLabel": "致电",
+    "phoneNumber": "400-800-1234"
   },
   "categories": [
     {
@@ -79,17 +54,14 @@ export const cases_config = {
           "location": "浙江杭州",
           "summary": "赛事入口、媒体、观众服务等多模块临建体系。",
           "background": "需在短周期内完成核心配套搭建，满足国际赛事标准。",
-          "backgroundImage": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&w=1600&q=80",
           "highlights": [
             "48 小时完成核心区域吊装",
             "模块化机电保障赛事运行"
           ],
-          "highlightsImage": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&w=1600&q=80",
           "deliverables": [
             "赛事外场临建集群",
             "媒体与贵宾接待中心"
           ],
-          "deliverablesImage": "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&w=1600&q=80",
           "metrics": [
             {
               "label": "搭建面积",
@@ -101,7 +73,33 @@ export const cases_config = {
             "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&w=1600&q=80"
-          ]
+          ],
+          "technicalSection": {
+            "title": "赛事临建参数",
+            "subtitle": "核心结构数据",
+            "columns": [
+              "项目",
+              "规格",
+              "说明"
+            ],
+            "rows": [
+              [
+                "结构跨度",
+                "60m",
+                "双层桁架+钢索体系"
+              ],
+              [
+                "檐口高度",
+                "12m",
+                "满足媒体转播视角"
+              ],
+              [
+                "交付周期",
+                "45 天",
+                "含安装调试"
+              ]
+            ]
+          }
         },
         {
           "slug": "nanjing-world-indoor-2025",
@@ -110,17 +108,14 @@ export const cases_config = {
           "location": "江苏南京",
           "summary": "暖通、指挥与媒体模块满足室内锦标赛运营。",
           "background": "在既有体育中心基础上扩建辅助空间，需保持温控与分区。",
-          "backgroundImage": "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&w=1600&q=80",
           "highlights": [
             "双层篷房媒体中心",
             "温控稳定 20±1℃"
           ],
-          "highlightsImage": "https://images.unsplash.com/photo-1500534319179-34d4982c68d3?auto=format&w=1600&q=80",
           "deliverables": [
             "运营指挥中心",
             "媒体直播区"
           ],
-          "deliverablesImage": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&w=1600&q=80",
           "metrics": [
             {
               "label": "搭建面积",
@@ -132,7 +127,17 @@ export const cases_config = {
             "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&w=1600&q=80"
-          ]
+          ],
+          "technicalSection": {
+            "title": "暖通配置",
+            "subtitle": "温控指标",
+            "columns": ["项目", "设置"],
+            "rows": [
+              ["送风温度", "20±1℃"],
+              ["新风量", "6 次/小时"],
+              ["噪声", "≤50dB"]
+            ]
+          }
         },
         {
           "slug": "wuhan-military-games-2019",
@@ -261,13 +266,6 @@ export const cases_config = {
             "https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1522771930-78848d9293e8?auto=format&w=1600&q=80"
-          ],
-          "technicalDescription": "结构采用 6061-T6 铝合金主梁，配置复合膜体和空调系统，实现全天候训练运营。",
-          "technicalSpecs": [
-            { "label": "结构跨度", "value": "42 米" },
-            { "label": "檐口高度", "value": "11 米" },
-            { "label": "覆盖面积", "value": "6,000 ㎡" },
-            { "label": "交付周期", "value": "45 天" }
           ]
         },
         {
@@ -873,7 +871,8 @@ export const contact_config = {
           "en": "projects delivered"
         }
       }
-    ]
+    ],
+    "overlayEnabled": true
   },
   "contactSection": {
     "sectionHeading": {
@@ -1827,7 +1826,8 @@ export const about_config = {
       "zh-CN": "从方案策划、智能制造到现场交付，时代篷房以设计力、制造力与全国化服务网络，助力项目以更快速度落地。",
       "zh-TW": "從方案策劃、智慧製造到現場交付，時代篷房以設計力、製造力與全國化服務網絡，助力專案以更快速度落地。",
       "en": "From concept to handover, we combine design excellence, intelligent manufacturing, and nationwide service to accelerate complex projects."
-    }
+    },
+    "overlayEnabled": true
   },
   "introSection": {
     "eyebrow": {
@@ -2199,7 +2199,8 @@ export const inventory_config = {
         "zh-TW": "全年 7×24 運維",
         "en": "24/7 operations"
       }
-    ]
+    ],
+    "overlayEnabled": true
   },
   "sectionHeading": {
     "eyebrow": {

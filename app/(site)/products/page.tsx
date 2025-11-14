@@ -150,18 +150,35 @@ function HeroCard({ hero }: { hero: ProductCenterData["hero"] }) {
   const eyebrow = resolveText(hero.eyebrow);
   const title = resolveText(hero.title, "模块化产品矩阵");
   const description = resolveText(hero.description);
+  const overlayEnabled = hero.overlayEnabled !== false;
   return (
     <section className="relative mt-1 overflow-hidden rounded-lg border border-[var(--color-border)] bg-black text-white md:mt-0">
       <Image src={hero.image ?? DEFAULT_PRODUCT_IMAGE} alt={title || "产品中心"} fill className="object-cover" priority sizes="100vw" />
-      <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-black/60 to-black/35" />
+      {overlayEnabled ? <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-black/60 to-black/35" /> : null}
       <div className="relative space-y-5 p-8 md:p-12 lg:max-w-2xl">
         {eyebrow ? (
-          <span className="inline-flex w-fit items-center rounded-full bg-white/20 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
+          <span
+            className={`inline-flex w-fit items-center rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] ${
+              overlayEnabled ? "bg-white/20" : "bg-black/40 backdrop-blur"
+            }`}
+          >
             {eyebrow}
           </span>
         ) : null}
-        <h1 className="text-3xl font-semibold md:text-4xl">{title}</h1>
-        <p className="max-w-2xl text-sm text-white/80 md:text-base">{description}</p>
+        <h1
+          className={`text-3xl font-semibold md:text-4xl ${
+            overlayEnabled ? "" : "drop-shadow-[0_6px_25px_rgba(0,0,0,0.55)]"
+          }`}
+        >
+          {title}
+        </h1>
+        <p
+          className={`max-w-2xl text-sm md:text-base ${
+            overlayEnabled ? "text-white/80" : "text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.65)]"
+          }`}
+        >
+          {description}
+        </p>
       </div>
     </section>
   );
@@ -169,11 +186,11 @@ function HeroCard({ hero }: { hero: ProductCenterData["hero"] }) {
 
 function ProductCard({ product, ctaLabel }: { product: { slug: string; title: string; description: string; href: string; image: string; tagline?: string }; ctaLabel: string }) {
   return (
-    <article className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] transition hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative h-72">
+    <article className="flex h-full flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] transition hover:-translate-y-1 hover:shadow-xl">
+      <div className="relative h-72 w-full">
         <Image src={product.image} alt={product.title} fill className="object-cover" sizes="100vw" />
       </div>
-      <div className="flex min-h-[240px] flex-col space-y-4 p-8">
+      <div className="flex flex-1 flex-col space-y-4 p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-semibold text-[var(--color-brand-secondary)]">{product.title}</h2>
           {product.tagline ? (

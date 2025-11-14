@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 
 interface CaseHeroCarouselProps {
@@ -13,24 +13,38 @@ interface CaseHeroCarouselProps {
 }
 
 export function CaseHeroCarousel({ slides, title, category, year, location, summary }: CaseHeroCarouselProps) {
-  const validSlides = slides.filter(Boolean);
+  const validSlides = useMemo(() => slides.filter(Boolean), [slides]);
   const [index, setIndex] = useState(0);
-  if (!validSlides.length) {
-    return null;
-  }
-
-  const go = (delta: number) => {
+  const [autoplay, setAutoplay] = useState(true);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const go = useCallback((delta: number) => {
     setIndex((prev) => {
       const next = (prev + delta + validSlides.length) % validSlides.length;
       return next;
     });
-  };
+  }, [validSlides.length]);
+
+  useEffect(() => {
+    if (validSlides.length <= 1 || !autoplay || isLightboxOpen) return;
+    const timer = setInterval(() => {
+      go(1);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [validSlides.length, autoplay, isLightboxOpen, go]);
+
+  if (!validSlides.length) {
+    return null;
+  }
 
   const showOverlay = index === 0;
 
   return (
-    <section className="relative overflow-hidden">
-      <div className="relative h-[420px] w-full sm:h-[520px]">
+    <section className="relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-muted)]">
+      <div
+        className="relative aspect-[16/9] w-full"
+        onMouseEnter={() => setAutoplay(false)}
+        onMouseLeave={() => setAutoplay(true)}
+      >
         <Image
           key={`${validSlides[index]}-${index}`}
           src={validSlides[index]}
@@ -45,9 +59,6 @@ export function CaseHeroCarousel({ slides, title, category, year, location, summ
             <div className="flex flex-wrap items-center gap-3 text-xs text-white/80">
               {year ? <span>{year}</span> : null}
               {location ? <span>{location}</span> : null}
-              <span className="rounded-full bg-white/20 px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.3em]">
-                {category}
-              </span>
             </div>
             <h1 className="text-3xl font-semibold md:text-4xl">{title}</h1>
             {summary ? <p className="max-w-3xl text-sm text-white/85 md:text-base">{summary}</p> : null}
@@ -83,10 +94,34 @@ export function CaseHeroCarousel({ slides, title, category, year, location, summ
                   }`}
                 />
               ))}
-            </div>
-          </>
-        ) : null}
+              </div>
+            </>
+          ) : null}
+        <button
+          type="button"
+          onClick={() => setIsLightboxOpen(true)}
+          className="absolute right-4 top-4 rounded-full bg-black/60 px-4 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-black/80"
+        >
+          查看大图
+        </button>
       </div>
+      {isLightboxOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <div className="relative h-[80vh] w-full max-w-5xl" onClick={(event) => event.stopPropagation()}>
+            <Image src={validSlides[index]} alt={title} fill className="object-contain" sizes="100vw" />
+            <button
+              type="button"
+              onClick={() => setIsLightboxOpen(false)}
+              className="absolute right-4 top-4 rounded-full bg-black/70 px-4 py-2 text-sm font-semibold text-white hover:bg-black"
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

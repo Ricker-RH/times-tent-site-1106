@@ -22,6 +22,12 @@ function toTValue(value: unknown): string | Record<string, string | undefined> |
   return undefined;
 }
 
+function toPlainString(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return "";
+}
+
 
 interface CaseDetailProps {
   params: { category: string; slug: string };
@@ -87,28 +93,81 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
   const featuredStudies = relatedStudies.slice(0, 3);
   const gallerySlides = Array.isArray(study.gallery) ? study.gallery.filter(Boolean) : [];
   const heroSlides = Array.from(new Set([study.image, ...gallerySlides].filter(Boolean)));
-  const backgroundText = !hideBackground ? t(study.background) : "";
+  const bodyBlocksRaw: ReadonlyArray<{ title?: unknown; subtitle?: unknown }> = Array.isArray((study as any).bodyBlocks)
+    ? ((study as any).bodyBlocks as ReadonlyArray<{ title?: unknown; subtitle?: unknown }>)
+    : [];
+  const normalizedBodyBlocks = !hideBackground
+    ? bodyBlocksRaw
+        .map((block) => {
+          const title = t(toTValue((block as any).title));
+          const subtitle = t(toTValue((block as any).subtitle));
+          const safeTitle = typeof title === "string" ? title.trim() : "";
+          const safeSubtitle = typeof subtitle === "string" ? subtitle.trim() : "";
+          if (!safeTitle && !safeSubtitle) {
+            return null;
+          }
+          return { title: safeTitle, subtitle: safeSubtitle };
+        })
+        .filter((block): block is { title: string; subtitle: string } => Boolean(block))
+    : [];
+  const fallbackBodyBlocks: Array<{ title: string; subtitle: string }> = [];
+  if (!normalizedBodyBlocks.length && !hideBackground) {
+    const legacyBackgroundHeadingRaw = (study as any).backgroundHeading;
+    const legacyBackgroundHeading = legacyBackgroundHeadingRaw ? t(toTValue(legacyBackgroundHeadingRaw)) : "";
+    const legacyBackgroundTitle = typeof legacyBackgroundHeading === "string" && legacyBackgroundHeading.trim().length
+      ? legacyBackgroundHeading.trim()
+      : "项目背景";
+    const legacyBackgroundText = t(study.background);
+    if (typeof legacyBackgroundText === "string" && legacyBackgroundText.trim().length) {
+      fallbackBodyBlocks.push({ title: legacyBackgroundTitle, subtitle: legacyBackgroundText.trim() });
+    }
+
+    const deliverablesHeadingRaw = (study as any).deliverablesHeading;
+    const deliverablesHeading = deliverablesHeadingRaw ? t(toTValue(deliverablesHeadingRaw)) : "";
+    const deliverablesTitle = typeof deliverablesHeading === "string" && deliverablesHeading.trim().length
+      ? deliverablesHeading.trim()
+      : "交付成果";
+    const deliverablesCandidates: ReadonlyArray<string | unknown> =
+      Array.isArray((study as any).deliverablesI18n) && (study as any).deliverablesI18n.length
+        ? ((study as any).deliverablesI18n as ReadonlyArray<string | unknown>)
+        : ((study.deliverables ?? []) as ReadonlyArray<string>);
+    const deliverablesText = deliverablesCandidates
+      .map((item) => t(toTValue(item)))
+      .filter((value): value is string => typeof value === "string" && value.trim().length)
+      .join("\n");
+    if (deliverablesText.trim().length) {
+      fallbackBodyBlocks.push({ title: deliverablesTitle, subtitle: deliverablesText });
+    }
+  }
+  const bodyCopyBlocks = normalizedBodyBlocks.length ? normalizedBodyBlocks : fallbackBodyBlocks;
   const highlightCandidates: ReadonlyArray<string | unknown> =
     Array.isArray((study as any).highlightsI18n) && (study as any).highlightsI18n.length
       ? ((study as any).highlightsI18n as ReadonlyArray<string | unknown>)
       : ((study.highlights ?? []) as ReadonlyArray<string>);
   const highlightTexts = highlightCandidates.map((item) => t(toTValue(item))).filter(Boolean);
-  const deliverableCandidates: ReadonlyArray<string | unknown> =
-    Array.isArray((study as any).deliverablesI18n) && (study as any).deliverablesI18n.length
-      ? ((study as any).deliverablesI18n as ReadonlyArray<string | unknown>)
-      : ((study.deliverables ?? []) as ReadonlyArray<string>);
-  const deliverableTexts = deliverableCandidates.map((item) => t(toTValue(item))).filter(Boolean);
-  const technicalDescriptionRaw = (study as any).technicalDescription;
-  const technicalDescriptionText = technicalDescriptionRaw ? t(toTValue(technicalDescriptionRaw)) : "";
-  const fallbackTechnicalText = (technicalDescriptionText || highlightTexts.join(" / ") || deliverableTexts.join(" / ")).trim();
-  const technicalSpecsFromConfig = Array.isArray((study as any).technicalSpecs)
-    ? ((study as any).technicalSpecs as Array<{ label: unknown; value: unknown }>)
-        .map((item) => ({ label: t(toTValue(item.label)), value: t(toTValue(item.value)) }))
-        .filter((entry) => entry.label || entry.value)
+  const technicalSectionConfig = (study as any).technicalSection ?? {};
+  const technicalSectionTitle = typeof technicalSectionConfig.title === "string"
+    ? technicalSectionConfig.title.trim()
+    : "";
+  const technicalSectionSubtitle = typeof technicalSectionConfig.subtitle === "string"
+    ? technicalSectionConfig.subtitle.trim()
+    : "";
+  const technicalColumns = Array.isArray(technicalSectionConfig.columns)
+    ? (technicalSectionConfig.columns as Array<unknown>).map((item) => toPlainString(item).trim()).filter(Boolean)
     : [];
-  const technicalSpecsDisplay = technicalSpecsFromConfig.length ? technicalSpecsFromConfig : metricsLocalized;
+  const technicalRows = Array.isArray(technicalSectionConfig.rows)
+    ? (technicalSectionConfig.rows as Array<unknown>)
+        .map((row) => (Array.isArray(row) ? row : []))
+        .map((row) => technicalColumns.map((_, idx) => toPlainString(row[idx]).trim()))
+        .filter((row) => row.some((cell) => cell.length))
+    : [];
+  const hasCustomTechnicalTable = technicalColumns.length > 0 && technicalRows.length > 0;
+  const technicalSectionTitleDisplay = technicalSectionTitle || (hasCustomTechnicalTable ? "" : "技术参数");
+  const technicalSectionSubtitleDisplay = technicalSectionSubtitle || (hasCustomTechnicalTable ? "" : "参数表");
+  const showTechnicalTable = hasCustomTechnicalTable || metricsLocalized.length > 0;
   const showDetailsSection =
-    !hideBackground && (Boolean(backgroundText) || Boolean(fallbackTechnicalText) || technicalSpecsDisplay.length > 0);
+    !hideBackground &&
+    (bodyCopyBlocks.length > 0 || showTechnicalTable);
 
   const baseCrumbs: ReadonlyArray<{ href?: string; label?: string | Record<string, string | undefined> | undefined }> = (
     Array.isArray((config as any).breadcrumbI18n) && (config as any).breadcrumbI18n.length
@@ -156,50 +215,71 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
             {showDetailsSection ? (
               <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                 <div className="space-y-8">
-                  {backgroundText ? (
-                    <div className="space-y-3">
-                      <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">项目背景</h2>
-                      <p className="text-sm text-[var(--color-text-secondary)] md:text-base">{backgroundText}</p>
+                  {bodyCopyBlocks.length ? (
+                    <div className="space-y-2">
+                      {bodyCopyBlocks.map((block, index) => (
+                        <article key={`body-copy-${index}`} className="space-y-2 rounded-2xl bg-white/80 p-4 sm:p-5">
+                          {block.title ? (
+                            <h3 className="text-lg font-semibold text-[var(--color-brand-secondary)]">{block.title}</h3>
+                          ) : null}
+                          {block.subtitle ? (
+                            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] whitespace-pre-line">{block.subtitle}</p>
+                          ) : null}
+                        </article>
+                      ))}
                     </div>
                   ) : null}
-                  {fallbackTechnicalText ? (
+                  {/* 技术参数说明已移除，仅保留表格 */}
+                  {showTechnicalTable ? (
                     <div className="space-y-3">
-                      <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">技术参数</h2>
-                      <p className="text-sm text-[var(--color-text-secondary)] md:text-base">{fallbackTechnicalText}</p>
-                    </div>
-                  ) : null}
-                  {technicalSpecsDisplay.length ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">技术参数</h2>
-                        <span className="text-xs text-[var(--color-text-tertiary)]">参数表</span>
-                      </div>
+                      {(technicalSectionTitleDisplay || technicalSectionSubtitleDisplay) ? (
+                        <div className="space-y-1">
+                          {technicalSectionTitleDisplay ? (
+                            <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{technicalSectionTitleDisplay}</h2>
+                          ) : null}
+                          {technicalSectionSubtitleDisplay ? (
+                            <p className="text-sm text-[var(--color-text-secondary)]">{technicalSectionSubtitleDisplay}</p>
+                          ) : null}
+                        </div>
+                      ) : null}
                       <div className="overflow-hidden rounded-lg border border-[var(--color-border)]">
                         <table className="w-full text-sm">
-                          <tbody>
-                            {technicalSpecsDisplay.map((spec) => (
-                              <tr key={`${spec.label}-${spec.value}`} className="border-b border-[var(--color-border)] last:border-b-0">
-                                <td className="w-1/3 bg-[var(--color-surface-muted)] px-4 py-3 font-semibold text-[var(--color-brand-secondary)]">
-                                  {spec.label}
-                                </td>
-                                <td className="px-4 py-3 text-[var(--color-text-secondary)]">{spec.value}</td>
-                              </tr>
-                            ))}
-                          </tbody>
+                          {hasCustomTechnicalTable ? (
+                            <>
+                              <thead className="bg-[var(--color-surface-muted)]">
+                                <tr>
+                                  {technicalColumns.map((column) => (
+                                    <th key={column} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--color-brand-secondary)]">
+                                      {column}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {technicalRows.map((row, rowIdx) => (
+                                  <tr key={`tech-row-${rowIdx}`} className="border-b border-[var(--color-border)] last:border-b-0">
+                                    {row.map((cell, cellIdx) => (
+                                      <td key={`tech-cell-${rowIdx}-${cellIdx}`} className="px-4 py-3 text-[var(--color-text-secondary)]">
+                                        {cell || "-"}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </>
+                          ) : (
+                            <tbody>
+                              {metricsLocalized.map((spec) => (
+                                <tr key={`${spec.label}-${spec.value}`} className="border-b border-[var(--color-border)] last:border-b-0">
+                                  <td className="w-1/3 bg-[var(--color-surface-muted)] px-4 py-3 font-semibold text-[var(--color-brand-secondary)]">
+                                    {spec.label}
+                                  </td>
+                                  <td className="px-4 py-3 text-[var(--color-text-secondary)]">{spec.value}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          )}
                         </table>
-                      </div>
-                    </div>
-                  ) : null}
-                  {deliverableTexts.length ? (
-                    <div className="space-y-3">
-                      <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">交付成果</h2>
-                      <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
-                        {deliverableTexts.map((item) => (
-                          <p key={item} className="flex items-start gap-2">
-                            <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-brand-primary)]"></span>
-                            <span>{item}</span>
-                          </p>
-                        ))}
                       </div>
                     </div>
                   ) : null}
@@ -249,7 +329,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
               </section>
             ) : null}
 
-            {hideAdvisor ? null : <AdvisorCTA />}
+            {hideAdvisor ? null : <ConsultationCTA consultation={config.consultation} />}
           </div>
         </div>
       </div>
@@ -284,23 +364,58 @@ function Breadcrumb({ items }: { items: ReadonlyArray<{ href?: string; label?: s
   );
 }
 
-function AdvisorCTA() {
+function ConsultationCTA({
+  consultation,
+}: {
+  consultation?: {
+    title?: string | Record<string, string | undefined>;
+    description?: string | Record<string, string | undefined>;
+    primaryLabel?: string | Record<string, string | undefined>;
+    primaryHref?: string;
+    phoneLabel?: string | Record<string, string | undefined>;
+    phoneNumber?: string;
+  };
+}) {
+  const title = t(toTValue(consultation?.title)) || "需要定制方案？";
+  const description = t(toTValue(consultation?.description)) ||
+    "留下项目信息，24 小时内由行业顾问回电，为您提供方案设计、预算测算与现场勘查。";
+  const primaryLabel = t(toTValue(consultation?.primaryLabel)) || "提交项目信息";
+  const primaryHref = consultation?.primaryHref?.trim() || "/contact";
+  const phoneLabel = t(toTValue(consultation?.phoneLabel)) || "致电";
+  const phoneNumber = consultation?.phoneNumber?.trim() || "400-800-1234";
+  const showPrimary = Boolean(primaryLabel && primaryHref);
+  const showPhone = Boolean(phoneLabel && phoneNumber);
+
+  if (!title && !description && !showPrimary && !showPhone) {
+    return null;
+  }
+
   return (
     <section className="rounded-lg border border-[var(--color-border)] bg-white p-6 md:p-8">
       <div className="space-y-4 text-left">
         <div className="space-y-2">
-          <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">需要定制方案？</p>
-          <p className="text-sm text-[var(--color-text-secondary)] md:text-base">
-            留下项目信息，24 小时内由行业顾问回电，为您提供方案设计、预算测算与现场勘查。
-          </p>
+          {title ? <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">{title}</p> : null}
+          {description ? (
+            <p className="text-sm text-[var(--color-text-secondary)] md:text-base">{description}</p>
+          ) : null}
         </div>
-        <div className="flex flex-col items-start gap-3 text-sm">
-          <Link href="/contact" className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full">
-            提交项目信息
-          </Link>
-          <Link href="tel:400-800-1234" className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full">
-            致电 400-800-1234
-          </Link>
+        <div className="flex flex-col gap-3 text-sm sm:flex-row">
+          {showPrimary ? (
+            <Link
+              href={primaryHref}
+              className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full sm:flex-1"
+            >
+              {primaryLabel}
+            </Link>
+          ) : null}
+          {showPhone ? (
+            <Link
+              href={`tel:${phoneNumber}`}
+              className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full sm:flex-1"
+            >
+              {`${phoneLabel} ${phoneNumber}`}
+            </Link>
+          ) : null}
         </div>
       </div>
     </section>

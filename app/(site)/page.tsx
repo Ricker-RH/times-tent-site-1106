@@ -295,6 +295,13 @@ function buildHeroData(homeConfig: HomeConfig, categories: CaseCategoryView[]): 
     description = "";
   }
 
+  const fallbackOverlayEnabled =
+    typeof (fallbackHero as Record<string, unknown>)?.overlayEnabled === "boolean"
+      ? Boolean((fallbackHero as Record<string, unknown>).overlayEnabled)
+      : true;
+  const overlayEnabled =
+    typeof heroConfig.overlayEnabled === "boolean" ? heroConfig.overlayEnabled : fallbackOverlayEnabled;
+
   const slides: HomeHeroSlide[] = [];
   const seen = new Set<string>();
   const slidesSource = Array.isArray(heroConfig.slides) ? heroConfig.slides : [];
@@ -391,6 +398,7 @@ function buildHeroData(homeConfig: HomeConfig, categories: CaseCategoryView[]): 
     description,
     highlights: slides[0]?.highlights ?? [],
     slides,
+    overlayEnabled,
     primaryCta: hasPrimaryLabelProp
       ? primaryLabel
         ? { label: primaryLabel, href: primaryHref }
@@ -542,6 +550,15 @@ function buildApplicationSection(homeConfig: HomeConfig) {
         (fallbackApplication as Record<string, unknown>)?.descriptionEn,
       );
 
+  const fallbackOverlayEnabled =
+    typeof (fallbackApplication as Record<string, unknown>)?.overlayEnabled === "boolean"
+      ? Boolean((fallbackApplication as Record<string, unknown>).overlayEnabled)
+      : true;
+  const overlayEnabled =
+    typeof (raw as Record<string, unknown>)?.overlayEnabled === "boolean"
+      ? Boolean((raw as Record<string, unknown>).overlayEnabled)
+      : fallbackOverlayEnabled;
+
   return {
     heading,
     description,
@@ -552,6 +569,7 @@ function buildApplicationSection(homeConfig: HomeConfig) {
       (fallbackApplication as Record<string, unknown>)?.actionLabelEn,
       "查看详情",
     ),
+    overlayEnabled,
   };
 }
 

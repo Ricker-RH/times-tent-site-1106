@@ -143,13 +143,21 @@ export function ProductMatrixSection({
       {cards.length && !hideProduct ? (
         <section className="relative bg-[var(--color-surface-muted)] py-16" data-preview-anchor="product">
           <div className="mx-auto w-full max-w-[1200px] space-y-6 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl space-y-2">
-              <h2 className="text-2xl font-bold text-[var(--color-brand-secondary)] md:text-3xl">
-                {resolveText(productShowcase.heading, "核心篷房产品矩阵")}
-              </h2>
-              {resolveText(productShowcase.description) ? (
-                <p className="text-sm text-[var(--color-text-secondary)]">{resolveText(productShowcase.description)}</p>
-              ) : null}
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="max-w-3xl space-y-2">
+                <h2 className="text-2xl font-bold text-[var(--color-brand-secondary)] md:text-3xl">
+                  {resolveText(productShowcase.heading, "核心篷房产品矩阵")}
+                </h2>
+                {resolveText(productShowcase.description) ? (
+                  <p className="text-sm text-[var(--color-text-secondary)]">{resolveText(productShowcase.description)}</p>
+                ) : null}
+              </div>
+              <Link
+                href="/products"
+                className={`${CTA_BUTTON_SECONDARY} self-start md:self-auto`}
+              >
+                查看所有产品
+              </Link>
             </div>
 
             <div className="grid auto-rows-fr gap-6 md:grid-cols-2 xl:grid-cols-3">

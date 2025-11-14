@@ -22,7 +22,7 @@ export function AboutCompanySection({ introSection }: AboutCompanySectionProps):
   return (
     <section className="bg-white pb-16 pt-8" id="about-company">
       <div className="mx-auto w-full max-w-[1200px] space-y-9 px-4 sm:px-6 lg:px-8">
-        <div className="space-y-3 text-center md:text-left">
+        <div className="space-y-5 text-center md:text-left">
           <h2 className="text-2xl font-bold text-[var(--color-brand-secondary)] md:text-3xl">{title}</h2>
           <p className="text-base text-[var(--color-text-secondary)]">{strapline}</p>
           <p className="whitespace-pre-line text-sm text-[var(--color-text-secondary)] md:text-base">{paragraph}</p>

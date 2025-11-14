@@ -5,10 +5,10 @@ import { query, withTransaction } from "./db";
 import type { FooterConfig } from "@/types/footer";
 import type { NavigationConfig, NavigationLink } from "@/types/navigation";
 import type { VideosConfig } from "@/types/videos";
-import { navigation_config, products_cards, cases_config } from "@/data/configs";
+import { navigation_config, products_cards, cases_config, inventory_config } from "@/data/configs";
 import { VISIBILITY_CONFIG_KEY } from "@/constants/visibility";
 import { createDefaultVisibilityConfig } from "@/lib/visibilityConfig";
-import type { ProductCenterConfig } from "./pageConfigs";
+import type { ProductCenterConfig, InventoryConfig } from "./pageConfigs";
 import type { JsonValue } from "./siteConfigHistory";
 import { diffJsonValues, recordSiteConfigHistory } from "./siteConfigHistory";
 import { t } from "@/data";
@@ -90,10 +90,11 @@ export async function getVideosConfig(): Promise<VideosConfig | null> {
 }
 
 export async function getNavigationConfig(): Promise<NavigationConfig | null> {
-  const [storedConfig, productCenterRaw, casesRaw] = await Promise.all([
+  const [storedConfig, productCenterRaw, casesRaw, inventoryRaw] = await Promise.all([
     getSiteConfig<NavigationConfig>(NAVIGATION_CONFIG_KEY),
     getSiteConfig<ProductCenterConfig>("产品中心"),
     getSiteConfig<CasesConfigStored>("案例展示"),
+    getSiteConfig<InventoryConfig>("现货库存"),
   ]);
 
   const baseConfig: NavigationConfig = storedConfig
@@ -173,10 +174,42 @@ export async function getNavigationConfig(): Promise<NavigationConfig | null> {
     nextLinks[caseLinkIndex] = existingLink;
   }
 
-  const inventoryLinkIndex = mainGroup.links.findIndex((link) => link.slug === "inventory" || (typeof link.href === "string" && link.href.startsWith("/inventory")));
+  const inventorySectionsSource = Array.isArray(inventoryRaw?.showcaseSections) && inventoryRaw!.showcaseSections!.length
+    ? inventoryRaw!.showcaseSections!
+    : inventory_config.showcaseSections ?? [];
+
+  const inventoryChildren: NavigationLink[] = inventorySectionsSource.map((section, index) => {
+    const id = typeof section?.id === "string" && section.id.trim() ? section.id.trim() : `section-${index + 1}`;
+    const titleVal = section?.title as unknown;
+    const labelZhCN = typeof titleVal === "string" && titleVal
+      ? titleVal
+      : (t(titleVal as Record<string, string | undefined>, "zh-CN") || id);
+    const labelZhTW = typeof titleVal === "string" && titleVal
+      ? titleVal
+      : (t(titleVal as Record<string, string | undefined>, "zh-TW") || id);
+    const labelEn = typeof titleVal === "string" && titleVal
+      ? titleVal
+      : (t(titleVal as Record<string, string | undefined>, "en") || id);
+    return {
+      slug: `inventory-${id}`,
+      href: `/inventory#${id}`,
+      label: {
+        "zh-CN": labelZhCN,
+        "zh-TW": labelZhTW,
+        en: labelEn,
+      },
+    } satisfies NavigationLink;
+  });
+
+  const inventoryLinkIndex = mainGroup.links.findIndex(
+    (link) => link.slug === "inventory" || (typeof link.href === "string" && link.href.startsWith("/inventory")),
+  );
   if (inventoryLinkIndex !== -1) {
     const inventoryLink = { ...nextLinks[inventoryLinkIndex] };
-    inventoryLink.href = "/inventory";
+    inventoryLink.href = inventoryChildren.length ? inventoryChildren[0].href : "/inventory";
+    if (inventoryChildren.length) {
+      inventoryLink.children = inventoryChildren;
+    }
     nextLinks[inventoryLinkIndex] = inventoryLink;
   }
 

@@ -29,6 +29,7 @@ type InventoryHero = {
   title?: MaybeLocalized;
   description?: MaybeLocalized;
   badges?: ReadonlyArray<MaybeLocalized>;
+  overlayEnabled?: boolean;
 };
 
 export interface InventoryClientProps {
@@ -60,46 +61,72 @@ export default function InventoryClient({ hero, sections, hiddenSections }: Inve
    );
  }
 
- function HeroSection({ hero }: { hero: InventoryHero }) {
-   const backgroundImage = sanitizeImageSrc(hero.backgroundImage ?? "");
-   const eyebrow = resolveText(hero.eyebrow);
-   const title = resolveText(hero.title);
-   const description = resolveText(hero.description);
-   const badges = (hero.badges ?? []).map((badge) => resolveText(badge)).filter(Boolean);
-   
-   return (
-     <section className="relative overflow-hidden">
-       <div className="absolute inset-0">
-         {backgroundImage ? (
-           <Image src={backgroundImage} alt={title || "Inventory hero"} fill priority className="object-cover" />
-         ) : (
-           <div className="flex h-full items-center justify-center bg-[var(--color-surface-muted)] text-xs text-[var(--color-text-tertiary)]">
-             背景图待补充
-           </div>
-         )}
-         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/45 to-black/25" />
-       </div>
-       <div className="relative z-10 mx-auto flex min-h-[420px] w-full max-w-[1200px] flex-col justify-center gap-6 px-4 py-16 text-white sm:px-6 md:py-20 lg:px-8">
-         {eyebrow ? (
-           <span className="inline-flex w-fit items-center rounded-full bg-white/15 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em]">
-             {eyebrow}
-           </span>
-         ) : null}
-         {title ? <h1 className="max-w-3xl text-3xl font-semibold md:text-4xl">{title}</h1> : null}
-        {description ? <p className="w-full text-sm text-white/80 md:text-base">{description}</p> : null}
-         {badges.length ? (
-           <div className="flex flex-wrap gap-2 text-xs text-white/80">
-             {badges.map((badge, index) => (
-               <span key={`${badge}-${index}`} className="inline-flex items-center rounded-full bg-white/15 px-3 py-1">
-                 {badge}
-               </span>
-             ))}
-           </div>
-         ) : null}
-       </div>
-     </section>
-   );
- }
+function HeroSection({ hero }: { hero: InventoryHero }) {
+  const backgroundImage = sanitizeImageSrc(hero.backgroundImage ?? "");
+  const eyebrow = resolveText(hero.eyebrow);
+  const title = resolveText(hero.title);
+  const description = resolveText(hero.description);
+  const badges = (hero.badges ?? []).map((badge) => resolveText(badge)).filter(Boolean);
+  const overlayEnabled = hero.overlayEnabled !== false;
+
+  return (
+    <section className="relative overflow-hidden">
+      <div className="absolute inset-0">
+        {backgroundImage ? (
+          <Image src={backgroundImage} alt={title || "Inventory hero"} fill priority className="object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-[var(--color-surface-muted)] text-xs text-[var(--color-text-tertiary)]">
+            背景图待补充
+          </div>
+        )}
+        {overlayEnabled ? <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/45 to-black/25" /> : null}
+      </div>
+      <div className="relative z-10 mx-auto flex min-h-[420px] w-full max-w-[1200px] flex-col justify-center gap-6 px-4 py-16 text-white sm:px-6 md:py-20 lg:px-8">
+        {eyebrow ? (
+          <span
+            className={`inline-flex w-fit items-center rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] ${
+              overlayEnabled ? "bg-white/15" : "bg-black/40 backdrop-blur"
+            }`}
+          >
+            {eyebrow}
+          </span>
+        ) : null}
+        {title ? (
+          <h1
+            className={`max-w-3xl text-3xl font-semibold md:text-4xl ${
+              overlayEnabled ? "" : "drop-shadow-[0_6px_20px_rgba(0,0,0,0.55)]"
+            }`}
+          >
+            {title}
+          </h1>
+        ) : null}
+        {description ? (
+          <p
+            className={`w-full text-sm md:text-base ${
+              overlayEnabled ? "text-white/80" : "text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.6)]"
+            }`}
+          >
+            {description}
+          </p>
+        ) : null}
+        {badges.length ? (
+          <div className="flex flex-wrap gap-2 text-xs text-white/80">
+            {badges.map((badge, index) => (
+              <span
+                key={`${badge}-${index}`}
+                className={`inline-flex items-center rounded-full px-3 py-1 ${
+                  overlayEnabled ? "bg-white/15" : "bg-black/45 backdrop-blur"
+                }`}
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
 
  function ShowcaseSection({ section, index }: { section: InventorySectionConfig; index: number }) {
    const id = section.id ?? `section-${index}`;

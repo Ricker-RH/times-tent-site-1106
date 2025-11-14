@@ -101,17 +101,9 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
                         className="object-cover"
                         sizes="100vw"
                       />
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
-                        <h2 className="text-2xl font-bold text-[var(--color-brand-primary)] md:text-3xl">
-                          <span className="inline-flex items-center rounded-full bg-white/15 px-5 py-2 text-[var(--color-brand-primary)] shadow-[0_4px_10px_rgba(0,0,0,0.1)] backdrop-blur-sm">
-                            {t(study.title)}
-                          </span>
-                        </h2>
-                        <Link
-                          href={`/cases/${category.slug}/${study.slug}`}
-                          className="inline-flex items-center rounded-full border-2 border-[var(--color-brand-primary)] px-6 py-3 text-sm font-bold text-[var(--color-brand-primary)] transition hover:bg-[var(--color-brand-primary)] hover:text-white"
-                        >
-                          查看详情
+                      <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                        <Link href={`/cases/${category.slug}/${study.slug}`} className="inline-block text-2xl font-extrabold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] md:text-3xl">
+                          {t(study.title)}
                         </Link>
                       </div>
                     </div>
@@ -129,13 +121,13 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
                       留下项目信息，24 小时内由行业顾问回电，为您提供方案设计、预算测算与现场勘查。
                     </p>
                   </div>
-                  <div className="flex flex-col items-start gap-3 text-sm">
-                    <Link href="/contact" className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full">
+                  <div className="flex flex-col gap-3 text-sm sm:flex-row">
+                    <Link href="/contact" className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full sm:flex-1">
                       提交项目信息
                     </Link>
                     <Link
                       href="tel:400-800-1234"
-                      className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full"
+                      className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full sm:flex-1"
                     >
                       致电 400-800-1234
                     </Link>
