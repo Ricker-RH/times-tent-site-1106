@@ -133,7 +133,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
         : ((study.deliverables ?? []) as ReadonlyArray<string>);
     const deliverablesText = deliverablesCandidates
       .map((item) => t(toTValue(item)))
-      .filter((value): value is string => typeof value === "string" && value.trim().length)
+      .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
       .join("\n");
     if (deliverablesText.trim().length) {
       fallbackBodyBlocks.push({ title: deliverablesTitle, subtitle: deliverablesText });

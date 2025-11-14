@@ -688,7 +688,7 @@ function serializePairMatrix(values: DetailMetricGroup[]): DetailMetricGroup[] {
 export function serializeProductDetail(detail: ProductDetailConfig): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (detail.title.trim()) result.title = detail.title.trim();
-  const hero: Record<string, string> = {};
+  const hero: Record<string, string | boolean> = {};
   if (typeof detail.hero.heading === "string") hero.heading = detail.hero.heading.trim();
   if (typeof detail.hero.badge === "string") hero.badge = detail.hero.badge.trim();
   if (typeof detail.hero.description === "string") hero.description = detail.hero.description.trim();

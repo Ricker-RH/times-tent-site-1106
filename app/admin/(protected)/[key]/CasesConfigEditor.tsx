@@ -160,7 +160,8 @@ function aggregateLocalizedList(values?: LocalizedValue[]): LocalizedValue | nul
   if (!values?.length) return null;
   const aggregated = ensureLocalized(undefined, "");
   let hasContent = false;
-  (SUPPORTED_LOCALES as LocaleKey[]).forEach((localeKey) => {
+  const localeKeys = SUPPORTED_LOCALES as ReadonlyArray<LocaleKey>;
+  localeKeys.forEach((localeKey) => {
     const parts = values
       .map((item) => (ensureLocalizedRecord(item)[localeKey] || "").trim())
       .filter(Boolean);
@@ -178,7 +179,8 @@ function fromStringArrayToLocalized(value: unknown): LocalizedValue | null {
   if (!lines.length) return null;
   const text = lines.join("\n");
   const localized = ensureLocalized(undefined, "");
-  (SUPPORTED_LOCALES as LocaleKey[]).forEach((localeKey) => {
+  const localeKeys = SUPPORTED_LOCALES as ReadonlyArray<LocaleKey>;
+  localeKeys.forEach((localeKey) => {
     localized[localeKey] = text;
   });
   return localized;
@@ -829,9 +831,10 @@ function CasesPreviewSurface({
   const [studyDragTargetIndex, setStudyDragTargetIndex] = useState<number | null>(null);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
+  const previewStudyIndex = previewPage.view === "study" ? previewPage.studyIndex : -1;
   useEffect(() => {
     setActiveSlideIndex(0);
-  }, [previewPage.categoryIndex, previewPage.studyIndex]);
+  }, [previewPage.categoryIndex, previewStudyIndex]);
 
   const handleDragStart = (event: DragEvent<HTMLDivElement>, index: number) => {
     dragSourceRef.current = index;

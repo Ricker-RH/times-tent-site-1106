@@ -73,6 +73,7 @@ function toStringValue(value: unknown): string {
 
 function cloneDetail(detail: ProductDetailConfig): ProductDetailConfig {
   return {
+    slug: detail.slug,
     title: detail.title,
     hero: { ...detail.hero },
     breadcrumb: [...detail.breadcrumb],
@@ -83,6 +84,19 @@ function cloneDetail(detail: ProductDetailConfig): ProductDetailConfig {
       pairs: section.pairs.map((group) => group.map((item) => ({ ...item }))),
     })),
     gallery: detail.gallery.map((item) => ({ ...item })),
+    tabs: detail.tabs.map((tab) => ({ ...tab })),
+    intro: {
+      blocks: detail.intro.blocks.map((block) => ({ ...block })),
+    },
+    specs: {
+      columns: [...detail.specs.columns],
+      rows: detail.specs.rows.map((row) => [...row]),
+      caption: detail.specs.caption,
+    },
+    accessories: {
+      items: detail.accessories.items.map((item) => ({ ...item })),
+    },
+    cta: detail.cta ? { ...detail.cta } : undefined,
   };
 }
 
@@ -262,9 +276,9 @@ type LocalizedOverridesMap = Record<
     gallery?: Array<{ alt?: LocalizedValue }>;
     cta?: { title?: LocalizedValue; description?: LocalizedValue; primaryLabel?: LocalizedValue; phoneLabel?: LocalizedValue };
     tabs?: Array<{ label?: LocalizedValue }>;
-    intro?: { blocks?: Array<{ title?: LocalizedValue; subtitle?: LocalizedValue } | undefined> };
+    intro?: { blocks?: Array<{ title?: LocalizedValue; subtitle?: LocalizedValue }> };
     specs?: { columns?: Array<LocalizedValue | undefined>; caption?: LocalizedValue };
-    accessories?: { items?: Array<{ title?: LocalizedValue; description?: LocalizedValue } | undefined> };
+    accessories?: { items?: Array<{ title?: LocalizedValue; description?: LocalizedValue }> };
   }
 >;
 
@@ -388,8 +402,8 @@ function extractLocalizedOverrides(rawMap: Record<string, unknown>, slugs: strin
       if (hasAnyLv(title)) rec.title = title;
       if (hasAnyLv(subtitle)) rec.subtitle = subtitle;
       return Object.keys(rec).length ? rec : undefined;
-    });
-    if (introOv.some(Boolean)) {
+    }).filter((block): block is { title?: LocalizedValue; subtitle?: LocalizedValue } => Boolean(block));
+    if (introOv.length) {
       entry.intro = { blocks: introOv };
     }
 
@@ -418,8 +432,8 @@ function extractLocalizedOverrides(rawMap: Record<string, unknown>, slugs: strin
       if (hasAnyLv(title)) rec.title = title;
       if (hasAnyLv(description)) rec.description = description;
       return Object.keys(rec).length ? rec : undefined;
-    });
-    if (accessoriesOv.some(Boolean)) {
+    }).filter((item): item is { title?: LocalizedValue; description?: LocalizedValue } => Boolean(item));
+    if (accessoriesOv.length) {
       entry.accessories = { items: accessoriesOv };
     }
 
@@ -1003,7 +1017,15 @@ interface HeroDialogProps {
     },
   ) => void;
   onCancel: () => void;
-  initialLocalized?: { title?: LocalizedValue; hero?: { badge?: LocalizedValue; scenarios?: LocalizedValue; description?: LocalizedValue } };
+  initialLocalized?: {
+    title?: LocalizedValue;
+    hero?: {
+      heading?: LocalizedValue;
+      badge?: LocalizedValue;
+      scenarios?: LocalizedValue;
+      description?: LocalizedValue;
+    };
+  };
 }
 
 function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDialogProps) {
@@ -1518,13 +1540,12 @@ function TabsEditorDialog({ value, onSave, onCancel, initialLocalized }: TabsEdi
     target: tab.target,
     visible: tab.visible !== false,
   });
-  const initialTabs = (value.length
-    ? value
-    : [
-        { id: "tab-intro", label: TAB_LABEL_FALLBACK.intro, target: "intro", visible: true },
-        { id: "tab-specs", label: TAB_LABEL_FALLBACK.specs, target: "specs", visible: true },
-        { id: "tab-accessories", label: TAB_LABEL_FALLBACK.accessories, target: "accessories", visible: true },
-      ]).map(ensureDraft);
+  const fallbackTabs: ProductDetailTabConfig[] = [
+    { id: "tab-intro", label: TAB_LABEL_FALLBACK.intro, target: "intro", visible: true },
+    { id: "tab-specs", label: TAB_LABEL_FALLBACK.specs, target: "specs", visible: true },
+    { id: "tab-accessories", label: TAB_LABEL_FALLBACK.accessories, target: "accessories", visible: true },
+  ];
+  const initialTabs = (value.length ? value : fallbackTabs).map(ensureDraft);
   const [tabs, setTabs] = useState<TabDraft[]>(initialTabs);
   const [labels, setLabels] = useState<LocalizedValue[]>(() =>
     initialTabs.map((tab, index) => createLocalizedRecord(tab.label ?? TAB_LABEL_FALLBACK[tab.target], initialLocalized?.[index]?.label)),
@@ -2442,23 +2463,7 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
   const toast = useToast();
   const prevStatusRef = useRef(formState.status);
 
-  const [localizedOverrides, setLocalizedOverrides] = useState<
-    Record<
-      string,
-      {
-        title?: LocalizedValue;
-        hero?: { badge?: LocalizedValue; scenarios?: LocalizedValue; description?: LocalizedValue };
-        sections?: Array<{
-          heading?: LocalizedValue;
-          paragraphs?: LocalizedValue[];
-          lists?: LocalizedValue[][];
-          pairs?: Array<Array<{ label?: LocalizedValue; value?: LocalizedValue }>>;
-        }>;
-        gallery?: Array<{ alt?: LocalizedValue }>;
-        cta?: { title?: LocalizedValue; description?: LocalizedValue; primaryLabel?: LocalizedValue; phoneLabel?: LocalizedValue };
-      }
-    >
-  >({});
+  const [localizedOverrides, setLocalizedOverrides] = useState<LocalizedOverridesMap>({});
   const payloadObject = useMemo(
     () => mergeSerializedWithOverrides(serializeProductDetailMap(details), localizedOverrides),
     [details, localizedOverrides],

@@ -13,7 +13,7 @@ export function ContactHeroSection({ hero }: ContactHeroSectionProps): JSX.Eleme
   const eyebrow = t(hero.eyebrow).trim();
   const title = t(hero.title);
   const description = t(hero.description);
-  const overlayEnabled = hero.overlayEnabled !== false;
+  const overlayEnabled = hero.overlayEnabled ?? true;
 
   return (
     <section className="relative overflow-hidden">

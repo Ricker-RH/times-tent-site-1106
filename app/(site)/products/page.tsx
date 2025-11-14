@@ -150,7 +150,7 @@ function HeroCard({ hero }: { hero: ProductCenterData["hero"] }) {
   const eyebrow = resolveText(hero.eyebrow);
   const title = resolveText(hero.title, "模块化产品矩阵");
   const description = resolveText(hero.description);
-  const overlayEnabled = hero.overlayEnabled !== false;
+  const overlayEnabled = hero.overlayEnabled ?? true;
   return (
     <section className="relative mt-1 overflow-hidden rounded-lg border border-[var(--color-border)] bg-black text-white md:mt-0">
       <Image src={hero.image ?? DEFAULT_PRODUCT_IMAGE} alt={title || "产品中心"} fill className="object-cover" priority sizes="100vw" />

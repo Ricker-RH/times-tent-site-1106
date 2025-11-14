@@ -67,7 +67,7 @@ function HeroSection({ hero }: { hero: InventoryHero }) {
   const title = resolveText(hero.title);
   const description = resolveText(hero.description);
   const badges = (hero.badges ?? []).map((badge) => resolveText(badge)).filter(Boolean);
-  const overlayEnabled = hero.overlayEnabled !== false;
+  const overlayEnabled = hero.overlayEnabled ?? true;
 
   return (
     <section className="relative overflow-hidden">

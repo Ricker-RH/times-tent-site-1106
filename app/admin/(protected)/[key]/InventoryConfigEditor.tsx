@@ -841,7 +841,7 @@ function SectionDialog({
 function InventoryPreview({ config, onEdit, onAddSection }: { config: InventoryConfigState; onEdit: (target: EditingTarget) => void; onAddSection: () => void }) {
   const previewConfig = useMemo(() => serializeConfig(config), [config]);
   const heroBackground = sanitizeImageSrc(previewConfig.hero?.backgroundImage);
-  const overlayEnabled = previewConfig.hero?.overlayEnabled !== false;
+  const overlayEnabled = previewConfig.hero?.overlayEnabled ?? true;
 
   return (
     <ConfigPreviewFrame

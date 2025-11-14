@@ -43,8 +43,8 @@ export type CaseStudy = CaseCategory["studies"][number] & {
   technicalSection?: {
     title?: string;
     subtitle?: string;
-    columns?: string[];
-    rows?: string[][];
+    columns?: string[] | readonly string[];
+    rows?: string[][] | ReadonlyArray<ReadonlyArray<string>>;
   };
 };
 
