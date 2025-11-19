@@ -184,7 +184,7 @@ export function ProductTabsSection({ tabs = [], intro, specs, accessories, hidde
             key={tab.id}
             type="button"
             onClick={() => setActiveTabId(tab.id)}
-            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+            className={`rounded-[6px] px-4 py-2 text-sm font-semibold transition ${
               tab.id === activeTab.id
                 ? "bg-[var(--color-brand-primary)] text-white shadow"
                 : "bg-[var(--color-surface-muted)] text-[var(--color-brand-secondary)] hover:bg-white"

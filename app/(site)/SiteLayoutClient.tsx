@@ -246,7 +246,7 @@ function LanguageButton({ variant = "desktop" }: LanguageButtonProps) {
   const [open, setOpen] = useState(false);
 
   const buttonClasses = cn(
-    "inline-flex items-center gap-2 rounded-full border border-[var(--color-border)] px-4 py-2 text-sm font-medium transition",
+    "inline-flex items-center gap-2 rounded-[6px] border border-[var(--color-border)] px-4 py-2 text-sm font-medium transition",
     variant === "desktop"
       ? "text-[var(--color-text-secondary)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
       : "w-full justify-between text-[var(--color-brand-secondary)]",
@@ -269,7 +269,7 @@ function LanguageButton({ variant = "desktop" }: LanguageButtonProps) {
       {open ? (
         <ul
           className={cn(
-            "absolute right-0 z-50 mt-2 min-w-[200px] rounded-xl border border-[var(--color-border)] bg-white p-2 ",
+            "absolute right-0 z-50 mt-2 min-w-[200px] rounded-[6px] border border-[var(--color-border)] bg-white p-2 ",
             variant === "mobile" ? "left-0 right-auto" : "",
           )}
         >
@@ -279,7 +279,7 @@ function LanguageButton({ variant = "desktop" }: LanguageButtonProps) {
                 type="button"
                 onClick={() => handleSelect(code)}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition hover:bg-[var(--color-surface-muted)]",
+                  "flex w-full items-center justify-between rounded-[6px] px-3 py-2 text-sm transition hover:bg-[var(--color-surface-muted)]",
                   code === locale ? "text-[var(--color-brand-primary)]" : "text-[var(--color-text-secondary)]",
                 )}
               >
