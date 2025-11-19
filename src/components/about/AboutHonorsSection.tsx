@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef } from "react";
 
 import { t } from "@/data";
 import type { AboutConfig } from "@/server/pageConfigs";
@@ -31,13 +32,13 @@ export function AboutHonorsSection({ honorsSection }: AboutHonorsSectionProps): 
 
         <div className="space-y-8">
           {tracks.map((items, trackIndex) => (
-            <div key={trackIndex} className="overflow-hidden">
+            <div key={trackIndex} className={styles.scroller}>
               <div className={styles.track}>
-                {[...items, ...items].map((item, idx) => {
+                {items.map((item, idx) => {
                   const itemName = t(item?.name);
                   return (
                     <figure
-                      key={`honor-${trackIndex}-${idx}`}
+                      key={`honor-${trackIndex}-a-${idx}`}
                       className="flex flex-col items-center gap-2 text-center text-sm text-[var(--color-text-secondary)]"
                     >
                       <Image
@@ -47,6 +48,29 @@ export function AboutHonorsSection({ honorsSection }: AboutHonorsSectionProps): 
                         height={150}
                         loading="eager"
                         priority={idx < items.length}
+                        className={styles.itemImage}
+                      />
+                      <figcaption className="max-w-[220px] font-medium text-[var(--color-brand-secondary)]">
+                        {itemName}
+                      </figcaption>
+                    </figure>
+                  );
+                })}
+              </div>
+              <div className={styles.trackClone} aria-hidden>
+                {items.map((item, idx) => {
+                  const itemName = t(item?.name);
+                  return (
+                    <figure
+                      key={`honor-${trackIndex}-b-${idx}`}
+                      className="flex flex-col items-center gap-2 text-center text-sm text-[var(--color-text-secondary)]"
+                    >
+                      <Image
+                        src={item?.image ?? "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&w=1600&q=80"}
+                        alt={itemName || "荣誉"}
+                        width={220}
+                        height={150}
+                        loading="eager"
                         className={styles.itemImage}
                       />
                       <figcaption className="max-w-[220px] font-medium text-[var(--color-brand-secondary)]">

@@ -1,10 +1,23 @@
-.track {
+.scroller {
+  overflow: hidden;
+  position: relative;
+}
+
+.track,
+.trackClone {
   --track-gap: 24px;
   display: flex;
   gap: var(--track-gap);
   width: max-content;
-  animation: marquee 28s linear infinite;
   will-change: transform;
+}
+
+.track {
+  animation: scroll 28s linear infinite;
+}
+
+.trackClone {
+  animation: scroll2 28s linear infinite;
 }
 
 .itemImage {
@@ -14,11 +27,24 @@
   object-fit: cover;
 }
 
-@keyframes marquee {
+@keyframes scroll {
   0% {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translate3d(-100%, 0, 0);
   }
+}
+
+@keyframes scroll2 {
+  0% {
+    transform: translate3d(100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.noAnimation {
+  animation: none !important;
 }
