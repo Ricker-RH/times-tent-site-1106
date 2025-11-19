@@ -8,13 +8,13 @@ module.exports = {
   theme: {
     borderRadius: {
       none: "0px",
-      sm: "2px",
-      DEFAULT: "2px",
-      md: "2px",
-      lg: "2px",
-      xl: "2px",
-      "2xl": "2px",
-      "3xl": "2px",
+      sm: "3px",
+      DEFAULT: "4px",
+      md: "4px",
+      lg: "5px",
+      xl: "6px",
+      "2xl": "8px",
+      "3xl": "10px",
       full: "9999px",
     },
     extend: {

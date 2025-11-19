@@ -47,7 +47,7 @@
   input[type="button"],
   input[type="submit"],
   input[type="reset"] {
-    border-radius: 2px !important;
+    border-radius: 3px !important;
   }
 }
 
