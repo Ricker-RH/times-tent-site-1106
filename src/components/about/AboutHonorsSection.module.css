@@ -1,27 +1,29 @@
-.scroller {
-  overflow: hidden;
+/* Row container: each track pair overlays within this area */
+.scrollerRow {
   position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+  overflow: hidden;
+  width: 100%;
+  height: 190px; /* image(150) + gap + caption height */
 }
 
-.track,
-.trackClone {
-  --track-gap: 24px;
-  display: flex;
-  gap: var(--track-gap);
-  width: max-content;
-  will-change: transform;
-  flex-shrink: 0;
-}
-
+/* Each moving track (absolute to overlay A and B) */
 .track {
-  animation: scroll 28s linear infinite;
+  --track-gap: 24px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  gap: var(--track-gap);
+  min-width: max-content;
+  will-change: transform;
 }
 
-.trackClone {
-  animation: scroll2 28s linear infinite;
+.trackA {
+  animation: marqueeA 28s linear infinite;
+}
+
+.trackB {
+  animation: marqueeB 28s linear infinite;
 }
 
 .itemImage {
@@ -31,24 +33,24 @@
   object-fit: cover;
 }
 
-@keyframes scroll {
+@keyframes marqueeA {
   0% {
-    transform: translate3d(0, 0, 0);
+    transform: translateX(0);
   }
   100% {
-    transform: translate3d(-100%, 0, 0);
+    transform: translateX(calc(-100% - var(--track-gap)));
   }
 }
 
-@keyframes scroll2 {
+@keyframes marqueeB {
   0% {
-    transform: translate3d(100%, 0, 0);
+    transform: translateX(calc(100% + var(--track-gap)));
   }
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: translateX(0);
   }
 }
 
-.noAnimation {
-  animation: none !important;
+.itemImage {
+  display: block;
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
 
 import { t } from "@/data";
 import type { AboutConfig } from "@/server/pageConfigs";
@@ -32,13 +31,14 @@ export function AboutHonorsSection({ honorsSection }: AboutHonorsSectionProps): 
 
         <div className="space-y-8">
           {tracks.map((items, trackIndex) => (
-            <div key={trackIndex} className={styles.scroller}>
-              <div className={styles.track}>
+            <div key={trackIndex} className={styles.scrollerRow}>
+              {/* Track A: slides out to the left */}
+              <div className={`${styles.track} ${styles.trackA}`}>
                 {items.map((item, idx) => {
                   const itemName = t(item?.name);
                   return (
                     <figure
-                      key={`honor-${trackIndex}-a-${idx}`}
+                      key={`honor-${trackIndex}-A-${idx}`}
                       className="flex flex-col items-center gap-2 text-center text-sm text-[var(--color-text-secondary)]"
                     >
                       <Image
@@ -57,12 +57,14 @@ export function AboutHonorsSection({ honorsSection }: AboutHonorsSectionProps): 
                   );
                 })}
               </div>
-              <div className={styles.trackClone} aria-hidden>
+
+              {/* Track B: enters from the right */}
+              <div className={`${styles.track} ${styles.trackB}`} aria-hidden>
                 {items.map((item, idx) => {
                   const itemName = t(item?.name);
                   return (
                     <figure
-                      key={`honor-${trackIndex}-b-${idx}`}
+                      key={`honor-${trackIndex}-B-${idx}`}
                       className="flex flex-col items-center gap-2 text-center text-sm text-[var(--color-text-secondary)]"
                     >
                       <Image
