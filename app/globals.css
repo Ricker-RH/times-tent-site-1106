@@ -42,12 +42,10 @@
   button,
   [role="button"],
   a[role="button"],
-  button.rounded-full,
-  a.rounded-full,
   input[type="button"],
   input[type="submit"],
   input[type="reset"] {
-    border-radius: 6px !important;
+    border-radius: 6px;
   }
 }
 
