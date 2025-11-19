@@ -43,7 +43,7 @@ interface ProductPageProps {
 }
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
-const CTA_BUTTON_BASE = "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition";
+const CTA_BUTTON_BASE = "inline-flex items-center justify-center rounded-[6px] px-6 py-3 text-sm font-semibold transition";
 const CTA_BUTTON_PRIMARY = `${CTA_BUTTON_BASE} bg-[var(--color-brand-primary)] text-white shadow-lg shadow-red-200/25 hover:bg-[#d82234]`;
 const CTA_BUTTON_SECONDARY = CTA_BUTTON_PRIMARY;
 

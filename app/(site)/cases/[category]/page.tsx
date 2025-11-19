@@ -122,7 +122,7 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
                     </p>
                   </div>
                   <div className="flex flex-col gap-3 text-sm sm:flex-row">
-                    <Link href="/contact" className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full sm:flex-1">
+                    <Link href="/contact" className="rounded-[6px] bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full sm:flex-1">
                       提交项目信息
                     </Link>
                     <Link

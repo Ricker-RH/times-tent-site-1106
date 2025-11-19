@@ -9,10 +9,10 @@ export default function ProductNotFound() {
           您访问的产品暂不可用，请返回产品中心或联系我们获取资料。
         </p>
         <div className="mt-6 flex justify-center gap-4">
-          <Link href="/products" className="inline-flex items-center rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-sm font-semibold text-white">
+          <Link href="/products" className="inline-flex items-center rounded-[6px] bg-[var(--color-brand-primary)] px-6 py-3 text-sm font-semibold text-white">
             返回产品中心
           </Link>
-          <Link href="/contact" className="inline-flex items-center rounded-full border border-[var(--color-brand-primary)] px-6 py-3 text-sm font-semibold text-[var(--color-brand-primary)]">
+          <Link href="/contact" className="inline-flex items-center rounded-[6px] border border-[var(--color-brand-primary)] px-6 py-3 text-sm font-semibold text-[var(--color-brand-primary)]">
             联系我们
           </Link>
         </div>

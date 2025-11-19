@@ -10,7 +10,7 @@ const FALLBACK_INVENTORY_IMAGE = "https://images.unsplash.com/photo-1542626991-c
 const FALLBACK_CAPABILITY_IMAGE = "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&w=1600&q=80";
 
 const CTA_BUTTON_BASE =
-  "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transform transition duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+  "inline-flex items-center justify-center rounded-[6px] px-6 py-3 text-sm font-semibold transform transition duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 const CTA_BUTTON_PRIMARY = `${CTA_BUTTON_BASE} bg-[var(--color-brand-primary)] text-white hover:bg-[#d82234]`;
 const CTA_BUTTON_SECONDARY = CTA_BUTTON_PRIMARY;
 
