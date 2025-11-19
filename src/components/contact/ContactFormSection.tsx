@@ -86,7 +86,7 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
   return (
     <section className="bg-[var(--color-surface-muted)] py-16" id="form">
       <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-10 rounded-[12px] bg-white p-8 shadow-[0_30px_80px_rgba(15,23,42,0.12)] lg:grid-cols-[1.05fr,0.95fr] lg:gap-12 xl:p-12">
+        <div className="grid gap-10 rounded-[6px] bg-white p-8 shadow-[0_30px_80px_rgba(15,23,42,0.12)] lg:grid-cols-[1.05fr,0.95fr] lg:gap-12 xl:p-12">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-3 text-left md:flex-row md:items-end md:justify-between">
               <div className="max-w-3xl space-y-2">
@@ -253,4 +253,3 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
     </section>
   );
 }
-
