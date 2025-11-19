@@ -1,6 +1,9 @@
 .scroller {
   overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 .track,
@@ -10,6 +13,7 @@
   gap: var(--track-gap);
   width: max-content;
   will-change: transform;
+  flex-shrink: 0;
 }
 
 .track {
