@@ -45,6 +45,8 @@ export function AboutHonorsSection({ honorsSection }: AboutHonorsSectionProps): 
                         alt={itemName || "荣誉"}
                         width={220}
                         height={150}
+                        loading="eager"
+                        priority={idx < items.length}
                         className={styles.itemImage}
                       />
                       <figcaption className="max-w-[220px] font-medium text-[var(--color-brand-secondary)]">
