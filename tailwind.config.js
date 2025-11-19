@@ -9,12 +9,12 @@ module.exports = {
     borderRadius: {
       none: "0px",
       sm: "2px",
-      DEFAULT: "4px",
-      md: "4px",
-      lg: "6px",
-      xl: "8px",
-      "2xl": "10px",
-      "3xl": "12px",
+      DEFAULT: "2px",
+      md: "2px",
+      lg: "2px",
+      xl: "2px",
+      "2xl": "2px",
+      "3xl": "2px",
       full: "9999px",
     },
     extend: {
