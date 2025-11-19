@@ -8,14 +8,14 @@ module.exports = {
   theme: {
     borderRadius: {
       none: "0px",
-      sm: "0.5px",
-      DEFAULT: "1px",
-      md: "1.5px",
-      lg: "2px",
-      xl: "2.5px",
-      "2xl": "3px",
-      "3xl": "4px",
-      full: "4px",
+      sm: "0.25px",
+      DEFAULT: "0.5px",
+      md: "0.75px",
+      lg: "1px",
+      xl: "1.5px",
+      "2xl": "2px",
+      "3xl": "3px",
+      full: "3px",
     },
     extend: {
       fontFamily: {
