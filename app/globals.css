@@ -39,7 +39,14 @@
     text-decoration: none;
   }
 
-  button {
+  button,
+  [role="button"],
+  a[role="button"],
+  button.rounded-full,
+  a.rounded-full,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
     border-radius: 2px !important;
   }
 }
