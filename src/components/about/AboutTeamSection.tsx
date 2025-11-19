@@ -28,7 +28,7 @@ export function AboutTeamSection({ teamSection }: AboutTeamSectionProps): JSX.El
           {(teamSection.leadership ?? []).map((leader) => (
             <div
               key={leader.name}
-              className="overflow-hidden rounded-[12px] bg-white shadow-[0_28px_80px_rgba(15,23,42,0.1)]"
+              className="overflow-hidden rounded-[6px] bg-white shadow-[0_28px_80px_rgba(15,23,42,0.1)]"
             >
               <div className="relative h-64 w-full">
                 <Image

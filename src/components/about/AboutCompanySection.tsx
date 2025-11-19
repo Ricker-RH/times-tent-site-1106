@@ -28,7 +28,7 @@ export function AboutCompanySection({ introSection }: AboutCompanySectionProps):
           <p className="whitespace-pre-line text-sm text-[var(--color-text-secondary)] md:text-base">{paragraph}</p>
         </div>
 
-        <div className="relative overflow-hidden rounded-[12px] bg-white shadow-[0_26px_70px_rgba(15,23,42,0.18)]">
+        <div className="relative overflow-hidden rounded-[6px] bg-white shadow-[0_26px_70px_rgba(15,23,42,0.18)]">
           <div className="relative">
             <Image
               src={introSection.campusImage}
