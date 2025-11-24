@@ -164,8 +164,11 @@ export function ProductMatrixSection({
               {cards.map((product) => (
                 <article
                   key={product.slug}
-                  className="group flex h-full flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-white transition hover:-translate-y-1 hover:shadow-xl"
+                  className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-white transition hover:-translate-y-1 hover:shadow-xl cursor-pointer"
                 >
+                  <Link href={product.href} className="absolute inset-0 z-10" aria-label={resolveText(product.title)}>
+                    <span className="sr-only">{resolveText(product.title)}</span>
+                  </Link>
                   <div className="relative flex-none overflow-hidden">
                     <div className="relative h-[220px] w-full overflow-hidden sm:h-[240px]">
                       <Image
