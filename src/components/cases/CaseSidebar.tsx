@@ -44,7 +44,7 @@ export function CaseSidebar({ categories, activeCategory, activeStudySlug, title
                         key={study.slug}
                         href={`/cases/${category.slug}/${study.slug}`}
                         className={[
-                          "block rounded-md px-3 py-2 text-xs transition",
+                          "block rounded-md px-3 py-2 text-sm transition",
                           isActiveStudy
                             ? "bg-white font-semibold text-[var(--color-brand-primary)]"
                             : "text-[var(--color-text-secondary)] hover:bg-white hover:text-[var(--color-brand-primary)]",
