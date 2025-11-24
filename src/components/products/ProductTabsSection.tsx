@@ -153,7 +153,7 @@ export function ProductTabsSection({ tabs = [], intro, specs, accessories, hidde
                 <Image src={item.image} alt={item.title || titleFallback(item.id)} fill className="object-cover" sizes="(min-width: 1024px) 20vw, 50vw" />
               </div>
             ) : null}
-            {item.title ? <h3 className="text-base font-semibold text-[var(--color-brand-secondary)]">{item.title}</h3> : null}
+            {item.title ? <h3 className="text-sm font-semibold text-[var(--color-brand-secondary)]">{item.title}</h3> : null}
             {item.description ? (
               <p className="text-sm text-[var(--color-text-secondary)]">{item.description}</p>
             ) : null}
