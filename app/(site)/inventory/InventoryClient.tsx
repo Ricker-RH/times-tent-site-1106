@@ -102,7 +102,7 @@ function HeroSection({ hero }: { hero: InventoryHero }) {
         ) : null}
         {description ? (
           <p
-            className={`w-full text-sm md:text-base ${
+            className={`w-full text-sm leading-6 md:text-base md:leading-7 [text-align:justify] ${
               overlayEnabled ? "text-white/80" : "text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.6)]"
             }`}
           >
@@ -140,9 +140,9 @@ function HeroSection({ hero }: { hero: InventoryHero }) {
     <section id={id} className={`${index % 2 === 1 ? "bg-[var(--color-surface-muted)]" : "bg-white"} scroll-mt-24 ${sectionPadding}`}>
        <div className="mx-auto w-full max-w-[1200px] space-y-6 px-4 sm:px-6 lg:px-8">
          <div className="space-y-2">
-           <h2 className="text-2xl font-semibold text-[var(--color-brand-secondary)] md:text-3xl">{title}</h2>
-           {summary ? <p className="text-sm text-[var(--color-text-secondary)] md:text-base">{summary}</p> : null}
-           {contact ? <p className="text-xs text-[var(--color-text-tertiary)] md:text-sm">{contact}</p> : null}
+          <h2 className="text-2xl font-semibold text-[var(--color-brand-secondary)] md:text-3xl">{title}</h2>
+          {summary ? <p className="text-sm leading-6 text-[var(--color-text-secondary)] md:text-base md:leading-7 [text-align:justify]">{summary}</p> : null}
+          {contact ? <p className="text-xs leading-5 text-[var(--color-text-tertiary)] md:text-sm md:leading-6">{contact}</p> : null}
          </div>
          <div className="space-y-6">
            {posters.map((poster, posterIndex) => (

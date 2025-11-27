@@ -39,7 +39,7 @@ export default async function TermsPage(): Promise<JSX.Element> {
             <p className="text-sm text-[var(--color-text-secondary)]">生效日期：{intro.lastUpdated}</p>
           ) : null}
           {introBody ? (
-            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{introBody}</p>
+            <p className="text-sm leading-[24px] text-[var(--color-text-secondary)]">{introBody}</p>
           ) : null}
         </header>
 
@@ -49,12 +49,12 @@ export default async function TermsPage(): Promise<JSX.Element> {
               <h2 className="text-2xl font-semibold text-[var(--color-brand-secondary)]">{resolveText(section.heading)}</h2>
             ) : null}
             {section.paragraphs?.map((paragraph, index) => (
-              <p key={`p-${index}`} className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              <p key={`p-${index}`} className="text-sm leading-[24px] text-[var(--color-text-secondary)]">
                 {paragraph}
               </p>
             ))}
             {section.items && section.items.length ? (
-              <ul className="list-disc space-y-3 pl-6 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+              <ul className="list-disc space-y-3 pl-6 text-sm leading-[24px] text-[var(--color-text-secondary)]">
                 {section.items.map((item, index) => (
                   <li key={`item-${index}`}>{item}</li>
                 ))}
@@ -68,9 +68,9 @@ export default async function TermsPage(): Promise<JSX.Element> {
             {resolveText(contact.heading, "联系我们")}
           </h2>
           {resolveText(contact.paragraph) ? (
-            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{resolveText(contact.paragraph)}</p>
+            <p className="text-sm leading-[24px] text-[var(--color-text-secondary)]">{resolveText(contact.paragraph)}</p>
           ) : null}
-          <ul className="space-y-2 text-sm leading-relaxed text-[var(--color-text-secondary)]">
+          <ul className="space-y-2 text-sm leading-[24px] text-[var(--color-text-secondary)]">
             {contact.company ? <li>公司名称：{contact.company}</li> : null}
             {contact.email ? (
               <li>

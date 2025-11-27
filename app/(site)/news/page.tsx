@@ -153,7 +153,7 @@ function NewsTimeline({ articles }: { articles: NewsArticle[] }) {
                     </span>
                   </div>
                   <h3 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{resolveText(article.title)}</h3>
-                  <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{resolveText(article.excerpt)}</p>
+                  <p className="text-sm leading-[24px] text-[var(--color-text-secondary)]">{resolveText(article.excerpt)}</p>
                   {article.tags?.length ? (
                     <div className="flex flex-wrap gap-2 text-xs text-[var(--color-brand-secondary)]">
                       {article.tags.slice(0, 3).map((tag, index) => (

@@ -96,7 +96,7 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
                   </h2>
                 ) : null}
                 {t(sectionHeading.description)?.trim() ? (
-                  <p className="text-base text-[var(--color-text-secondary)]">
+                  <p className="text-base leading-7 text-[var(--color-text-secondary)] [text-align:justify]">
                     {t(sectionHeading.description)}
                   </p>
                 ) : null}
@@ -107,7 +107,7 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
               {(highlights ?? []).map((item) => (
                 <div key={t(item.title)} className="rounded-md bg-[var(--color-surface-muted)] p-5 shadow-sm">
                   <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">{t(item.title)}</p>
-                  <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{t(item.description)}</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)] [text-align:justify]">{t(item.description)}</p>
                 </div>
               ))}
             </div>
@@ -116,7 +116,7 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-text-tertiary)]">
                 {t(serviceNetworkCopy.eyebrow)}
               </p>
-              <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{t(serviceNetworkCopy.description)}</p>
+              <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)] [text-align:justify]">{t(serviceNetworkCopy.description)}</p>
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {(serviceHubs ?? []).map((hub) => (
                   <span
@@ -132,9 +132,9 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
           </div>
 
           <div className="flex h-full flex-col justify-between rounded-md border border-white/40 bg-[var(--color-surface-muted)] p-6 shadow-inner lg:p-8">
-          <div className="space-y-1.5 text-sm text-[var(--color-text-secondary)]">
+          <div className="space-y-1.5 text-sm leading-6 text-[var(--color-text-secondary)]">
             <p className="text-base font-semibold text-[var(--color-brand-secondary)]">{t(formPanel.title)}</p>
-            <p>{t(formPanel.responseNote)}</p>
+            <p className="leading-6 [text-align:justify]">{t(formPanel.responseNote)}</p>
           </div>
 
           <div className="mt-5 flex-1">

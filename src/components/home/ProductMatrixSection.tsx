@@ -149,7 +149,7 @@ export function ProductMatrixSection({
                   {resolveText(productShowcase.heading, "核心篷房产品矩阵")}
                 </h2>
                 {resolveText(productShowcase.description) ? (
-                  <p className="text-sm text-[var(--color-text-secondary)]">{resolveText(productShowcase.description)}</p>
+                  <p className="text-sm leading-6 text-[var(--color-text-secondary)] [text-align:justify]">{resolveText(productShowcase.description)}</p>
                 ) : null}
               </div>
               <Link
@@ -202,7 +202,7 @@ export function ProductMatrixSection({
                           return null;
                         }
                         return (
-                          <p className="text-sm leading-relaxed text-[var(--color-text-secondary)]">
+                          <p className="text-sm leading-[24px] text-[var(--color-text-secondary)] [text-align:justify]">
                             {description}
                           </p>
                         );
@@ -245,7 +245,7 @@ export function ProductMatrixSection({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-black/35" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center text-white">
                   {resolveText(inventory.description) ? (
-                    <p className="max-w-2xl text-lg font-semibold leading-relaxed text-white/90 md:text-xl">
+                    <p className="max-w-2xl text-lg font-semibold leading-[28px] text-white/90 md:text-xl">
                       {resolveText(inventory.description)}
                     </p>
                   ) : null}
@@ -297,7 +297,7 @@ export function ProductMatrixSection({
                         </h3>
                       ) : null}
                       {resolveText(overviewHero.description) ? (
-                        <p className="max-w-3xl whitespace-pre-line text-xs text-white/85 md:text-sm">
+                        <p className="max-w-3xl whitespace-pre-line text-xs leading-5 text-white/85 md:text-sm md:leading-6 [text-align:justify]">
                           {resolveText(overviewHero.description)}
                         </p>
                       ) : null}
@@ -325,7 +325,7 @@ export function ProductMatrixSection({
                                   {resolveText(item.title)}
                                 </p>
                                 {resolveText(item.description) ? (
-                                  <p className="pl-4 text-xs text-white/80">{resolveText(item.description)}</p>
+                                  <p className="pl-4 text-xs leading-5 text-white/80 [text-align:justify]">{resolveText(item.description)}</p>
                                 ) : null}
                               </div>
                             ))}
@@ -406,7 +406,7 @@ export function ProductMatrixSection({
                 <h3 className="text-2xl font-semibold md:text-3xl">{resolveText(contact.title)}</h3>
               ) : null}
               {resolveText(contact.description) ? (
-                <p className="max-w-2xl text-sm text-white/80 md:text-base">{resolveText(contact.description)}</p>
+                <p className="max-w-2xl text-sm leading-6 text-white/80 md:text-base md:leading-7 [text-align:justify]">{resolveText(contact.description)}</p>
               ) : null}
             </div>
             <div className="flex flex-col gap-4 sm:flex-row">
@@ -498,7 +498,7 @@ function CapabilityCarousel({
                     </div>
                     <div className="space-y-2 text-center">
                       {titleText ? (
-                        <p className="text-sm font-semibold leading-relaxed text-[var(--color-brand-secondary)]">{titleText}</p>
+                        <p className="text-sm font-semibold leading-[24px] text-[var(--color-brand-secondary)]">{titleText}</p>
                       ) : null}
                       {subtitleText ? (
                         <p className="text-xs text-[var(--color-brand-primary)]/75">{subtitleText}</p>

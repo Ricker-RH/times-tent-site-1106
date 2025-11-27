@@ -270,11 +270,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             : otherSections.map((section) => (
               <section key={section.heading} className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                 <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{section.heading}</h2>
-                <div className="mt-4 space-y-4 text-sm leading-7 text-[var(--color-text-secondary)]">
-                  {section.paragraphs?.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
-                </div>
+          <div className="mt-4 space-y-4 text-sm leading-7 text-[var(--color-text-secondary)] [text-align:justify]">
+            {section.paragraphs?.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
               </section>
             ))}
 
@@ -304,14 +304,14 @@ function ProductAdvisorCTA({ cta }: { cta?: { title?: string; description?: stri
 
   return (
     <section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-6 md:p-8">
-      <div className="space-y-4 text-left">
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">{title}</p>
-          <p className="text-sm text-[var(--color-text-secondary)] md:text-base">
-            {description}
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 text-sm sm:flex-row">
+          <div className="space-y-4 text-left">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">{title}</p>
+              <p className="text-sm leading-6 text-[var(--color-text-secondary)] md:text-base md:leading-7 [text-align:justify]">
+                {description}
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 text-sm sm:flex-row">
           <Link href={primaryHref} className={`${CTA_BUTTON_PRIMARY} w-full sm:flex-1`}>
             {primaryLabel}
           </Link>

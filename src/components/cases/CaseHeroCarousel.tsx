@@ -75,7 +75,7 @@ export function CaseHeroCarousel({ slides, title, year, location, summary, overl
                 </h1>
                 {summary ? (
                   <p
-                    className={`max-w-3xl text-sm md:text-base ${
+                    className={`max-w-3xl text-sm leading-6 md:text-base md:leading-7 [text-align:justify] ${
                       overlayEnabled ? "text-white/85" : "text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.65)]"
                     }`}
                   >

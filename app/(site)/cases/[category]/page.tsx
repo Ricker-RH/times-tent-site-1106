@@ -85,7 +85,7 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
             {hideHeader ? null : (
               <header className="space-y-3">
                 <h1 className="text-2xl font-semibold text-[var(--color-brand-secondary)] md:text-3xl">{t(category.name)}</h1>
-                <p className="text-sm text-[var(--color-text-secondary)] md:text-base">{t(category.intro)}</p>
+                <p className="text-sm leading-6 text-[var(--color-text-secondary)] md:text-base md:leading-7 [text-align:justify]">{t(category.intro)}</p>
               </header>
             )}
 
@@ -117,7 +117,7 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
                 <div className="space-y-4 text-left">
                   <div className="space-y-2">
                     <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">需要定制方案？</p>
-                    <p className="text-sm text-[var(--color-text-secondary)]">
+                    <p className="text-sm leading-6 text-[var(--color-text-secondary)] [text-align:justify]">
                       留下项目信息，24 小时内由行业顾问回电，为您提供方案设计、预算测算与现场勘查。
                     </p>
                   </div>

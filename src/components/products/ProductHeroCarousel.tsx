@@ -106,7 +106,7 @@ export function ProductHeroCarousel({ slides, title, description, eyebrow, badge
               </div>
               {hasTitle ? <h1 className="text-3xl font-semibold leading-tight md:text-4xl">{title}</h1> : null}
               {hasDescription ? (
-                <p className="max-w-3xl text-sm text-white/85 md:text-base">{description}</p>
+                <p className="max-w-3xl text-sm leading-6 text-white/85 md:text-base md:leading-7 [text-align:justify]">{description}</p>
               ) : null}
             </div>
           </>
@@ -125,7 +125,7 @@ export function ProductHeroCarousel({ slides, title, description, eyebrow, badge
             </div>
             {hasTitle ? <h1 className="text-3xl font-semibold leading-tight md:text-4xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">{title}</h1> : null}
             {hasDescription ? (
-              <p className="max-w-3xl text-sm text-white/90 md:text-base drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)]">{description}</p>
+              <p className="max-w-3xl text-sm leading-6 text-white/90 md:text-base md:leading-7 [text-align:justify] drop-shadow-[0_1px_4px_rgba(0,0,0,0.45)]">{description}</p>
             ) : null}
           </div>
         ) : null}

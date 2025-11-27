@@ -73,7 +73,7 @@ export function ProductTabsSection({ tabs = [], intro, specs, accessories, hidde
           >
             {block.title ? <h3 className="text-lg font-semibold text-[var(--color-brand-secondary)]">{block.title}</h3> : null}
             {block.subtitle ? (
-              <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">{block.subtitle}</p>
+              <p className="mt-3 text-sm leading-[24px] text-[var(--color-text-secondary)]">{block.subtitle}</p>
             ) : null}
             {block.image ? (
               <div className="relative mt-4 aspect-video overflow-hidden rounded-xl bg-[var(--color-surface-muted)]">
@@ -155,7 +155,7 @@ export function ProductTabsSection({ tabs = [], intro, specs, accessories, hidde
             ) : null}
             {item.title ? <h3 className="text-sm font-semibold text-[var(--color-brand-secondary)]">{item.title}</h3> : null}
             {item.description ? (
-              <p className="text-sm text-[var(--color-text-secondary)]">{item.description}</p>
+              <p className="text-sm leading-[24px] text-[var(--color-text-secondary)]">{item.description}</p>
             ) : null}
           </article>
         );

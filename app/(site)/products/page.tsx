@@ -173,7 +173,7 @@ function HeroCard({ hero }: { hero: ProductCenterData["hero"] }) {
           {title}
         </h1>
         <p
-          className={`max-w-2xl text-sm md:text-base ${
+          className={`max-w-2xl text-sm leading-6 md:text-base md:leading-7 [text-align:justify] ${
             overlayEnabled ? "text-white/80" : "text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.65)]"
           }`}
         >
@@ -199,7 +199,7 @@ function ProductCard({ product, ctaLabel }: { product: { slug: string; title: st
             </span>
           ) : null}
         </div>
-        <p className="text-sm text-[var(--color-text-secondary)]">{product.description}</p>
+        <p className="text-sm leading-6 text-[var(--color-text-secondary)] [text-align:justify]">{product.description}</p>
         <div className="mt-auto flex justify-start pt-2">
           <Link
             href={product.href}

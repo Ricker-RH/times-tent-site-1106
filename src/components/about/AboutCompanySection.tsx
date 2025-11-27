@@ -24,8 +24,8 @@ export function AboutCompanySection({ introSection }: AboutCompanySectionProps):
       <div className="mx-auto w-full max-w-[1200px] space-y-9 px-4 sm:px-6 lg:px-8">
         <div className="space-y-5 text-center md:text-left">
           <h2 className="text-2xl font-bold text-[var(--color-brand-secondary)] md:text-3xl">{title}</h2>
-          <p className="text-base text-[var(--color-text-secondary)]">{strapline}</p>
-          <p className="whitespace-pre-line text-sm text-[var(--color-text-secondary)] md:text-base">{paragraph}</p>
+          <p className="text-base leading-7 text-[var(--color-text-secondary)] [text-align:justify]">{strapline}</p>
+          <p className="whitespace-pre-line text-sm leading-6 text-[var(--color-text-secondary)] md:text-base md:leading-7 [text-align:justify]">{paragraph}</p>
         </div>
 
         <div className="relative overflow-hidden rounded-[6px] bg-white shadow-[0_26px_70px_rgba(15,23,42,0.18)]">

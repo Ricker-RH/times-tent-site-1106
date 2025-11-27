@@ -24,7 +24,7 @@ export function AboutWhySection({ whyUsSection }: AboutWhySectionProps): JSX.Ele
             <h2 className="text-2xl font-bold text-[var(--color-brand-secondary)] md:text-3xl">
               {t(whyUsSection.title)}
             </h2>
-            <p className="text-base text-[var(--color-text-secondary)]">
+            <p className="text-base leading-7 text-[var(--color-text-secondary)] [text-align:justify]">
               {t(whyUsSection.description)}
             </p>
           </div>
@@ -51,7 +51,7 @@ export function AboutWhySection({ whyUsSection }: AboutWhySectionProps): JSX.Ele
                   </span>
                   <div className="rounded-md bg-white/70 p-4 text-[var(--color-brand-secondary)] shadow backdrop-blur">
                     <h3 className="text-sm font-semibold">{t(highlight.title)}</h3>
-                    <p className="mt-2 text-xs text-[var(--color-text-secondary)]">{t(highlight.description)}</p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--color-text-secondary)] [text-align:justify]">{t(highlight.description)}</p>
                   </div>
                 </div>
               </div>

@@ -27,7 +27,7 @@ export function ContactChannelsSection({ section }: ContactChannelsSectionProps)
                 <h2 className="text-2xl font-bold text-[var(--color-brand-secondary)] md:text-3xl">{headingTitle}</h2>
               ) : null}
               {headingDesc ? (
-                <p className="text-base text-[var(--color-text-secondary)]">{headingDesc}</p>
+                <p className="text-base leading-7 text-[var(--color-text-secondary)] [text-align:justify]">{headingDesc}</p>
               ) : null}
             </div>
           </div>
@@ -47,7 +47,7 @@ export function ContactChannelsSection({ section }: ContactChannelsSectionProps)
                   <span className="block text-base font-semibold text-[var(--color-brand-secondary)]">
                     {t(card.value)}
                   </span>
-                  <span className="block text-xs text-[var(--color-text-secondary)]">{t(card.helper)}</span>
+                  <span className="block text-xs leading-5 text-[var(--color-text-secondary)]">{t(card.helper)}</span>
                 </span>
               </a>
             ))}

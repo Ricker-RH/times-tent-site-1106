@@ -224,7 +224,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
                             <h3 className="text-lg font-semibold text-[var(--color-brand-secondary)]">{block.title}</h3>
                           ) : null}
                           {block.subtitle ? (
-                            <p className="text-sm leading-relaxed text-[var(--color-text-secondary)] whitespace-pre-line">{block.subtitle}</p>
+                            <p className="max-w-3xl text-sm leading-[24px] text-[var(--color-text-secondary)] whitespace-pre-line [text-align:justify]">{block.subtitle}</p>
                           ) : null}
                         </article>
                       ))}
@@ -239,7 +239,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
                             <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">{technicalSectionTitleDisplay}</h2>
                           ) : null}
                           {technicalSectionSubtitleDisplay ? (
-                            <p className="text-sm text-[var(--color-text-secondary)]">{technicalSectionSubtitleDisplay}</p>
+                            <p className="max-w-3xl text-sm text-[var(--color-text-secondary)] [text-align:justify]">{technicalSectionSubtitleDisplay}</p>
                           ) : null}
                         </div>
                       ) : null}

@@ -103,7 +103,7 @@ export function NewsDetailClient({ article, moreArticles, hiddenSections }: News
               <h1 className="max-w-3xl text-3xl font-semibold leading-tight text-white md:text-4xl lg:text-5xl">
                 {translateData(article.title, activeLocale)}
               </h1>
-              {excerpt ? <p className="max-w-2xl text-sm leading-relaxed text-white/80 md:text-base">{excerpt}</p> : null}
+              {excerpt ? <p className="max-w-2xl text-sm leading-[24px] text-white/80 md:text-base">{excerpt}</p> : null}
               <div className="flex flex-wrap items-center gap-3 text-xs text-white/70">
                 <span>{formattedDate}</span>
                 {tags.length ? <span>·</span> : null}
