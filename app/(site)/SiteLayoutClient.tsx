@@ -78,10 +78,11 @@ interface SiteLayoutClientProps {
   navigation: NavigationConfig;
   footer: FooterConfig;
   rightRail: RightRailConfig;
+  availableLocales?: readonly LocaleKey[];
   children: React.ReactNode;
 }
 
-export function SiteLayoutClient({ navigation, footer, rightRail, children }: SiteLayoutClientProps) {
+export function SiteLayoutClient({ navigation, footer, rightRail, availableLocales, children }: SiteLayoutClientProps) {
   const mainGroup = useMemo(
     () => navigation.groups?.find((group) => group.key === "main") ?? navigation.groups?.[0],
     [navigation],
@@ -91,7 +92,8 @@ export function SiteLayoutClient({ navigation, footer, rightRail, children }: Si
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <LocaleProvider>
+    <LocaleProvider availableLocales={availableLocales}
+    >
       <div className="flex min-h-screen flex-col">
         <Header
           links={mainLinks}

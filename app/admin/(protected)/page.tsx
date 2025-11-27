@@ -8,6 +8,8 @@ import { getAdminChannelSettings, resolveAdminChannels } from "@/server/adminCha
 import { listSiteConfigSummaries } from "@/server/siteConfigs";
 import { listRecentSiteConfigHistory } from "@/server/siteConfigHistory";
 import { RecentHistoryPanel } from "./RecentHistoryPanel";
+import { getVisibilityConfig } from "@/server/visibility";
+import { LanguageVisibilityToggle } from "./[key]/LanguageVisibilityToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +27,11 @@ function formatDate(value?: string): string {
 }
 
 export default async function AdminDashboardPage() {
-  const [session, summaries, channelSettings] = await Promise.all([
+  const [session, summaries, channelSettings, visibilityConfig] = await Promise.all([
     getCurrentAdmin(),
     listSiteConfigSummaries(),
     getAdminChannelSettings(),
+    getVisibilityConfig(),
   ]);
 
   const isSuperAdmin = session?.role === "superadmin";
@@ -76,6 +79,18 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
       </header>
+
+      {isSuperAdmin ? (
+        <section className="rounded-2xl border border-[var(--color-border)] bg-white/80 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">语言显示/隐藏</h2>
+              <p className="text-[10px] text-[var(--color-text-tertiary,#8690a3)]">控制站点可见语言，影响前台语言菜单与预览。</p>
+            </div>
+            <LanguageVisibilityToggle initial={visibilityConfig} />
+          </div>
+        </section>
+      ) : null}
 
       {isSuperAdmin ? (
         <section className="grid gap-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] xl:items-start">

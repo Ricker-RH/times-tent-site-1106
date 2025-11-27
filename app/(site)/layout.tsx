@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { siteData } from "@/data";
 import { getFooterConfig, getNavigationConfig } from "@/server/siteConfigs";
 import { getRightRailConfig } from "@/server/pageConfigs";
-import { getVisibilityConfig, isPageHidden, resolveVisibilityPageKeyFromPath } from "@/server/visibility";
+import { getVisibilityConfig, getVisibleLocales, isPageHidden, resolveVisibilityPageKeyFromPath } from "@/server/visibility";
 import type { FooterConfig } from "@/types/footer";
 import type { NavigationConfig, NavigationLink } from "@/types/navigation";
 
@@ -24,8 +24,9 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
   const filteredNavigation = filterNavigationByVisibility(navigation, visibility);
   const filteredFooter = filterFooterByVisibility(footer, visibility);
 
+  const visibleLocales = getVisibleLocales(visibility);
   return (
-    <SiteLayoutClient navigation={filteredNavigation} footer={filteredFooter} rightRail={rightRailConfig}>
+    <SiteLayoutClient navigation={filteredNavigation} footer={filteredFooter} rightRail={rightRailConfig} availableLocales={visibleLocales}>
       {children}
     </SiteLayoutClient>
   );

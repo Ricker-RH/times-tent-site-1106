@@ -13,6 +13,7 @@ import {
   type VisibilityConfig,
 } from "@/lib/visibilityConfig";
 import { getSiteConfig } from "./siteConfigs";
+import { SUPPORTED_LOCALES, type LocaleKey } from "@/i18n/locales";
 
 export async function getVisibilityConfig(): Promise<VisibilityConfig> {
   const raw = await getSiteConfig<unknown>(VISIBILITY_CONFIG_KEY);
@@ -49,3 +50,8 @@ export function resolveVisibilityPageKeyFromPath(pathname: string): VisibilityPa
 }
 
 export { VISIBILITY_PAGES };
+
+export function getVisibleLocales(config: VisibilityConfig): readonly LocaleKey[] {
+  const hidden = config.locales ?? {};
+  return SUPPORTED_LOCALES.filter((code) => hidden[code] !== true);
+}

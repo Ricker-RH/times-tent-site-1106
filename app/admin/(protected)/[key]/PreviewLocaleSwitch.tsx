@@ -1,6 +1,6 @@
 "use client";
 
-import { SUPPORTED_LOCALES } from "@/i18n/locales";
+import { SUPPORTED_LOCALES, type LocaleKey } from "@/i18n/locales";
 import { useLocale } from "@/providers/LocaleProvider";
 
 const LOCALE_LABELS: Record<string, string> = {
@@ -9,7 +9,7 @@ const LOCALE_LABELS: Record<string, string> = {
   en: "English",
 };
 
-export function PreviewLocaleSwitch({ className = "" }: { className?: string }) {
+export function PreviewLocaleSwitch({ className = "", visibleLocales }: { className?: string; visibleLocales?: readonly LocaleKey[] }) {
   const { locale, setLocale } = useLocale();
 
   return (
@@ -18,7 +18,7 @@ export function PreviewLocaleSwitch({ className = "" }: { className?: string }) 
         预览语言
       </span>
       <div className="flex items-center gap-1">
-        {SUPPORTED_LOCALES.map((code) => (
+        {(visibleLocales ?? SUPPORTED_LOCALES).map((code) => (
           <button
             key={code}
             type="button"

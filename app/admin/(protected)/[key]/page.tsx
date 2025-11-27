@@ -9,7 +9,8 @@ import { getProductCenterConfig } from "@/server/pageConfigs";
 import { listSiteConfigHistory } from "@/server/siteConfigHistory";
 import { VISIBILITY_CONFIG_KEY } from "@/constants/visibility";
 import { PreviewLocaleSwitch } from "./PreviewLocaleSwitch";
-import { getVisibilityConfig } from "@/server/visibility";
+import { getVisibilityConfig, getVisibleLocales } from "@/server/visibility";
+import { LanguageVisibilityToggle } from "./LanguageVisibilityToggle";
 import { GlobalTranslationProvider } from "@/hooks/useGlobalTranslationManager";
 import { GlobalTranslationBar } from "./GlobalTranslationBar";
 
@@ -56,15 +57,15 @@ export default async function AdminConfigDetailPage({
   const session = await getCurrentAdmin();
   const isSuperAdmin = session?.role === "superadmin";
 
-  const [value, history] = await Promise.all([
+  const [value, history, visibilityConfig] = await Promise.all([
     getSiteConfigRaw(configKey),
     isSuperAdmin ? listSiteConfigHistory(configKey, 30) : Promise.resolve([]),
+    isSuperAdmin ? getVisibilityConfig() : Promise.resolve(undefined),
   ]);
 
   let relatedData: Record<string, unknown> | undefined;
   if (configKey === "首页") {
     const productCenterConfig = await getProductCenterConfig();
-    const visibilityConfig = await getVisibilityConfig();
     relatedData = { productCenterConfig, visibilityConfig, isSuperAdmin };
   }
 
@@ -114,7 +115,10 @@ export default async function AdminConfigDetailPage({
           </span>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-3xl font-semibold text-[var(--color-brand-secondary)]">编辑配置</h1>
-            <PreviewLocaleSwitch />
+            <div className="flex items-center gap-3">
+              <PreviewLocaleSwitch visibleLocales={visibilityConfig ? getVisibleLocales(visibilityConfig) : undefined} />
+              {isSuperAdmin && visibilityConfig ? <LanguageVisibilityToggle initial={visibilityConfig} /> : null}
+            </div>
           </div>
           <p className="max-w-2xl text-sm text-[var(--color-text-secondary)]">
             更新后会立即写入数据库，并在前台页面请求时实时生效。建议在提交前校验 JSON 结构与字段。可通过下方按钮快速格式化或恢复初始值。

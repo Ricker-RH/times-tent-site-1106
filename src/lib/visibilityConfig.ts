@@ -1,4 +1,5 @@
 import { VISIBILITY_CONFIG_KEY, VISIBILITY_PAGES, type VisibilityPageDefinition, type VisibilityPageKey } from "@/constants/visibility";
+import { SUPPORTED_LOCALES } from "@/i18n/locales";
 
 export interface VisibilityPageState {
   hidden?: boolean;
@@ -8,6 +9,7 @@ export interface VisibilityPageState {
 
 export interface VisibilityConfig {
   pages: Record<string, VisibilityPageState>;
+  locales?: Record<string, boolean>;
   _meta?: Record<string, unknown>;
 }
 
@@ -28,8 +30,13 @@ export function createDefaultVisibilityConfig(): VisibilityConfig {
   VISIBILITY_PAGES.forEach((definition) => {
     pages[definition.key] = createPageState(definition);
   });
+  const locales: Record<string, boolean> = {};
+  SUPPORTED_LOCALES.forEach((code) => {
+    locales[code] = false;
+  });
   return {
     pages,
+    locales,
     _meta: {
       schema: "visibility.v1",
       updatedAt: new Date(0).toISOString(),
@@ -86,8 +93,22 @@ export function normalizeVisibilityConfig(value: unknown): VisibilityConfig {
   const metaRaw = record._meta;
   const meta = metaRaw && typeof metaRaw === "object" ? (metaRaw as Record<string, unknown>) : undefined;
 
+  const localesRaw = record.locales;
+  const locales: Record<string, boolean> = {};
+  if (localesRaw && typeof localesRaw === "object") {
+    SUPPORTED_LOCALES.forEach((code) => {
+      const val = (localesRaw as Record<string, unknown>)[code];
+      locales[code] = val === true;
+    });
+  } else {
+    SUPPORTED_LOCALES.forEach((code) => {
+      locales[code] = false;
+    });
+  }
+
   return {
     pages: normalizedPages,
+    locales,
     _meta: meta,
   } satisfies VisibilityConfig;
 }
@@ -120,12 +141,20 @@ export function mergeWithDefaultVisibility(config: VisibilityConfig): Visibility
       fields: mergedFields,
     } satisfies VisibilityPageState;
   }
+  const mergedLocales: Record<string, boolean> = { ...(fallback.locales ?? {}) };
+  const nextLocales = config.locales ?? {};
+  SUPPORTED_LOCALES.forEach((code) => {
+    if (typeof nextLocales[code] === "boolean") {
+      mergedLocales[code] = nextLocales[code] as boolean;
+    }
+  });
   const mergedMeta = {
     ...fallback._meta,
     ...config._meta,
   } as Record<string, unknown> | undefined;
   return {
     pages,
+    locales: mergedLocales,
     _meta: mergedMeta,
   } satisfies VisibilityConfig;
 }

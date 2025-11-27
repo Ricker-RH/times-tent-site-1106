@@ -14,22 +14,23 @@ const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
 
 const STORAGE_KEY = "times-tent-locale";
 
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
+export function LocaleProvider({ children, availableLocales: providedLocales }: { children: React.ReactNode; availableLocales?: readonly LocaleKey[] }) {
   const [locale, setLocaleState] = useState<LocaleKey>(DEFAULT_LOCALE);
   const router = useRouter();
+  const availableLocales = useMemo(() => (providedLocales && providedLocales.length ? providedLocales : AVAILABLE_LOCALES), [providedLocales]);
 
   useEffect(() => {
     const stored =
       typeof window !== "undefined"
         ? (window.localStorage.getItem(STORAGE_KEY) as LocaleKey | null)
         : null;
-    if (stored && AVAILABLE_LOCALES.includes(stored)) {
+    if (stored && availableLocales.includes(stored)) {
       setLocaleState(stored);
       setCurrentLocale(stored);
     } else {
       setCurrentLocale(DEFAULT_LOCALE);
     }
-  }, []);
+  }, [availableLocales]);
 
   const setLocale = useCallback((next: LocaleKey) => {
     if (next === locale) return;
@@ -47,8 +48,8 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   }, [locale, router]);
 
   const value = useMemo(
-    () => ({ locale, setLocale, availableLocales: AVAILABLE_LOCALES }),
-    [locale, setLocale],
+    () => ({ locale, setLocale, availableLocales }),
+    [locale, setLocale, availableLocales],
   );
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
