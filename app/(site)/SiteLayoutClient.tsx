@@ -409,8 +409,8 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
                 <p className="whitespace-nowrap text-2xl font-semibold tracking-[0.08em]">{brandNameZh}</p>
                 <p className="whitespace-nowrap text-[0.95rem] font-medium tracking-[0.06em] text-white/80">{brandNameEn}</p>
               </div>
-            <div className="-ml-2 grid grid-cols-[1.75rem,1fr] items-start gap-x-2 gap-y-2 text-sm text-white/80">
-              <span className="relative -top-[2px] flex items-start justify-center text-white/80">
+            <div className="-ml-2 grid grid-cols-[1.75rem,1fr] items-center gap-x-2 gap-y-2 text-sm text-white/80">
+              <span className="flex items-center justify-center text-white/80">
                 <IconMapPin className="h-5 w-5" />
               </span>
               <p className="font-medium leading-snug">{t(footer.contact.address)}</p>
@@ -422,7 +422,7 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
                 const iconSizeClass = index === 0 ? "h-[14px] w-[14px]" : "h-4 w-4";
                 return (
                   <Fragment key={`footer-phone-${index}`}>
-                    <span className="flex items-start justify-center pt-[2px] text-white/75">
+                    <span className="flex items-center justify-center text-white/75">
                       <IconComponent className={iconSizeClass} />
                     </span>
                     <a href={trimmedHref || fallbackHref} className="transition hover:text-white">
@@ -431,7 +431,7 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
                   </Fragment>
                 );
               })}
-              <span className="flex items-start justify-center pt-[2px] text-white/80">
+              <span className="relative top-[1px] flex items-center justify-center text-white/80">
                 <IconMail className="h-4 w-4" />
               </span>
               <a href={footer.contact.email.href} className="transition hover:text-white">
