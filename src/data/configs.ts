@@ -154,12 +154,7 @@ export const cases_config = {
             "主场馆及分赛区临建",
             "通信与广播配套"
           ],
-          "metrics": [
-            {
-              "label": "临建面积",
-              "value": "32,000㎡"
-            }
-          ],
+          "metrics": [],
           "image": "https://images.unsplash.com/photo-1542626991-cbc4e32524cc?auto=format&w=1600&q=80",
           "gallery": [
             "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80",
