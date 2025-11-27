@@ -340,29 +340,7 @@ export async function getHomeConfig(): Promise<HomeConfig> {
 
 export async function getCasesConfig(): Promise<CasesConfig> {
   const config = await getSiteConfig<CasesConfig>(CASES_CONFIG_KEY);
-  const source: CasesConfig = config ?? (cases_config as CasesConfig);
-
-  const sanitized: CasesConfig = {
-    ...source,
-    categories: (source.categories ?? []).map((category) => ({
-      ...category,
-      studies: (category.studies ?? []).map((study) => {
-        if (study.slug === "wuhan-military-games-2019") {
-          return {
-            ...study,
-            metrics: [],
-            // @ts-expect-error optional field may exist in persisted config
-            metricsI18n: [],
-            // @ts-expect-error optional field may exist in persisted config
-            technicalSection: undefined,
-          };
-        }
-        return study;
-      }),
-    })),
-  };
-
-  return sanitized;
+  return config ?? (cases_config as CasesConfig);
 }
 
 export async function getInventoryConfig(): Promise<InventoryConfig> {

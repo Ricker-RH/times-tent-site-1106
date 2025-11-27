@@ -164,7 +164,8 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
   const hasCustomTechnicalTable = technicalColumns.length > 0 && technicalRows.length > 0;
   const technicalSectionTitleDisplay = technicalSectionTitle || (hasCustomTechnicalTable ? "" : "技术参数");
   const technicalSectionSubtitleDisplay = technicalSectionSubtitle || (hasCustomTechnicalTable ? "" : "参数表");
-  const showTechnicalTable = hasCustomTechnicalTable || metricsLocalized.length > 0;
+  const suppressTechParams = study.slug === "wuhan-military-games-2019";
+  const showTechnicalTable = !suppressTechParams && (hasCustomTechnicalTable || metricsLocalized.length > 0);
   const showDetailsSection =
     !hideBackground &&
     (bodyCopyBlocks.length > 0 || showTechnicalTable);
