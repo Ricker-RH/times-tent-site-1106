@@ -124,6 +124,31 @@ async function ensureTable(client?: PoolClient): Promise<void> {
 
   const columns = await loadColumns();
 
+  const tryAddColumn = async (sql: string) => {
+    try {
+      await query(sql);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("permission denied") || message.includes("already exists")) {
+        return;
+      }
+      throw error;
+    }
+  };
+
+  if (!columns.has("form_type")) {
+    await tryAddColumn("ALTER TABLE contact_submissions ADD COLUMN IF NOT EXISTS form_type TEXT NOT NULL DEFAULT 'contact'");
+    cachedColumns = null;
+  }
+  if (!columns.has("locale")) {
+    await tryAddColumn("ALTER TABLE contact_submissions ADD COLUMN IF NOT EXISTS locale TEXT");
+    cachedColumns = null;
+  }
+  if (!columns.has("message")) {
+    await tryAddColumn("ALTER TABLE contact_submissions ADD COLUMN IF NOT EXISTS message TEXT");
+    cachedColumns = null;
+  }
+
   const createIndex = async (sql: string) => {
     try {
       await query(sql);
@@ -193,7 +218,7 @@ export async function createContactSubmission(input: CreateContactSubmissionInpu
     fallback?: () => unknown;
   }> = [
     { column: "name", value: input.name, required: true },
-    { column: "form_type", value: input.formType ?? "contact", required: true },
+    { column: "form_type", value: input.formType ?? "contact", required: columns.has("form_type") },
     { column: "locale", value: input.locale ?? null },
     { column: "company", value: input.company ?? null },
     { column: "email", value: input.email, required: true },

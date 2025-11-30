@@ -30,7 +30,7 @@ function formatScenario(value: string | null): string {
     case "other":
       return "其他";
     default:
-      return "未选择";
+      return value ?? "未选择";
   }
 }
 

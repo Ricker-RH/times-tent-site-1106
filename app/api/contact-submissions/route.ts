@@ -13,12 +13,15 @@ function sanitizeString(value: unknown, maxLength: number): string | null {
 }
 
 function sanitizeScenario(value: unknown): string | null {
-  const allowed = new Set(["sports", "hospitality", "industrial", "brand", "other"]);
   if (typeof value !== "string") return null;
   const normalized = value.trim().toLowerCase();
   if (!normalized) return null;
-  if (allowed.has(normalized)) return normalized;
-  return "other";
+  const safe = normalized.replace(/[^a-z0-9\-]/g, "");
+  if (!safe) return "other";
+  if (safe.length > 64) {
+    return safe.slice(0, 64);
+  }
+  return safe;
 }
 
 export async function POST(request: Request) {

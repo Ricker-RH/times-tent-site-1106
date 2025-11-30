@@ -73,6 +73,26 @@ interface ServiceCopyState {
 interface FormPanelState {
   title: LocalizedValue;
   responseNote: LocalizedValue;
+  nameLabel: LocalizedValue;
+  namePlaceholder: LocalizedValue;
+  companyLabel: LocalizedValue;
+  companyPlaceholder: LocalizedValue;
+  emailLabel: LocalizedValue;
+  emailPlaceholder: LocalizedValue;
+  phoneLabel: LocalizedValue;
+  phonePlaceholder: LocalizedValue;
+  scenarioLabel: LocalizedValue;
+  scenarioPlaceholder: LocalizedValue;
+  timelineLabel: LocalizedValue;
+  timelinePlaceholder: LocalizedValue;
+  briefLabel: LocalizedValue;
+  briefPlaceholder: LocalizedValue;
+  submitLabel: LocalizedValue;
+  submittingLabel: LocalizedValue;
+  successMessage: LocalizedValue;
+  errorMessage: LocalizedValue;
+  submitNote: LocalizedValue;
+  scenarioOptions: Array<{ value: string; label: LocalizedValue }>;
 }
 
 interface GuaranteeState {
@@ -244,6 +264,29 @@ function normalizeConnectSection(raw: unknown): ConnectSectionState {
     formPanel: {
       title: ensureLocalized(section.formPanel && asRecord(section.formPanel).title, "填写项目要素"),
       responseNote: ensureLocalized(section.formPanel && asRecord(section.formPanel).responseNote, "顾问将在 1 小时内联系您。"),
+      nameLabel: ensureLocalized(section.formPanel && asRecord(section.formPanel).nameLabel, "联系人"),
+      namePlaceholder: ensureLocalized(section.formPanel && asRecord(section.formPanel).namePlaceholder, "请输入姓名"),
+      companyLabel: ensureLocalized(section.formPanel && asRecord(section.formPanel).companyLabel, "公司/机构"),
+      companyPlaceholder: ensureLocalized(section.formPanel && asRecord(section.formPanel).companyPlaceholder, "请输入公司名称"),
+      emailLabel: ensureLocalized(section.formPanel && asRecord(section.formPanel).emailLabel, "Email"),
+      emailPlaceholder: ensureLocalized(section.formPanel && asRecord(section.formPanel).emailPlaceholder, "name@example.com"),
+      phoneLabel: ensureLocalized(section.formPanel && asRecord(section.formPanel).phoneLabel, "电话"),
+      phonePlaceholder: ensureLocalized(section.formPanel && asRecord(section.formPanel).phonePlaceholder, "联系电话"),
+      scenarioLabel: ensureLocalized(section.formPanel && asRecord(section.formPanel).scenarioLabel, "应用场景"),
+      scenarioPlaceholder: ensureLocalized(section.formPanel && asRecord(section.formPanel).scenarioPlaceholder, "请选择应用场景"),
+      timelineLabel: ensureLocalized(section.formPanel && asRecord(section.formPanel).timelineLabel, "预计档期"),
+      timelinePlaceholder: ensureLocalized(section.formPanel && asRecord(section.formPanel).timelinePlaceholder, "例如 2025年11月"),
+      briefLabel: ensureLocalized(section.formPanel && asRecord(section.formPanel).briefLabel, "项目简介"),
+      briefPlaceholder: ensureLocalized(section.formPanel && asRecord(section.formPanel).briefPlaceholder, "请输入场地规模、预计人流或特殊需求。"),
+      submitLabel: ensureLocalized(section.formPanel && asRecord(section.formPanel).submitLabel, "提交需求"),
+      submittingLabel: ensureLocalized(section.formPanel && asRecord(section.formPanel).submittingLabel, "提交中..."),
+      successMessage: ensureLocalized(section.formPanel && asRecord(section.formPanel).successMessage, "提交成功，我们会尽快与您联系"),
+      errorMessage: ensureLocalized(section.formPanel && asRecord(section.formPanel).errorMessage, "提交失败，请稍后再试"),
+      submitNote: ensureLocalized(section.formPanel && asRecord(section.formPanel).submitNote, "提交后我们将在 1 个工作日内回复，提供下一步安排。"),
+      scenarioOptions: ensureArray<Record<string, unknown>>(section.formPanel && asRecord(section.formPanel).scenarioOptions).map((opt, index) => ({
+        value: ensureString(opt.value) || `option-${index + 1}`,
+        label: ensureLocalized(opt.label, `选项 ${index + 1}`),
+      })),
     },
   } satisfies ConnectSectionState;
 }
@@ -361,6 +404,28 @@ function serializeConfig(config: ContactConfigState): ContactConfig {
         formPanel: {
           title: cleanLocalized(config.connectSection.formPanel.title),
           responseNote: cleanLocalized(config.connectSection.formPanel.responseNote),
+          nameLabel: cleanLocalized(config.connectSection.formPanel.nameLabel),
+          namePlaceholder: cleanLocalized(config.connectSection.formPanel.namePlaceholder),
+          companyLabel: cleanLocalized(config.connectSection.formPanel.companyLabel),
+          companyPlaceholder: cleanLocalized(config.connectSection.formPanel.companyPlaceholder),
+          emailLabel: cleanLocalized(config.connectSection.formPanel.emailLabel),
+          emailPlaceholder: cleanLocalized(config.connectSection.formPanel.emailPlaceholder),
+          phoneLabel: cleanLocalized(config.connectSection.formPanel.phoneLabel),
+          phonePlaceholder: cleanLocalized(config.connectSection.formPanel.phonePlaceholder),
+          scenarioLabel: cleanLocalized(config.connectSection.formPanel.scenarioLabel),
+          scenarioPlaceholder: cleanLocalized(config.connectSection.formPanel.scenarioPlaceholder),
+          timelineLabel: cleanLocalized(config.connectSection.formPanel.timelineLabel),
+          timelinePlaceholder: cleanLocalized(config.connectSection.formPanel.timelinePlaceholder),
+          briefLabel: cleanLocalized(config.connectSection.formPanel.briefLabel),
+          briefPlaceholder: cleanLocalized(config.connectSection.formPanel.briefPlaceholder),
+          submitLabel: cleanLocalized(config.connectSection.formPanel.submitLabel),
+          submittingLabel: cleanLocalized(config.connectSection.formPanel.submittingLabel),
+          successMessage: cleanLocalized(config.connectSection.formPanel.successMessage),
+          errorMessage: cleanLocalized(config.connectSection.formPanel.errorMessage),
+          submitNote: cleanLocalized(config.connectSection.formPanel.submitNote),
+          scenarioOptions: config.connectSection.formPanel.scenarioOptions
+            .map((opt) => ({ value: opt.value.trim() || undefined, label: cleanLocalized(opt.label) }))
+            .filter((opt) => opt.value || Object.keys(opt.label).length),
         },
       },
       guaranteeSection: {
@@ -1208,6 +1273,297 @@ function ConnectSectionDialog({
               multiline
               rows={3}
             />
+            <div className="grid gap-3 md:grid-cols-2">
+              <LocalizedTextField
+                label="联系人-标签"
+                value={draft.formPanel.nameLabel}
+                translationContext="联系我们-表单-联系人-标签"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, nameLabel: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+              <LocalizedTextField
+                label="联系人-占位"
+                value={draft.formPanel.namePlaceholder}
+                translationContext="联系我们-表单-联系人-占位"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, namePlaceholder: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <LocalizedTextField
+                label="公司-标签"
+                value={draft.formPanel.companyLabel}
+                translationContext="联系我们-表单-公司-标签"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, companyLabel: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+              <LocalizedTextField
+                label="公司-占位"
+                value={draft.formPanel.companyPlaceholder}
+                translationContext="联系我们-表单-公司-占位"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, companyPlaceholder: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <LocalizedTextField
+                label="Email-标签"
+                value={draft.formPanel.emailLabel}
+                translationContext="联系我们-表单-Email-标签"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, emailLabel: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+              <LocalizedTextField
+                label="Email-占位"
+                value={draft.formPanel.emailPlaceholder}
+                translationContext="联系我们-表单-Email-占位"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, emailPlaceholder: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <LocalizedTextField
+                label="电话-标签"
+                value={draft.formPanel.phoneLabel}
+                translationContext="联系我们-表单-电话-标签"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, phoneLabel: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+              <LocalizedTextField
+                label="电话-占位"
+                value={draft.formPanel.phonePlaceholder}
+                translationContext="联系我们-表单-电话-占位"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, phonePlaceholder: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <LocalizedTextField
+                label="应用场景-标签"
+                value={draft.formPanel.scenarioLabel}
+                translationContext="联系我们-表单-应用场景-标签"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, scenarioLabel: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+              <LocalizedTextField
+                label="应用场景-占位"
+                value={draft.formPanel.scenarioPlaceholder}
+                translationContext="联系我们-表单-应用场景-占位"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, scenarioPlaceholder: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <LocalizedTextField
+                label="预计档期-标签"
+                value={draft.formPanel.timelineLabel}
+                translationContext="联系我们-表单-预计档期-标签"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, timelineLabel: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+              <LocalizedTextField
+                label="预计档期-占位"
+                value={draft.formPanel.timelinePlaceholder}
+                translationContext="联系我们-表单-预计档期-占位"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, timelinePlaceholder: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <LocalizedTextField
+                label="项目简介-标签"
+                value={draft.formPanel.briefLabel}
+                translationContext="联系我们-表单-项目简介-标签"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, briefLabel: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+              <LocalizedTextField
+                label="项目简介-占位"
+                value={draft.formPanel.briefPlaceholder}
+                translationContext="联系我们-表单-项目简介-占位"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, briefPlaceholder: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <LocalizedTextField
+                label="提交按钮文案"
+                value={draft.formPanel.submitLabel}
+                translationContext="联系我们-表单-提交按钮文案"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, submitLabel: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+              <LocalizedTextField
+                label="提交中状态文案"
+                value={draft.formPanel.submittingLabel}
+                translationContext="联系我们-表单-提交中状态文案"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, submittingLabel: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <LocalizedTextField
+                label="提交成功提示"
+                value={draft.formPanel.successMessage}
+                translationContext="联系我们-表单-提交成功提示"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, successMessage: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+              <LocalizedTextField
+                label="提交失败提示"
+                value={draft.formPanel.errorMessage}
+                translationContext="联系我们-表单-提交失败提示"
+                onChange={(next) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    formPanel: { ...prev.formPanel, errorMessage: ensureLocalizedNoFallback(next) },
+                  }))
+                }
+              />
+            </div>
+            <LocalizedTextField
+              label="提交说明"
+              value={draft.formPanel.submitNote}
+              translationContext="联系我们-表单-提交说明"
+              onChange={(next) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  formPanel: { ...prev.formPanel, submitNote: ensureLocalizedNoFallback(next) },
+                }))
+              }
+              multiline
+              rows={3}
+            />
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold text-[var(--color-brand-secondary)]">应用场景选项集</h4>
+              <p className="text-xs text-[var(--color-text-secondary)]">在此维护下拉选项；为空时将自动使用“案例展示”的分类。</p>
+              <div className="space-y-3">
+                {draft.formPanel.scenarioOptions.map((opt, idx) => (
+                  <div key={idx} className="grid gap-3 md:grid-cols-[1fr,1.5fr,auto] md:items-end">
+                    <TextField
+                      label={`选项值 (slug)`}
+                      value={opt.value}
+                      onChange={(next) =>
+                        setDraft((prev) => {
+                          const nextOptions = [...prev.formPanel.scenarioOptions];
+                          nextOptions[idx] = { ...nextOptions[idx], value: next };
+                          return { ...prev, formPanel: { ...prev.formPanel, scenarioOptions: nextOptions } };
+                        })
+                      }
+                    />
+                    <LocalizedTextField
+                      label={`选项标签`}
+                      value={opt.label}
+                      translationContext={`联系我们-表单-应用场景-选项-${idx + 1}`}
+                      onChange={(next) =>
+                        setDraft((prev) => {
+                          const nextOptions = [...prev.formPanel.scenarioOptions];
+                          nextOptions[idx] = { ...nextOptions[idx], label: ensureLocalizedNoFallback(next) } as any;
+                          return { ...prev, formPanel: { ...prev.formPanel, scenarioOptions: nextOptions } };
+                        })
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="h-10 rounded-md border border-[var(--color-border)] px-3 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
+                      onClick={() =>
+                        setDraft((prev) => {
+                          const nextOptions = prev.formPanel.scenarioOptions.filter((_, i) => i !== idx);
+                          return { ...prev, formPanel: { ...prev.formPanel, scenarioOptions: nextOptions } };
+                        })
+                      }
+                    >移除</button>
+                  </div>
+                ))}
+                <div>
+                  <button
+                    type="button"
+                    className="rounded-md border border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
+                    onClick={() =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        formPanel: {
+                          ...prev.formPanel,
+                          scenarioOptions: [
+                            ...prev.formPanel.scenarioOptions,
+                            { value: "", label: {} as any },
+                          ],
+                        },
+                      }))
+                    }
+                  >新增选项</button>
+                </div>
+              </div>
+            </div>
           </div>
         ) : null}
       </div>

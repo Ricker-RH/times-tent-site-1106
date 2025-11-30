@@ -5,7 +5,9 @@ import { ContactHeroSection } from "@/components/contact/ContactHeroSection";
 import { ContactChannelsSection } from "@/components/contact/ContactChannelsSection";
 import { ContactFormSection } from "@/components/contact/ContactFormSection";
 import { ContactGuaranteeSection } from "@/components/contact/ContactGuaranteeSection";
-import { getCasesConfig, getContactConfig, type CaseCategory } from "@/server/pageConfigs";
+import { getCasesConfig, getContactConfig } from "@/server/pageConfigs";
+import { t, setCurrentLocale } from "@/data";
+import { getRequestLocale } from "@/server/locale";
 
 export const metadata = {
   title: "联系方式 | 时代篷房",
@@ -19,24 +21,38 @@ export default async function Page(): Promise<JSX.Element> {
   const hideChannels = hiddenSections.channels === true;
   const hideForm = hiddenSections.form === true;
   const hideGuarantee = hiddenSections.guarantee === true;
+  const locale = getRequestLocale();
+  setCurrentLocale(locale);
   const [config, casesConfig] = await Promise.all([getContactConfig(), getCasesConfig()]);
   const hero = config.hero;
   const contactSection = config.contactSection;
   const connectSection = config.connectSection;
   const guaranteeSection = config.guaranteeSection;
-  const categories: CaseCategory[] = Array.isArray(casesConfig.categories)
-    ? (casesConfig.categories as CaseCategory[])
-    : [];
-  const scenarioOptions = categories
-    .map((category) => {
-      const slug = typeof category.slug === "string" ? category.slug : "";
-      const name = typeof category.name === "string" ? category.name : "";
-      return {
-        value: slug,
-        label: name || slug,
-      };
-    })
-    .filter((option) => option.value);
+  const configuredOptionsRaw = (config.connectSection as any)?.formPanel?.scenarioOptions ?? [];
+  const scenarioOptions = (configuredOptionsRaw.length
+    ? configuredOptionsRaw
+        .map((opt: any) => ({
+          value: typeof opt.value === "string" ? opt.value : "",
+          label:
+            opt.label && typeof opt.label === "object"
+              ? t(opt.label as Record<string, string | undefined>) || ""
+              : typeof opt.label === "string"
+                ? opt.label
+                : "",
+        }))
+        .filter((opt: any) => opt.value)
+    : (Array.isArray(casesConfig.categories) ? casesConfig.categories : [])
+        .map((category: any) => {
+          const slug = typeof category.slug === "string" ? category.slug : "";
+          let name = "";
+          if (typeof category.name === "string") {
+            name = category.name;
+          } else if (category.name && typeof category.name === "object") {
+            name = t(category.name as Record<string, string | undefined>) || "";
+          }
+          return { value: slug, label: name || slug };
+        })
+        .filter((option: any) => option.value));
 
   return (
     <main className="flex-1">

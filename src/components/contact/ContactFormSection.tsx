@@ -36,6 +36,38 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
     return FALLBACK_SCENARIOS;
   }, [scenarios]);
 
+  const resolve = (value: unknown, fallback: string): string => {
+    if (!value) return fallback;
+    if (typeof value === "string") return value;
+    try {
+      const text = t(value as Record<string, string | undefined>);
+      return text || fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  const nameLabel = resolve((formPanel as any)?.nameLabel, "联系人");
+  const namePlaceholder = resolve((formPanel as any)?.namePlaceholder, "请输入姓名");
+  const companyLabel = resolve((formPanel as any)?.companyLabel, "公司/机构");
+  const companyPlaceholder = resolve((formPanel as any)?.companyPlaceholder, "请输入公司名称");
+  const emailLabel = resolve((formPanel as any)?.emailLabel, "Email");
+  const emailPlaceholder = resolve((formPanel as any)?.emailPlaceholder, "name@example.com");
+  const phoneLabel = resolve((formPanel as any)?.phoneLabel, "电话");
+  const phonePlaceholder = resolve((formPanel as any)?.phonePlaceholder, "联系电话");
+  const scenarioLabel = resolve((formPanel as any)?.scenarioLabel, "应用场景");
+  const scenarioPlaceholder = resolve((formPanel as any)?.scenarioPlaceholder, "请选择应用场景");
+  const timelineLabel = resolve((formPanel as any)?.timelineLabel, "预计档期");
+  const timelinePlaceholder = resolve((formPanel as any)?.timelinePlaceholder, "例如 2025年11月");
+  const briefLabel = resolve((formPanel as any)?.briefLabel, "项目简介");
+  const briefPlaceholder = resolve((formPanel as any)?.briefPlaceholder, "请输入场地规模、预计人流或特殊需求。");
+
+  const submitLabel = resolve((formPanel as any)?.submitLabel, "提交需求");
+  const submittingLabel = resolve((formPanel as any)?.submittingLabel, "提交中...");
+  const successMessageDefault = resolve((formPanel as any)?.successMessage, "提交成功，我们会尽快与您联系");
+  const errorMessageDefault = resolve((formPanel as any)?.errorMessage, "提交失败，请稍后再试");
+  const submitNote = resolve((formPanel as any)?.submitNote, "提交后我们将在 1 个工作日内回复，提供下一步安排。");
+
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -69,17 +101,17 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
       if (!response.ok) {
         const result = (await response.json().catch(() => null)) as { message?: string } | null;
         setStatus("error");
-        setStatusMessage(result?.message ?? "提交失败，请稍后再试");
+        setStatusMessage(result?.message ?? errorMessageDefault);
         return;
       }
 
       setStatus("success");
-      setStatusMessage("提交成功，我们会尽快与您联系");
+      setStatusMessage(successMessageDefault);
       form.reset();
     } catch (error) {
       console.error("Failed to submit contact form", error);
       setStatus("error");
-      setStatusMessage("提交失败，请检查网络后重试");
+      setStatusMessage(errorMessageDefault);
     }
   };
 
@@ -141,21 +173,21 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
             <form className="space-y-3 text-[var(--color-brand-secondary)]" onSubmit={handleSubmit}>
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="space-y-2 text-xs font-semibold text-[var(--color-brand-secondary)]/80">
-                    <span>联系人</span>
+                    <span>{nameLabel}</span>
                     <input
                       className="h-12 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 text-sm outline-none focus:border-[var(--color-brand-primary)]"
                       name="name"
-                      placeholder="请输入姓名"
+                      placeholder={namePlaceholder}
                       required
                       type="text"
                     />
                   </label>
                   <label className="space-y-2 text-xs font-semibold text-[var(--color-brand-secondary)]/80">
-                    <span>公司/机构</span>
+                    <span>{companyLabel}</span>
                     <input
                       className="h-12 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 text-sm outline-none focus:border-[var(--color-brand-primary)]"
                       name="company"
-                      placeholder="请输入公司名称"
+                      placeholder={companyPlaceholder}
                       type="text"
                     />
                   </label>
@@ -163,21 +195,21 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="space-y-2 text-xs font-semibold text-[var(--color-brand-secondary)]/80">
-                    <span>Email</span>
+                    <span>{emailLabel}</span>
                     <input
                       className="h-12 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 text-sm outline-none focus:border-[var(--color-brand-primary)]"
                       name="email"
-                      placeholder="name@example.com"
+                      placeholder={emailPlaceholder}
                       required
                       type="email"
                     />
                   </label>
                   <label className="space-y-2 text-xs font-semibold text-[var(--color-brand-secondary)]/80">
-                    <span>电话</span>
+                    <span>{phoneLabel}</span>
                     <input
                       className="h-12 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 text-sm outline-none focus:border-[var(--color-brand-primary)]"
                       name="phone"
-                      placeholder="联系电话"
+                      placeholder={phonePlaceholder}
                       type="tel"
                     />
                   </label>
@@ -185,14 +217,14 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="space-y-2 text-xs font-semibold text-[var(--color-brand-secondary)]/80">
-                    <span>应用场景</span>
+                    <span>{scenarioLabel}</span>
                     <select
                       className="h-12 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 text-sm outline-none focus:border-[var(--color-brand-primary)]"
                       name="scenario"
                       defaultValue=""
                     >
                       <option disabled value="">
-                        请选择应用场景
+                        {scenarioPlaceholder}
                       </option>
                       {scenarioOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -202,36 +234,36 @@ export function ContactFormSection({ section, scenarios }: ContactFormSectionPro
                     </select>
                   </label>
                   <label className="space-y-2 text-xs font-semibold text-[var(--color-brand-secondary)]/80">
-                    <span>预计档期</span>
+                    <span>{timelineLabel}</span>
                     <input
                       className="h-12 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 text-sm outline-none focus:border-[var(--color-brand-primary)]"
                       name="timeline"
-                      placeholder="例如 2025年11月"
+                      placeholder={timelinePlaceholder}
                       type="text"
                     />
                   </label>
                 </div>
 
                 <label className="space-y-1.5 text-xs font-semibold text-[var(--color-brand-secondary)]/80">
-                  <span>项目简介</span>
+                  <span>{briefLabel}</span>
                   <textarea
                     className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-3 text-sm outline-none focus:border-[var(--color-brand-primary)]"
                     name="brief"
-                    placeholder="请输入场地规模、预计人流或特殊需求。"
+                    placeholder={briefPlaceholder}
                     rows={4}
                   />
                 </label>
 
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--color-text-secondary)]">
                   <span className="space-y-1">
-                    <span className="block">提交后我们将在 1 个工作日内回复，提供下一步安排。</span>
+                    <span className="block">{submitNote}</span>
                   </span>
                   <button
                     className="rounded-md bg-[var(--color-brand-primary)] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-70"
                     disabled={status === "submitting"}
                     type="submit"
                   >
-                    {status === "submitting" ? "提交中..." : "提交需求"}
+                    {status === "submitting" ? submittingLabel : submitLabel}
                   </button>
                 </div>
                 {status !== "idle" && statusMessage ? (
