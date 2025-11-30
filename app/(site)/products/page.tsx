@@ -186,7 +186,7 @@ function HeroCard({ hero }: { hero: ProductCenterData["hero"] }) {
 
 function ProductCard({ product, ctaLabel }: { product: { slug: string; title: string; description: string; href: string; image: string; tagline?: string }; ctaLabel: string }) {
   return (
-    <article className="flex h-full flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] transition hover:-translate-y-1 hover:shadow-xl">
+    <article className="relative flex h-full flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] transition hover:-translate-y-1 hover:shadow-xl">
       <div className="relative h-72 w-full">
         <Image src={product.image} alt={product.title} fill className="object-cover" sizes="100vw" />
       </div>
@@ -201,15 +201,13 @@ function ProductCard({ product, ctaLabel }: { product: { slug: string; title: st
         </div>
         <p className="text-sm leading-6 text-[var(--color-text-secondary)] [text-align:justify]">{product.description}</p>
         <div className="mt-auto flex justify-start pt-2">
-          <Link
-            href={product.href}
-            className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-brand-primary)]"
-          >
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-brand-primary)]">
             {normalizeCtaLabel(ctaLabel)}
             <span aria-hidden>→</span>
-          </Link>
+          </span>
         </div>
       </div>
+      <Link href={product.href} className="absolute inset-0 z-10" aria-label={`查看 ${product.title} 详情`} />
     </article>
   );
 }
