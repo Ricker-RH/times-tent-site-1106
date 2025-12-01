@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/server/auth";
 import { query } from "@/server/db";
 import AdminUserCreateForm from "./AdminUserCreateForm";
+import { updateAdminUserRole, deleteAdminUser } from "./actions";
 
 export const metadata: Metadata = {
   title: "管理员账号管理 | TIMES TENT",
@@ -76,6 +77,31 @@ export default async function AdminUsersPage() {
                           </span>
                         ) : null}
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {user.role !== "superadmin" ? (
+                        <form action={updateAdminUserRole} className="inline-flex items-center gap-2">
+                          <input type="hidden" name="username" value={user.username} />
+                          <input type="hidden" name="role" value="superadmin" />
+                          <button
+                            type="submit"
+                            className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                          >
+                            升级为 Superadmin
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="text-[10px] text-[var(--color-text-tertiary,#8690a3)]">最高权限</span>
+                      )}
+                      <form action={deleteAdminUser} className="inline-flex items-center gap-2">
+                        <input type="hidden" name="username" value={user.username} />
+                        <button
+                          type="submit"
+                          className="rounded-full border border-rose-200 px-3 py-1 text-xs text-rose-600 transition hover:bg-rose-50"
+                        >
+                          删除
+                        </button>
+                      </form>
                     </div>
                   </div>
                 ))}

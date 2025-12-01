@@ -83,3 +83,80 @@ export async function createAdminUserAction(_prev: CreateAdminUserActionState, f
     return { status: "error", message: "创建失败，请稍后再试" };
   }
 }
+
+export type UpdateAdminUserRoleActionState =
+  | { status: "idle" }
+  | { status: "success"; message: string }
+  | { status: "error"; message: string };
+
+export async function updateAdminUserRoleAction(_prev: UpdateAdminUserRoleActionState, formData: FormData): Promise<UpdateAdminUserRoleActionState> {
+  await ensureSuperAdmin();
+
+  const username = normalizeUsername(formData.get("username"));
+  const role = normalizeRole(formData.get("role"));
+
+  if (!username) {
+    return { status: "error", message: "缺少用户名" };
+  }
+
+  try {
+    await query(`UPDATE admin_users SET role = $2 WHERE username = $1`, [username, role]);
+    revalidatePath("/admin/users");
+    return { status: "success", message: "角色更新成功" };
+  } catch (error) {
+    console.error("Failed to update admin user role", error);
+    return { status: "error", message: "更新失败，请稍后再试" };
+  }
+}
+
+export type DeleteAdminUserActionState =
+  | { status: "idle" }
+  | { status: "success"; message: string }
+  | { status: "error"; message: string };
+
+export async function deleteAdminUserAction(_prev: DeleteAdminUserActionState, formData: FormData): Promise<DeleteAdminUserActionState> {
+  const session = await ensureSuperAdmin();
+
+  const username = normalizeUsername(formData.get("username"));
+  if (!username) {
+    return { status: "error", message: "缺少用户名" };
+  }
+  if (session.username && session.username === username) {
+    return { status: "error", message: "不可删除当前登录账号" };
+  }
+
+  try {
+    await query(`DELETE FROM admin_users WHERE username = $1`, [username]);
+    revalidatePath("/admin/users");
+    return { status: "success", message: "删除成功" };
+  } catch (error) {
+    console.error("Failed to delete admin user", error);
+    return { status: "error", message: "删除失败，请稍后再试" };
+  }
+}
+
+export async function updateAdminUserRole(formData: FormData) {
+  await ensureSuperAdmin();
+  const username = normalizeUsername(formData.get("username"));
+  const role = normalizeRole(formData.get("role"));
+  if (!username) return;
+  try {
+    await query(`UPDATE admin_users SET role = $2 WHERE username = $1`, [username, role]);
+    revalidatePath("/admin/users");
+  } catch (error) {
+    console.error("Failed to update admin user role", error);
+  }
+}
+
+export async function deleteAdminUser(formData: FormData) {
+  const session = await ensureSuperAdmin();
+  const username = normalizeUsername(formData.get("username"));
+  if (!username) return;
+  if (session.username && session.username === username) return;
+  try {
+    await query(`DELETE FROM admin_users WHERE username = $1`, [username]);
+    revalidatePath("/admin/users");
+  } catch (error) {
+    console.error("Failed to delete admin user", error);
+  }
+}
