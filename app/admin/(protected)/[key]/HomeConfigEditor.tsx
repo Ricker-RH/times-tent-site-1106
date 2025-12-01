@@ -3129,6 +3129,16 @@ function ProductShowcaseDialog({
     return [...baseOptions, ...extraOptions];
   }, [draft.cards, productOptions]);
 
+  const handleMoveSelected = (index: number, offset: -1 | 1) => {
+    setDraft((prev) => {
+      const list = [...prev.selectedProductSlugs];
+      const target = index + offset;
+      if (target < 0 || target >= list.length) return prev;
+      [list[index], list[target]] = [list[target], list[index]];
+      return { ...prev, selectedProductSlugs: list };
+    });
+  };
+
   return (
     <EditorDialog
       title="编辑产品矩阵"
@@ -3180,6 +3190,44 @@ function ProductShowcaseDialog({
             values={draft.selectedProductSlugs}
             onChange={(next) => setDraft((prev) => ({ ...prev, selectedProductSlugs: next }))}
           />
+        ) : null}
+
+        {showSelection ? (
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">精选产品顺序</h3>
+            {draft.selectedProductSlugs.length ? (
+              <div className="space-y-2">
+                {draft.selectedProductSlugs.map((slug, index) => {
+                  const label = productOptions.find((o) => o.value === slug)?.label || slug;
+                  return (
+                    <div key={`${slug}-${index}`} className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-white/70 p-3">
+                      <span className="text-sm text-[var(--color-text-secondary)]">{label}</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSelected(index, -1)}
+                          disabled={index === 0}
+                          className="rounded-full border border-[var(--color-border)] px-3 py-1 transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] disabled:opacity-50"
+                        >
+                          上移
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSelected(index, 1)}
+                          disabled={index === draft.selectedProductSlugs.length - 1}
+                          className="rounded-full border border-[var(--color-border)] px-3 py-1 transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] disabled:opacity-50"
+                        >
+                          下移
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white/60 p-4 text-center text-xs text-[var(--color-text-secondary)]">未选择产品</div>
+            )}
+          </div>
         ) : null}
 
         {showCards ? (
@@ -3338,6 +3386,16 @@ function ApplicationAreasDialog({
     setDraft(cloneApplicationAreasState(value));
   }, [value, scope]);
 
+  const handleMoveSelected = (index: number, offset: -1 | 1) => {
+    setDraft((prev) => {
+      const list = [...prev.selectedCategorySlugs];
+      const target = index + offset;
+      if (target < 0 || target >= list.length) return prev;
+      [list[index], list[target]] = [list[target], list[index]];
+      return { ...prev, selectedCategorySlugs: list };
+    });
+  };
+
   const showCopy = scope === "copy" || scope === "full";
   const showSelection = scope === "selection" || scope === "full";
   const showItems = scope === "items" || scope === "full";
@@ -3395,6 +3453,44 @@ function ApplicationAreasDialog({
             values={draft.selectedCategorySlugs}
             onChange={(next) => setDraft((prev) => ({ ...prev, selectedCategorySlugs: next }))}
           />
+        ) : null}
+
+        {showSelection ? (
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">已选分类顺序</h3>
+            {draft.selectedCategorySlugs.length ? (
+              <div className="space-y-2">
+                {draft.selectedCategorySlugs.map((slug, index) => {
+                  const label = CASE_CATEGORY_OPTIONS.find((o) => o.value === slug)?.label || slug;
+                  return (
+                    <div key={`${slug}-${index}`} className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-white/70 p-3">
+                      <span className="text-sm text-[var(--color-text-secondary)]">{label}</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSelected(index, -1)}
+                          disabled={index === 0}
+                          className="rounded-full border border-[var(--color-border)] px-3 py-1 transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] disabled:opacity-50"
+                        >
+                          上移
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveSelected(index, 1)}
+                          disabled={index === draft.selectedCategorySlugs.length - 1}
+                          className="rounded-full border border-[var(--color-border)] px-3 py-1 transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)] disabled:opacity-50"
+                        >
+                          下移
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white/60 p-4 text-center text-xs text-[var(--color-text-secondary)]">未选择分类</div>
+            )}
+          </div>
         ) : null}
 
         {showItems ? (
