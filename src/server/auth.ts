@@ -25,6 +25,7 @@ export interface AdminSession {
   username: string | null;
   email: string | null;
   role: AdminRole;
+  jti?: string | null;
 }
 
 export const SESSION_COOKIE_NAME = "tt_admin_session";
@@ -115,6 +116,7 @@ export async function verifyCredentials(identifier: string, password: string): P
 }
 
 export async function createAdminSession(user: AdminSession): Promise<void> {
+  const jti = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const token = await new SignJWT({
     role: user.role,
     username: user.username,
@@ -125,6 +127,7 @@ export async function createAdminSession(user: AdminSession): Promise<void> {
     .setIssuer(JWT_ISSUER)
     .setAudience(JWT_AUDIENCE)
     .setSubject(user.id)
+    .setJti(jti)
     .setExpirationTime(`${SESSION_MAX_AGE_SECONDS}s`)
     .sign(getJwtSecret());
 
@@ -138,6 +141,27 @@ export async function createAdminSession(user: AdminSession): Promise<void> {
   };
 
   cookies().set(SESSION_COOKIE_NAME, token, cookieOptions);
+
+  try {
+    await query(
+      `CREATE TABLE IF NOT EXISTS admin_session_locks (
+        username TEXT PRIMARY KEY,
+        jti TEXT NOT NULL,
+        issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`
+    );
+    if (user.username) {
+      await query(
+        `INSERT INTO admin_session_locks (username, jti, issued_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (username)
+         DO UPDATE SET jti = EXCLUDED.jti, issued_at = EXCLUDED.issued_at`,
+        [user.username, jti]
+      );
+    }
+  } catch (error) {
+    console.error("Failed to persist admin session lock", error);
+  }
 }
 
 export function clearAdminSession(): void {
@@ -187,6 +211,7 @@ async function parseSessionFromCookie(): Promise<AdminSession | null> {
       role,
       username: typeof payload.username === "string" ? payload.username : null,
       email: typeof payload.email === "string" ? payload.email : null,
+      jti: typeof payload.jti === "string" ? payload.jti : null,
     };
   } catch (error) {
     console.error("Failed to verify admin session", error);
@@ -239,6 +264,28 @@ export async function requireAdmin(options?: {
     const headerUrl = headers().get("x-invoke-path") ?? headers().get("x-forwarded-path") ?? options?.redirectTo;
     const location = buildLoginRedirect(headerUrl);
     throw new AdminRedirectError(location);
+  }
+
+  try {
+    if (session.username) {
+      const { rows } = await query<{ jti: string }>(
+        `SELECT jti FROM admin_session_locks WHERE username = $1 LIMIT 1`,
+        [session.username]
+      );
+      const activeJti = rows[0]?.jti;
+      if (!activeJti || !session.jti || activeJti !== session.jti) {
+        clearAdminSession();
+        const headerUrl = headers().get("x-invoke-path") ?? headers().get("x-forwarded-path") ?? options?.redirectTo;
+        const login = buildLoginRedirect(headerUrl);
+        const location = login.includes("?") ? `${login}&reason=conflict` : `${login}?reason=conflict`;
+        throw new AdminRedirectError(location);
+      }
+    }
+  } catch (error) {
+    if (error instanceof AdminRedirectError) {
+      throw error;
+    }
+    console.error("Failed to verify active admin session", error);
   }
 
   if (options?.role === "superadmin" && session.role !== "superadmin") {

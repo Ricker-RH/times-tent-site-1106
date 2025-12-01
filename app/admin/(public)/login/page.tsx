@@ -22,11 +22,12 @@ function resolveRedirect(target?: string): string {
   return "/admin";
 }
 
-export default async function AdminLoginPage({ searchParams }: { searchParams?: { next?: string } }) {
+export default async function AdminLoginPage({ searchParams }: { searchParams?: { next?: string; reason?: string } }) {
   const current = await getCurrentAdmin();
   const next = typeof searchParams?.next === "string" ? searchParams.next : undefined;
+  const reason = typeof searchParams?.reason === "string" ? searchParams.reason : undefined;
 
-  if (current) {
+  if (current && reason !== "conflict") {
     redirect(resolveRedirect(next));
   }
 
@@ -140,6 +141,11 @@ export default async function AdminLoginPage({ searchParams }: { searchParams?: 
                 <h2 className="text-lg font-semibold text-[var(--color-brand-secondary)] md:text-xl">配置中心登录</h2>
                 <p className="text-xs text-[var(--color-text-secondary)]">使用后台账号密码进入管理界面</p>
               </div>
+              {reason === "conflict" ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+                  您的账号已在另一设备登录，本设备已被退出。请重新登录以继续使用。
+                </div>
+              ) : null}
               <LoginForm next={next} />
               <SupportContact />
               <div className="text-center text-xs text-[var(--color-text-tertiary,#8690a3)]">
