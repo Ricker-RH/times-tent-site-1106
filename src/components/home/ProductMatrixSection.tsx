@@ -487,12 +487,12 @@ function CapabilityCarousel({
                   className="relative w-[240px] flex-shrink-0 overflow-hidden rounded-2xl p-4 text-[var(--color-brand-secondary)] sm:w-[260px]"
                 >
                   <div className="flex h-full flex-col gap-4">
-                    <div className="relative h-32 w-full overflow-hidden rounded-xl">
+                    <div className="relative h-[150px] w-[220px] overflow-hidden rounded-xl mx-auto">
                       <Image
                         src={resolveImage(data.image, FALLBACK_CAPABILITY_IMAGE)}
                         alt={titleText || subtitleText || "能力亮点"}
                         fill
-                        sizes="(min-width: 1280px) 20vw, (min-width: 768px) 30vw, 60vw"
+                        sizes="220px"
                         className="object-cover"
                       />
                     </div>
