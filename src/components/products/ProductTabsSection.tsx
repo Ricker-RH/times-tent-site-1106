@@ -149,7 +149,7 @@ export function ProductTabsSection({ tabs = [], intro, specs, accessories, hidde
         return (
           <article key={item.id} className="flex flex-col items-center gap-3 text-center">
             {item.image ? (
-              <div className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-[var(--color-surface-muted)] aspect-[4/3]">
+              <div className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-[var(--color-surface-muted)] aspect-[16/9]">
                 <Image src={item.image} alt={item.title || titleFallback(item.id)} fill className="object-cover" sizes="(min-width: 1024px) 20vw, 50vw" />
               </div>
             ) : null}
