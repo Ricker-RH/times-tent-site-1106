@@ -206,7 +206,8 @@ export async function getNavigationConfig(): Promise<NavigationConfig | null> {
   );
   if (inventoryLinkIndex !== -1) {
     const inventoryLink = { ...nextLinks[inventoryLinkIndex] };
-    inventoryLink.href = inventoryChildren.length ? inventoryChildren[0].href : "/inventory";
+    // 主导航始终跳转到页面顶部，不携带锚点
+    inventoryLink.href = "/inventory";
     if (inventoryChildren.length) {
       inventoryLink.children = inventoryChildren;
     }
