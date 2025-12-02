@@ -49,7 +49,7 @@ export async function resetAdminUserPassword(formData: FormData) {
   } catch (error) {
     // ignore error detail; redirect back
   }
-  redirect(`/admin/users/${encodeURIComponent(username)}?verified=1&ok=1`);
+  redirect(`/admin/users/${encodeURIComponent(username)}?verified=1&ok=1&action=password_reset`);
 }
 
 export async function setAdminUserActive(formData: FormData) {
@@ -64,7 +64,7 @@ export async function setAdminUserActive(formData: FormData) {
     await query(`UPDATE admin_users SET "isActive" = $2 WHERE username = $1`, [username, active]);
     revalidatePath(`/admin/users/${encodeURIComponent(username)}`);
   } catch {}
-  redirect(`/admin/users/${encodeURIComponent(username)}?verified=1&ok=1`);
+  redirect(`/admin/users/${encodeURIComponent(username)}?verified=1&ok=1&action=status_update&active=${active ? "true" : "false"}`);
 }
 
 export async function renameAdminUser(formData: FormData) {
@@ -82,7 +82,7 @@ export async function renameAdminUser(formData: FormData) {
     await query(`UPDATE admin_users SET username = $2 WHERE username = $1`, [username, nextUsername]);
     await query(`UPDATE admin_session_locks SET username = $2 WHERE username = $1`, [username, nextUsername]);
     revalidatePath(`/admin/users/${encodeURIComponent(nextUsername)}`);
-    redirect(`/admin/users/${encodeURIComponent(nextUsername)}?verified=1&ok=1`);
+    redirect(`/admin/users/${encodeURIComponent(nextUsername)}?verified=1&ok=1&action=rename&prev=${encodeURIComponent(username)}&next=${encodeURIComponent(nextUsername)}`);
   } catch {
     redirect(`/admin/users/${encodeURIComponent(username)}?verified=1&error=rename_failed`);
   }

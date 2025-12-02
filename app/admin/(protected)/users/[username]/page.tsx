@@ -7,6 +7,7 @@ import { requireAdmin } from "@/server/auth";
 import { query } from "@/server/db";
 import { getLastLoginActivity } from "@/server/adminActivity";
 import { verifyHumanAction, resetAdminUserPassword, setAdminUserActive, renameAdminUser } from "./actions";
+import FeedbackToast from "./FeedbackToast";
 
 type AdminDetail = {
   username: string;
@@ -56,6 +57,11 @@ export default async function AdminUserDetailPage({ params, searchParams }: { pa
   if (!username) redirect("/admin/users");
 
   const verifiedParam = (typeof searchParams?.verified === "string" ? searchParams?.verified : Array.isArray(searchParams?.verified) ? searchParams?.verified?.[0] : undefined) === "1";
+  const okParam = (typeof searchParams?.ok === "string" ? searchParams?.ok : Array.isArray(searchParams?.ok) ? searchParams?.ok?.[0] : undefined) === "1";
+  const errorParam = typeof searchParams?.error === "string" ? searchParams?.error : Array.isArray(searchParams?.error) ? searchParams?.error?.[0] : undefined;
+  const actionParam = typeof searchParams?.action === "string" ? searchParams?.action : Array.isArray(searchParams?.action) ? searchParams?.action?.[0] : undefined;
+  const activeParam = typeof searchParams?.active === "string" ? searchParams?.active : Array.isArray(searchParams?.active) ? searchParams?.active?.[0] : undefined;
+  const nextParam = typeof searchParams?.next === "string" ? searchParams?.next : Array.isArray(searchParams?.next) ? searchParams?.next?.[0] : undefined;
   const cookieStore = cookies();
   const verifiedCookie = cookieStore.get("tt_admin_detail_verified")?.value === "1";
   const verified = verifiedParam || verifiedCookie;
@@ -83,6 +89,7 @@ export default async function AdminUserDetailPage({ params, searchParams }: { pa
 
   return (
     <div className="space-y-10">
+      <FeedbackToast ok={okParam} error={errorParam} action={actionParam} active={activeParam} next={nextParam} />
       <div className="space-y-4">
         <Link href="/admin/users" className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-secondary)] transition hover:text-[var(--color-brand-primary)]">
           ← 返回管理员列表
