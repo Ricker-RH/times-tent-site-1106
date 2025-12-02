@@ -143,6 +143,18 @@ export default function HomeClient({
   }, [slidesCount, isPaused]);
 
   useEffect(() => {
+    if (slidesCount <= 1) return;
+    const max = carouselSlides.length - 1;
+    if (heroIndex >= max) {
+      setIsTransitionEnabled(false);
+      setHeroIndex(1);
+    } else if (heroIndex <= 0) {
+      setIsTransitionEnabled(false);
+      setHeroIndex(carouselSlides.length - 2);
+    }
+  }, [heroIndex, slidesCount, carouselSlides.length]);
+
+  useEffect(() => {
     if (!isTransitionEnabled) {
       const id = window.requestAnimationFrame(() => setIsTransitionEnabled(true));
       return () => window.cancelAnimationFrame(id);
