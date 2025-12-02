@@ -5,7 +5,7 @@ import { getInventoryConfig } from "@/server/pageConfigs";
 import InventoryClient, { type InventoryClientProps } from "./InventoryClient";
 
 export const metadata = {
-  title: "现货图库 | 时代篷房",
+  title: "现货库存 | 时代篷房",
   description: "以海报形式浏览时代篷房现货模块，快速了解可用规格与所在仓储节点。",
 };
 

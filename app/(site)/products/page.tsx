@@ -9,7 +9,7 @@ import { normalizeLocalizedField } from "@/i18n/locales";
 import { getRequestLocale } from "@/server/locale";
 
 export const metadata = {
-  title: "模块化产品矩阵 | 时代篷房",
+  title: "产品 | 时代篷房",
   description: "了解人字形、弧形、弯柱、锥顶、双层等核心篷房产品，掌握结构亮点与应用场景。",
 };
 
