@@ -274,7 +274,7 @@ export default function HomeClient({
               </button>
             </>
           ) : null}
-          <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-3">
+          <div className="absolute bottom-[35px] left-1/2 flex -translate-x-1/2 items-center gap-3">
             {slides.map((slide, idx) => (
               <button
                 key={slide.slug}
