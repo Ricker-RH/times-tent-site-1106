@@ -1,0 +1,41 @@
+公司网址：
+	
+生产环境：https://www.timestent.com/
+- 首页：https://www.timestent.com/
+- 关于时代：https://www.timestent.com/about
+- 案例总览：https://www.timestent.com/cases
+- 案例分类页（示例）：https://www.timestent.com/cases/sports-events
+- 案例详情页（示例）：https://www.timestent.com/cases/sports-events/hangzhou-asian-games-2023
+- 联系方式：https://www.timestent.com/contact
+- 现货库存：https://www.timestent.com/inventory
+- 隐私政策：https://www.timestent.com/privacy
+- 产品中心：https://www.timestent.com/products
+- 产品详情页（示例）：https://www.timestent.com/products/gable-tent
+- 用户条款：https://www.timestent.com/terms
+
+
+后台管理系统
+生产环境：https://www.timestent.com/admin
+- 总览页：https://www.timestent.com/admin
+- 首页配置：https://www.timestent.com/admin/%E9%A6%96%E9%A1%B5
+- 产品配置：https://www.timestent.com/admin/%E4%BA%A7%E5%93%81%E4%B8%AD%E5%BF%83
+- 案例配置：https://www.timestent.com/admin/%E6%A1%88%E4%BE%8B%E5%B1%95%E7%A4%BA
+- 现货库存配置：https://www.timestent.com/admin/%E7%8E%B0%E8%B4%A7%E5%BA%93%E5%AD%98
+- 关于时代配置：https://www.timestent.com/admin/%E5%85%B3%E4%BA%8E%E6%97%B6%E4%BB%A3
+- 联系方式配置：https://www.timestent.com/admin/%E8%81%94%E7%B3%BB%E6%96%B9%E5%BC%8F
+- 提交记录查看：https://www.timestent.com/admin/submissions
+- 账号管理配置：https://www.timestent.com/admin/users
+
+
+账号信息：
+用户名：Ricker  密码：001122
+用户名：小怪兽  密码：123456
+用户名：TT  密码：Timestent
+用户名：Winnk  密码：123456
+
+
+
+
+
+
+

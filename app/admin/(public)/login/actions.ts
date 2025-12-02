@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 
 import { createAdminSession, verifyCredentials } from "@/server/auth";
+import { headers } from "next/headers";
+import { recordAdminLogin } from "@/server/adminActivity";
 
 export type LoginActionState =
   | { status: "idle" }
@@ -31,6 +33,14 @@ export async function loginAction(_prevState: LoginActionState, formData: FormDa
     }
 
     await createAdminSession(session);
+    try {
+      const h = headers();
+      const ip = h.get("x-forwarded-for") || h.get("x-real-ip") || null;
+      const ua = h.get("user-agent") || null;
+      if (session.username) {
+        await recordAdminLogin(session.username, ip, ua);
+      }
+    } catch {}
     redirect(resolveNextPath(next));
   } catch (error) {
     console.error("loginAction failed", error);

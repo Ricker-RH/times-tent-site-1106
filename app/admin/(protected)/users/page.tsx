@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import { requireAdmin } from "@/server/auth";
 import { query } from "@/server/db";
@@ -93,6 +94,12 @@ export default async function AdminUsersPage() {
                       ) : (
                         <span className="text-[10px] text-[var(--color-text-tertiary,#8690a3)]">最高权限</span>
                       )}
+                      <Link
+                        href={`/admin/users/${encodeURIComponent(user.username)}`}
+                        className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-text-secondary)] transition hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary)]"
+                      >
+                        查看详情
+                      </Link>
                       <form action={deleteAdminUser} className="inline-flex items-center gap-2">
                         <input type="hidden" name="username" value={user.username} />
                         <button
