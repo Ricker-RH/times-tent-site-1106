@@ -10,7 +10,8 @@ export async function GET(): Promise<Response> {
     if (error instanceof AdminRedirectError) {
       const url = new URL(error.location, "http://localhost");
       const reason = url.searchParams.get("reason");
-      if (reason === "conflict") {
+      const path = url.pathname || "";
+      if (reason === "conflict" || path.startsWith("/admin/session/conflict")) {
         return NextResponse.json({ ok: false, reason: "conflict" }, { status: 409 });
       }
       return NextResponse.json({ ok: false }, { status: 401 });

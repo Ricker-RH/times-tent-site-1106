@@ -26,6 +26,15 @@ export async function loginAction(_prevState: LoginActionState, formData: FormDa
     return { status: "error", message: "请输入账号和密码" };
   }
 
+  // Detect kick-out (conflict) context from Referer
+  let isConflictContext = false;
+  try {
+    const h = headers();
+    const referer = h.get("referer") || "";
+    const url = new URL(referer, "http://localhost");
+    isConflictContext = url.searchParams.get("reason") === "conflict";
+  } catch {}
+
   try {
     const session = await verifyCredentials(identifier, password);
     if (!session) {
@@ -44,6 +53,9 @@ export async function loginAction(_prevState: LoginActionState, formData: FormDa
     redirect(resolveNextPath(next));
   } catch (error) {
     console.error("loginAction failed", error);
+    if (isConflictContext) {
+      return { status: "error", message: "您的账号已在另一设备登录，本设备已被退出。请重新登录以继续使用。" };
+    }
     return { status: "error", message: "登录失败，请稍后再试" };
   }
 }

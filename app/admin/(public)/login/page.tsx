@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { getCurrentAdmin } from "@/server/auth";
+import { query } from "@/server/db";
 
 import { LoginForm } from "./LoginForm";
 import { SupportContact } from "./SupportContact";
@@ -27,7 +28,19 @@ export default async function AdminLoginPage({ searchParams }: { searchParams?: 
   const next = typeof searchParams?.next === "string" ? searchParams.next : undefined;
   const reason = typeof searchParams?.reason === "string" ? searchParams.reason : undefined;
 
-  if (current && reason !== "conflict") {
+  let currentIsActive = false;
+  try {
+    if (current?.username && current?.jti) {
+      const { rows } = await query<{ jti: string }>(
+        `SELECT jti FROM admin_session_locks WHERE username = $1 LIMIT 1`,
+        [current.username]
+      );
+      const activeJti = rows[0]?.jti;
+      currentIsActive = Boolean(activeJti && activeJti === current.jti);
+    }
+  } catch {}
+
+  if (currentIsActive && reason !== "conflict") {
     redirect(resolveRedirect(next));
   }
 

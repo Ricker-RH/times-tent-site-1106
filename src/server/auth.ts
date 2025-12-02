@@ -141,6 +141,7 @@ export async function createAdminSession(user: AdminSession): Promise<void> {
   };
 
   cookies().set(SESSION_COOKIE_NAME, token, cookieOptions);
+  cookies().set("tt_admin_jti", jti, { ...cookieOptions });
 
   try {
     await query(
@@ -174,6 +175,7 @@ export function clearAdminSession(): void {
   };
 
   cookies().delete(SESSION_COOKIE_NAME);
+  cookies().delete("tt_admin_jti");
 
   const paths = ["/", "/admin", "/admin/", "/admin/login"] as const;
   const domains: Array<string | undefined> = [undefined, "localhost", SESSION_COOKIE_DOMAIN].filter(
@@ -185,6 +187,8 @@ export function clearAdminSession(): void {
       const options = domain ? { ...baseOptions, path, domain } : { ...baseOptions, path };
       cookies().set(SESSION_COOKIE_NAME, "", options);
       cookies().delete({ name: SESSION_COOKIE_NAME, path, ...(domain ? { domain } : {}) });
+      cookies().set("tt_admin_jti", "", options);
+      cookies().delete({ name: "tt_admin_jti", path, ...(domain ? { domain } : {}) });
     });
   });
 }
@@ -211,7 +215,7 @@ async function parseSessionFromCookie(): Promise<AdminSession | null> {
       role,
       username: typeof payload.username === "string" ? payload.username : null,
       email: typeof payload.email === "string" ? payload.email : null,
-      jti: typeof payload.jti === "string" ? payload.jti : null,
+      jti: typeof payload.jti === "string" ? payload.jti : (cookies().get("tt_admin_jti")?.value ?? null),
     };
   } catch (error) {
     console.error("Failed to verify admin session", error);
@@ -277,8 +281,8 @@ export async function requireAdmin(options?: {
         clearAdminSession();
         const headerUrl = headers().get("x-invoke-path") ?? headers().get("x-forwarded-path") ?? options?.redirectTo;
         const login = buildLoginRedirect(headerUrl);
-        const location = login.includes("?") ? `${login}&reason=conflict` : `${login}?reason=conflict`;
-        throw new AdminRedirectError(location);
+        const conflict = `/admin/session/conflict?next=${encodeURIComponent(login)}`;
+        throw new AdminRedirectError(conflict);
       }
     }
   } catch (error) {

@@ -172,7 +172,6 @@ async function HumanVerifyForm({ username }: { username: string }) {
   return (
     <form action={verifyHumanAction} method="post" className="space-y-6">
       <input type="hidden" name="username" value={username} />
-      {/* hash is generated server-side to avoid storing state */}
       <input type="hidden" name="hash" value={hash} />
       <label className="block text-sm font-medium text-[var(--color-brand-secondary)]">请输入图形验证码</label>
       <div className="flex items-center gap-4">

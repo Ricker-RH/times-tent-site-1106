@@ -2945,7 +2945,7 @@ function CompanyOverviewDialog({
                         capabilities: prev.capabilities.map((item, idx) => (idx === index ? { ...item, image: next } : item)),
                       }))
                     }
-                    helper="最佳尺寸 260×128"
+                    helper="最佳尺寸 220×150"
                   />
                 </div>
               ))}
