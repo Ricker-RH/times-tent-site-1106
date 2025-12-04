@@ -8,13 +8,16 @@ export type IconName =
   | "shield-check"
   | "message-circle";
 
-export function ContactIcon({ name }: { name: IconName }): JSX.Element {
+type IconSize = "sm" | "md" | "lg";
+
+export function ContactIcon({ name, size = "md" }: { name: IconName; size?: IconSize }): JSX.Element {
+  const sizeClass = size === "lg" ? "h-7 w-7" : size === "sm" ? "h-4 w-4" : "h-5 w-5";
   switch (name) {
     case "phone":
       return (
         <svg
           aria-hidden="true"
-          className="h-3 w-3"
+          className={sizeClass}
           fill="none"
           height="16"
           stroke="currentColor"
@@ -31,7 +34,7 @@ export function ContactIcon({ name }: { name: IconName }): JSX.Element {
       return (
         <svg
           aria-hidden="true"
-          className="h-5 w-5"
+          className={sizeClass}
           fill="none"
           height="24"
           stroke="currentColor"
@@ -49,7 +52,7 @@ export function ContactIcon({ name }: { name: IconName }): JSX.Element {
       return (
         <svg
           aria-hidden="true"
-          className="h-5 w-5"
+          className={sizeClass}
           fill="none"
           height="24"
           stroke="currentColor"
@@ -67,7 +70,7 @@ export function ContactIcon({ name }: { name: IconName }): JSX.Element {
       return (
         <svg
           aria-hidden="true"
-          className="h-5 w-5"
+          className={sizeClass}
           fill="none"
           height="24"
           stroke="currentColor"
@@ -89,7 +92,7 @@ export function ContactIcon({ name }: { name: IconName }): JSX.Element {
       return (
         <svg
           aria-hidden="true"
-          className="h-5 w-5"
+          className={sizeClass}
           fill="none"
           height="24"
           stroke="currentColor"
@@ -107,7 +110,7 @@ export function ContactIcon({ name }: { name: IconName }): JSX.Element {
       return (
         <svg
           aria-hidden="true"
-          className="h-5 w-5"
+          className={sizeClass}
           fill="none"
           height="24"
           stroke="currentColor"
