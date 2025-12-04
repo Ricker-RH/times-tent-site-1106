@@ -39,8 +39,8 @@ export function ContactChannelsSection({ section }: ContactChannelsSectionProps)
                 href={card.href}
                 className="flex items-start gap-3 rounded-md bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
               >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)]">
-                  <ContactIcon name={(card.icon as IconName) ?? "phone"} size="lg" />
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary)]">
+                  <ContactIcon name={(card.icon as IconName) ?? "phone"} size="md" />
                 </span>
                 <span className="space-y-1 text-sm text-[var(--color-text-secondary)]">
                   <strong className="block text-[var(--color-brand-secondary)]">{t(card.title)}</strong>
