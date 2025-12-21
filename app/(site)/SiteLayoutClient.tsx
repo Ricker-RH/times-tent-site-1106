@@ -209,17 +209,21 @@ function MobileLink({ link, currentPath, onNavigate }: { link: NavigationLink; c
 
   return (
     <div className="rounded-md border border-[var(--color-border)]">
-      <button
-        type="button"
-        onClick={() => (hasChildren ? setOpen((prev) => !prev) : onNavigate())}
+      <div
         className={cn(
           "flex w-full items-center justify-between px-4 py-3 text-sm font-semibold",
           active ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-brand-secondary)]",
         )}
       >
-        <span>{t(link.label, locale as LocaleKey)}</span>
-        {hasChildren ? <span>{open ? "▴" : "▾"}</span> : null}
-      </button>
+        <Link href={link.href} className="flex-1" onClick={onNavigate}>
+          {t(link.label, locale as LocaleKey)}
+        </Link>
+        {hasChildren ? (
+          <button type="button" className="ml-3 rounded-md px-2 py-1" aria-label="展开" onClick={() => setOpen((prev) => !prev)}>
+            {open ? "▴" : "▾"}
+          </button>
+        ) : null}
+      </div>
       {hasChildren ? (
         <div className={cn("border-t border-[var(--color-border)] bg-[var(--color-surface-muted)]", open ? "block" : "hidden")}
         >
