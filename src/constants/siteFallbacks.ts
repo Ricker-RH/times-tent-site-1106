@@ -707,7 +707,7 @@ export const FALLBACK_RIGHT_RAIL_CONFIG: RightRailConfig = {
     {
       id: "mail",
       icon: "mail",
-      href: "mailto:info@timestent.com",
+      href: "mailto:business@timestent.com",
       label: {
         "zh-CN": "邮件咨询",
         "zh-TW": "郵件諮詢",

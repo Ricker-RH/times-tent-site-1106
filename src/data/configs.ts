@@ -915,16 +915,16 @@ export const contact_config = {
           "en": "Email"
         },
         "value": {
-          "zh-CN": "Winnk@timestent.com",
-          "zh-TW": "Winnk@timestent.com",
-          "en": "Winnk@timestent.com"
+          "zh-CN": "business@timestent.com",
+          "zh-TW": "business@timestent.com",
+          "en": "business@timestent.com"
         },
         "helper": {
           "zh-CN": "欢迎发送图纸或招标文件",
           "zh-TW": "歡迎傳送圖紙或招標文件",
           "en": "Send drawings or tender docs"
         },
-        "href": "mailto:Winnk@timestent.com"
+        "href": "mailto:business@timestent.com"
       },
       {
         "icon": "map-pin",
@@ -1391,8 +1391,8 @@ export const footer_config = {
       "href": "tel:+862062651300"
     },
     "email": {
-      "label": "Winnk@timestent.com",
-      "href": "mailto:Winnk@timestent.com"
+      "label": "business@timestent.com",
+      "href": "mailto:business@timestent.com"
     }
   },
   "navigationGroups": [
