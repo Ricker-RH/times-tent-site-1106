@@ -8,7 +8,7 @@ import { createPortal, useFormState, useFormStatus } from "react-dom";
 import type { HomeCompanyOverview, HomeInventoryHighlight, ProductMatrixSectionProps } from "@/components/home/ProductMatrixSection";
 import { FALLBACK_HOME_CONFIG, FALLBACK_PRODUCT_CENTER_CONFIG } from "@/constants/siteFallbacks";
 import { cases_config, products_cards } from "@/data/configs";
-import type { CaseCategory, HomeConfig, ProductCenterConfig } from "@/server/pageConfigs";
+import type { CaseCategory, CasesConfig, HomeConfig, ProductCenterConfig, CaseStudy } from "@/server/pageConfigs";
 
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
@@ -371,46 +371,12 @@ type EditingTarget =
   | { type: "inventory"; scope: InventoryScope }
   | { type: "contactCta"; scope: ContactCtaScope };
 
-type CaseStudySource = NonNullable<CaseCategory["studies"]>[number];
-
-const CASE_CATEGORIES: CaseCategory[] = ensureArray<CaseCategory>(cases_config?.categories);
-
-const CASE_CATEGORY_OPTIONS = CASE_CATEGORIES.map((category) => ({
-  value: ensureString(category.slug),
-  label: ensureString(category.name) || ensureString(category.slug) || "分类",
-}));
-
-
 interface CaseStudyOption {
   value: string;
   label: string;
   category: string;
   href: string;
 }
-
-const CASE_STUDY_OPTIONS: CaseStudyOption[] = CASE_CATEGORIES.flatMap((category) => {
-  const categoryRecord = ensureObject(category);
-  const categorySlug = ensureString(categoryRecord.slug);
-  if (!categorySlug) return [] as CaseStudyOption[];
-  const categoryLabel = ensureString(categoryRecord.name) || categorySlug || "分类";
-  return ensureArray<CaseStudySource>(categoryRecord.studies)
-    .map((study) => {
-      const studyRecord = ensureObject(study);
-      const slug = ensureString(studyRecord.slug);
-      if (!slug) return null;
-      const title = ensureString(studyRecord.title) || slug;
-      return {
-        value: slug,
-        label: `${categoryLabel} / ${title}`,
-        category: categorySlug,
-        href: `/cases/${categorySlug}/${slug}`,
-      } as CaseStudyOption;
-    })
-    .filter(Boolean) as CaseStudyOption[];
-});
-
-const CASE_STUDY_LOOKUP = new Map(CASE_STUDY_OPTIONS.map((option) => [option.value, option]));
-
 
 const DEFAULT_PRODUCT_OPTIONS: ProductOption[] = products_cards.map((product) => {
   const slug = ensureString(product.href).split("/").pop() ?? "";
@@ -452,12 +418,12 @@ function createId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 8)}-${Date.now().toString(36)}`;
 }
 
-function normalizeHeroSlide(raw: unknown, index: number): HeroSlideState {
+function normalizeHeroSlide(raw: unknown, index: number, caseStudyLookup: Map<string, CaseStudyOption>): HeroSlideState {
   const slide = ensureObject(raw);
   const caseRef = ensureObject(slide.caseRef);
   const imageOverride = ensureObject(slide.imageOverride);
   const caseSlug = ensureString(caseRef.slug);
-  const fallbackCase = caseSlug ? CASE_STUDY_LOOKUP.get(caseSlug) : undefined;
+  const fallbackCase = caseSlug ? caseStudyLookup.get(caseSlug) : undefined;
   const caseCategory = ensureString(caseRef.category) || fallbackCase?.category || "";
   const href = ensureString(slide.href) || fallbackCase?.href || "";
 
@@ -502,7 +468,11 @@ function normalizeHeroSlide(raw: unknown, index: number): HeroSlideState {
   } satisfies HeroSlideState;
 }
 
-function normalizeHero(raw: unknown): HeroState {
+function normalizeHero(
+  raw: unknown,
+  caseCategoryOptions: { value: string; label: string }[],
+  caseStudyLookup: Map<string, CaseStudyOption>
+): HeroState {
   const hero = ensureObject(raw);
   const fallbackHero = FALLBACK_HOME_CONFIG.hero ?? {};
   const fallbackBadge = ensureCompleteLocalizedField(
@@ -549,7 +519,9 @@ function normalizeHero(raw: unknown): HeroState {
     en: (hero as Record<string, unknown>)["ctaSecondaryEn"],
     "zh-TW": (hero as Record<string, unknown>)["ctaSecondaryZhTw"],
   };
-  const slidesNormalized = ensureArray(hero.slides).map((slide, index) => normalizeHeroSlide(slide, index));
+  const slidesNormalized = ensureArray(hero.slides).map((slide, index) =>
+    normalizeHeroSlide(slide, index, caseStudyLookup)
+  );
   const initialHighlights = slidesNormalized[0]?.highlights ?? createEmptyLocalized("");
   const rawHighlights = (hero as Record<string, unknown>).highlights as Record<string, unknown> | undefined;
   const hasAnyRawHighlights = !!rawHighlights && SUPPORTED_LOCALES.some((locale) => {
@@ -777,7 +749,7 @@ function normalizeProductShowcase(raw: unknown, productOptions: ProductOption[])
   } satisfies ProductShowcaseState;
 }
 
-function normalizeApplicationAreas(raw: unknown): ApplicationAreasState {
+function normalizeApplicationAreas(raw: unknown, caseCategoryOptions: { value: string; label: string }[]): ApplicationAreasState {
   const application = ensureObject(raw);
   const fallback = ensureObject(FALLBACK_HOME_CONFIG.applicationAreas);
   const fallbackHeading = ensureCompleteLocalizedField(
@@ -970,11 +942,16 @@ function normalizeContactCta(raw: unknown): ContactCtaState {
   } satisfies ContactCtaState;
 }
 
-function normalizeConfig(raw: Record<string, unknown>, productOptions: ProductOption[]): HomeConfigState {
-  const hero = normalizeHero(raw.hero);
+function normalizeConfig(
+  raw: Record<string, unknown>,
+  productOptions: ProductOption[],
+  caseCategoryOptions: { value: string; label: string }[],
+  caseStudyLookup: Map<string, CaseStudyOption>
+): HomeConfigState {
+  const hero = normalizeHero(raw.hero, caseCategoryOptions, caseStudyLookup);
   const companyOverview = normalizeCompanyOverview(raw.companyOverview);
   const productShowcase = normalizeProductShowcase(raw.productShowcase, productOptions);
-  const applicationAreas = normalizeApplicationAreas(raw.applicationAreas);
+  const applicationAreas = normalizeApplicationAreas(raw.applicationAreas, caseCategoryOptions);
   const inventoryHighlight = normalizeInventoryHighlight(raw.inventoryHighlight);
   const contactCta = normalizeContactCta(raw.contactCta);
   const meta = raw._meta && typeof raw._meta === "object" ? (raw._meta as Record<string, unknown>) : undefined;
@@ -1897,16 +1874,26 @@ function HomePreview({
   config,
   onEdit,
   productConfig,
+  casesConfig,
 }: {
   config: HomeConfigState;
   onEdit: (target: EditingTarget) => void;
   productConfig: ProductCenterConfig;
+  casesConfig?: CasesConfig;
 }) {
   const { locale } = useLocale();
   const previewConfig = useMemo(() => serializeConfig(config), [config]);
   const mergedConfig = useMemo(() => mergeHomeConfigWithFallback(previewConfig), [previewConfig]);
 
-  const casesConfigData = useMemo(() => ({ categories: CASE_CATEGORIES }), []);
+  const casesConfigData = useMemo(() => {
+    if (casesConfig) {
+      return casesConfig;
+    }
+    // Fallback to static config if dynamic is missing, but prefer dynamic
+    // If we absolutely must use a fallback, we should import the static one or handle empty
+    return cases_config; 
+  }, [casesConfig]);
+
   const previewProductConfig = useMemo<ProductCenterConfig>(
     () => ({
       ...productConfig,
@@ -1992,7 +1979,7 @@ function mergeHomeConfigWithFallback(config: HomeConfig): HomeConfig {
   return config;
 }
 
-function buildPreviewHeroData(homeConfig: HomeConfig, casesConfig: { categories: CaseCategory[] }): HomeHeroData {
+function buildPreviewHeroData(homeConfig: HomeConfig, casesConfig: CasesConfig): HomeHeroData {
   const heroConfig = homeConfig.hero ?? {};
   const slides: HomeHeroSlide[] = [];
   const seen = new Set<string>();
@@ -2067,7 +2054,7 @@ function buildPreviewHeroData(homeConfig: HomeConfig, casesConfig: { categories:
   };
 }
 
-function buildPreviewApplicationTabs(homeConfig: HomeConfig, casesConfig: { categories: CaseCategory[] }): HomeApplicationTab[] {
+function buildPreviewApplicationTabs(homeConfig: HomeConfig, casesConfig: CasesConfig): HomeApplicationTab[] {
   const selected = ensureArray<string>(homeConfig.applicationAreas?.selectedCategorySlugs)
     .map((slug) => ensureString(slug))
     .filter(Boolean);
@@ -2109,7 +2096,7 @@ function buildPreviewApplicationTabs(homeConfig: HomeConfig, casesConfig: { cate
     ) as LocalizedText;
 
     const override = overrides.get(slug);
-    const studies = ensureArray<CaseStudySource>(categoryRecord.studies);
+    const studies = ensureArray<CaseStudy>(categoryRecord.studies);
     const primaryStudyRecord = studies.length ? ensureObject(studies[0]) : undefined;
     const image = ensureString(override?.imageOverride) || ensureString(primaryStudyRecord?.image);
     if (!image) continue;
@@ -2306,7 +2293,7 @@ function buildPreviewInventoryHighlight(homeConfig: HomeConfig): HomeInventoryHi
   };
 }
 
-function findCaseStudy(categories: CaseCategory[], slug: string, categorySlug?: string) {
+function findCaseStudy(categories: readonly CaseCategory[], slug: string, categorySlug?: string) {
   if (!slug) return null;
   if (categorySlug) {
     const category = categories.find((item) => item.slug === categorySlug);
@@ -2362,7 +2349,23 @@ function PreviewActionRail({ anchors, onEdit }: { anchors: AnchorMap; onEdit: (t
 
 // Dialog implementations
 
-function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scope: HeroScope; onSave: (next: HeroState) => void; onCancel: () => void }) {
+function HeroDialog({
+  value,
+  scope,
+  onSave,
+  onCancel,
+  caseCategoryOptions,
+  caseStudyOptions,
+  caseStudyLookup,
+}: {
+  value: HeroState;
+  scope: HeroScope;
+  onSave: (next: HeroState) => void;
+  onCancel: () => void;
+  caseCategoryOptions: { value: string; label: string }[];
+  caseStudyOptions: CaseStudyOption[];
+  caseStudyLookup: Map<string, CaseStudyOption>;
+}) {
   const [draft, setDraft] = useState<HeroState>(() => cloneHeroState(value));
 
   useEffect(() => {
@@ -2379,11 +2382,11 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
       slides: [
         ...prev.slides,
         (() => {
-          const defaultStudy = CASE_STUDY_OPTIONS[0];
+          const defaultStudy = caseStudyOptions[0];
           return {
             id: createId("hero-slide"),
             caseSlug: defaultStudy?.value ?? "",
-            caseCategory: defaultStudy?.category ?? CASE_CATEGORY_OPTIONS[0]?.value ?? "",
+            caseCategory: defaultStudy?.category ?? caseCategoryOptions[0]?.value ?? "",
             href: defaultStudy?.href ?? "",
             imageSrc: "",
             eyebrow: createEmptyLocalized(""),
@@ -2548,8 +2551,8 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
                             ...prev,
                             slides: prev.slides.map((item, idx) => {
                               if (idx !== index) return item;
-                              const option = CASE_STUDY_LOOKUP.get(nextSlug);
-                              const previousOption = CASE_STUDY_LOOKUP.get(item.caseSlug);
+                              const option = caseStudyLookup.get(nextSlug);
+                              const previousOption = caseStudyLookup.get(item.caseSlug);
                               const shouldUpdateHref =
                                 !item.href || (previousOption && item.href === previousOption.href);
                               const nextHref = option?.href ?? "";
@@ -2565,7 +2568,7 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
                         className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
                       >
                         <option value="">未选择</option>
-                        {CASE_STUDY_OPTIONS.map((option) => (
+                        {caseStudyOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -2585,7 +2588,7 @@ function HeroDialog({ value, scope, onSave, onCancel }: { value: HeroState; scop
                         className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
                       >
                         <option value="">未设置</option>
-                        {CASE_CATEGORY_OPTIONS.map((option) => (
+                        {caseCategoryOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -3374,11 +3377,13 @@ function ApplicationAreasDialog({
   scope,
   onSave,
   onCancel,
+  caseCategoryOptions,
 }: {
   value: ApplicationAreasState;
   scope: ApplicationScope;
   onSave: (next: ApplicationAreasState) => void;
   onCancel: () => void;
+  caseCategoryOptions: { value: string; label: string }[];
 }) {
   const [draft, setDraft] = useState<ApplicationAreasState>(() => cloneApplicationAreasState(value));
 
@@ -3449,7 +3454,7 @@ function ApplicationAreasDialog({
         {showSelection ? (
           <CheckboxList
             label="已选分类"
-            options={CASE_CATEGORY_OPTIONS}
+            options={caseCategoryOptions}
             values={draft.selectedCategorySlugs}
             onChange={(next) => setDraft((prev) => ({ ...prev, selectedCategorySlugs: next }))}
           />
@@ -3461,7 +3466,7 @@ function ApplicationAreasDialog({
             {draft.selectedCategorySlugs.length ? (
               <div className="space-y-2">
                 {draft.selectedCategorySlugs.map((slug, index) => {
-                  const label = CASE_CATEGORY_OPTIONS.find((o) => o.value === slug)?.label || slug;
+                  const label = caseCategoryOptions.find((o) => o.value === slug)?.label || slug;
                   return (
                     <div key={`${slug}-${index}`} className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] bg-white/70 p-3">
                       <span className="text-sm text-[var(--color-text-secondary)]">{label}</span>
@@ -3506,7 +3511,7 @@ function ApplicationAreasDialog({
                       ...prev.items,
                       {
                         id: createId("application-item"),
-                        areaKey: CASE_CATEGORY_OPTIONS[0]?.value ?? "",
+                        areaKey: caseCategoryOptions[0]?.value ?? "",
                         imageOverride: "",
                         nameOverride: createEmptyLocalized(""),
                         nameOverrideEnabled: false,
@@ -3554,7 +3559,7 @@ function ApplicationAreasDialog({
                       className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-brand-primary)] focus:outline-none"
                     >
                       <option value="">未设置</option>
-                      {CASE_CATEGORY_OPTIONS.map((option) => (
+                      {caseCategoryOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
@@ -3900,6 +3905,50 @@ export function HomeConfigEditor({
   initialConfig: Record<string, unknown>;
   relatedData?: Record<string, unknown>;
 }) {
+  const casesConfig = useMemo<CasesConfig | undefined>(() => {
+    return relatedData && typeof relatedData === "object"
+      ? (relatedData as { casesConfig?: CasesConfig }).casesConfig
+      : undefined;
+  }, [relatedData]);
+
+  const caseCategories = useMemo<CaseCategory[]>(() => {
+    return ensureArray<CaseCategory>(casesConfig?.categories || cases_config?.categories);
+  }, [casesConfig]);
+
+  const caseCategoryOptions = useMemo(() => {
+    return caseCategories.map((category) => ({
+      value: ensureString(category.slug),
+      label: ensureString(category.name) || ensureString(category.slug) || "分类",
+    }));
+  }, [caseCategories]);
+
+  const caseStudyOptions = useMemo<CaseStudyOption[]>(() => {
+    return caseCategories.flatMap((category) => {
+      const categoryRecord = ensureObject(category);
+      const categorySlug = ensureString(categoryRecord.slug);
+      if (!categorySlug) return [] as CaseStudyOption[];
+      const categoryLabel = ensureString(categoryRecord.name) || categorySlug || "分类";
+      return ensureArray<CaseStudy>(categoryRecord.studies)
+        .map((study) => {
+          const studyRecord = ensureObject(study);
+          const slug = ensureString(studyRecord.slug);
+          if (!slug) return null;
+          const title = ensureString(studyRecord.title) || slug;
+          return {
+            value: slug,
+            label: `${categoryLabel} / ${title}`,
+            category: categorySlug,
+            href: `/cases/${categorySlug}/${slug}`,
+          } as CaseStudyOption;
+        })
+        .filter((item): item is CaseStudyOption => Boolean(item));
+    });
+  }, [caseCategories]);
+
+  const caseStudyLookup = useMemo(() => {
+    return new Map(caseStudyOptions.map((option) => [option.value, option]));
+  }, [caseStudyOptions]);
+
   const productCenterConfig = useMemo<ProductCenterConfig>(() => {
     const source =
       relatedData && typeof relatedData === "object"
@@ -3949,8 +3998,8 @@ export function HomeConfigEditor({
   }, [productCenterConfig]);
 
   const normalizedInitialConfig = useMemo(
-    () => normalizeConfig(initialConfig, productOptions),
-    [initialConfig, productOptions],
+    () => normalizeConfig(initialConfig, productOptions, caseCategoryOptions, caseStudyLookup),
+    [initialConfig, productOptions, caseCategoryOptions, caseStudyLookup],
   );
 
   const [config, setConfig] = useState<HomeConfigState>(normalizedInitialConfig);
@@ -4055,7 +4104,12 @@ export function HomeConfigEditor({
     <div className="space-y-10">
 
 
-      <HomePreview config={config} onEdit={setEditing} productConfig={productCenterConfig} />
+      <HomePreview
+        config={config}
+        onEdit={setEditing}
+        productConfig={productCenterConfig}
+        casesConfig={casesConfig}
+      />
 
       {editing?.type === "hero" ? (
         <HeroDialog
@@ -4068,6 +4122,9 @@ export function HomeConfigEditor({
             setEditing(null);
             startGlobalSave(updated);
           }}
+          caseCategoryOptions={caseCategoryOptions}
+          caseStudyOptions={caseStudyOptions}
+          caseStudyLookup={caseStudyLookup}
         />
       ) : null}
 
@@ -4111,6 +4168,7 @@ export function HomeConfigEditor({
             setEditing(null);
             startGlobalSave(updated);
           }}
+          caseCategoryOptions={caseCategoryOptions}
         />
       ) : null}
 

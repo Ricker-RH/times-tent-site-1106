@@ -1,3 +1,4 @@
+import { LocalizedField, LocaleKey } from "@/i18n/locales";
 import { product_details } from "@/data/configs";
 import { PRODUCT_MEDIA, DEFAULT_MEDIA } from "@/data/productMedia";
 import { resolveImageSrc, sanitizeImageSrc } from "@/utils/image";
@@ -9,13 +10,13 @@ function toStringValue(value: unknown, fallback = ""): string {
   return fallback;
 }
 
-function readLocalized(value: unknown, fallback = ""): string {
+function readLocalized(value: unknown, fallback = "", locale?: LocaleKey): string {
   if (typeof value === "string") return value;
   if (!value) return fallback;
   if (typeof value === "number") return String(value);
   if (typeof value !== "object" || Array.isArray(value)) return fallback;
   const record = value as Record<string, unknown>;
-  const active = getCurrentLocale?.() ?? DEFAULT_LOCALE;
+  const active = locale ?? getCurrentLocale?.() ?? DEFAULT_LOCALE;
   const byActive = record[active];
   if (typeof byActive === "string" && byActive.trim()) return byActive;
   const byDefault = record[DEFAULT_LOCALE];
@@ -32,11 +33,11 @@ function asRecord(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
 
-function asStringArray(value: unknown, fallback: string[] = []): string[] {
+function asStringArray(value: unknown, fallback: string[] = [], locale?: LocaleKey): string[] {
   if (!Array.isArray(value)) return [...fallback];
   const result: string[] = [];
   value.forEach((item, index) => {
-    const str = readLocalized(item, fallback[index] ?? "").trim();
+    const str = readLocalized(item, fallback[index] ?? "", locale).trim();
     if (str) {
       result.push(str);
     }
@@ -44,12 +45,12 @@ function asStringArray(value: unknown, fallback: string[] = []): string[] {
   return result.length ? result : [...fallback];
 }
 
-function asStringMatrix(value: unknown, fallback: string[][] = []): string[][] {
+function asStringMatrix(value: unknown, fallback: string[][] = [], locale?: LocaleKey): string[][] {
   if (!Array.isArray(value)) return fallback.map((group) => [...group]);
   const groups: string[][] = [];
   value.forEach((group, idx) => {
     if (!Array.isArray(group)) return;
-    const normalized = asStringArray(group, fallback[idx] ?? []);
+    const normalized = asStringArray(group, fallback[idx] ?? [], locale);
     if (normalized.length) {
       groups.push(normalized);
     }
@@ -62,7 +63,7 @@ interface RawPair {
   value?: unknown;
 }
 
-function asPairMatrix(value: unknown, fallback: DetailMetricGroup[] = []): DetailMetricGroup[] {
+function asPairMatrix(value: unknown, fallback: DetailMetricGroup[] = [], locale?: LocaleKey): DetailMetricGroup[] {
   if (!Array.isArray(value)) return fallback.map((group) => group.map((item) => ({ ...item })));
   const groups: DetailMetricGroup[] = [];
   value.forEach((group, groupIdx) => {
@@ -71,8 +72,8 @@ function asPairMatrix(value: unknown, fallback: DetailMetricGroup[] = []): Detai
     group.forEach((item, itemIdx) => {
       if (!isRecord(item)) return;
       const fallbackItem = fallback[groupIdx]?.[itemIdx];
-      const label = readLocalized(item.label, fallbackItem?.label ?? "").trim();
-      const val = readLocalized(item.value, fallbackItem?.value ?? "").trim();
+      const label = readLocalized(item.label, fallbackItem?.label ?? "", locale).trim();
+      const val = readLocalized(item.value, fallbackItem?.value ?? "", locale).trim();
       if (label || val) {
         normalized.push({ label, value: val });
       }
@@ -256,7 +257,7 @@ function cloneAccessoriesConfig(accessories: ProductAccessoriesConfig): ProductA
   };
 }
 
-function normalizeTabsConfig(raw: unknown, fallback: ProductDetailTabConfig[]): ProductDetailTabConfig[] {
+function normalizeTabsConfig(raw: unknown, fallback: ProductDetailTabConfig[], locale?: LocaleKey): ProductDetailTabConfig[] {
   if (!Array.isArray(raw)) {
     return cloneTabsConfig(fallback);
   }
@@ -270,7 +271,7 @@ function normalizeTabsConfig(raw: unknown, fallback: ProductDetailTabConfig[]): 
     }
     const target = targetRaw as ProductDetailTabTarget;
     const fallbackLabel = fallback[index]?.label ?? DEFAULT_TAB_DEFINITIONS.find((tab) => tab.target === target)?.label ?? target;
-    const label = readLocalized(item.label, fallbackLabel).trim() || fallbackLabel;
+    const label = readLocalized(item.label, fallbackLabel, locale).trim() || fallbackLabel;
     const idRaw = toStringValue(item.id ?? (item as Record<string, unknown>)._id, "").trim();
     const id = idRaw || `${target}-${index + 1}`;
     if (seen.has(id)) {
@@ -286,7 +287,7 @@ function normalizeTabsConfig(raw: unknown, fallback: ProductDetailTabConfig[]): 
   return normalized;
 }
 
-function normalizeIntroConfig(raw: unknown, fallback: ProductIntroConfig): ProductIntroConfig {
+function normalizeIntroConfig(raw: unknown, fallback: ProductIntroConfig, locale?: LocaleKey): ProductIntroConfig {
   if (!isRecord(raw)) {
     return cloneIntroConfig(fallback);
   }
@@ -299,15 +300,15 @@ function normalizeIntroConfig(raw: unknown, fallback: ProductIntroConfig): Produ
     if (!isRecord(entry)) return;
     const fallbackBlock = fallback.blocks[index];
     const id = toStringValue(entry.id, `intro-${index + 1}`).trim() || `intro-${index + 1}`;
-    const title = readLocalized(entry.title, fallbackBlock?.title ?? "");
-    const subtitle = readLocalized(entry.subtitle, fallbackBlock?.subtitle ?? "");
+    const title = readLocalized(entry.title, fallbackBlock?.title ?? "", locale);
+    const subtitle = readLocalized(entry.subtitle, fallbackBlock?.subtitle ?? "", locale);
     const image = resolveImageSrc(toStringValue(entry.image, ""), "") || undefined;
     blocks.push({ id, title: title.trim(), subtitle: subtitle.trim(), image });
   });
   return blocks.length ? { blocks } : cloneIntroConfig(fallback);
 }
 
-function normalizeSpecsConfig(raw: unknown, fallback: ProductSpecsConfig): ProductSpecsConfig {
+function normalizeSpecsConfig(raw: unknown, fallback: ProductSpecsConfig, locale?: LocaleKey): ProductSpecsConfig {
   if (!isRecord(raw)) {
     return cloneSpecsConfig(fallback);
   }
@@ -318,7 +319,7 @@ function normalizeSpecsConfig(raw: unknown, fallback: ProductSpecsConfig): Produ
     ? ((raw as Record<string, unknown>).rows as unknown[])
     : [];
   const columns = columnsRaw.length
-    ? columnsRaw.map((item, index) => readLocalized(item, fallback.columns[index] ?? DEFAULT_SPEC_COLUMNS[index] ?? `列${index + 1}`).trim())
+    ? columnsRaw.map((item, index) => readLocalized(item, fallback.columns[index] ?? DEFAULT_SPEC_COLUMNS[index] ?? `列${index + 1}`, locale).trim())
     : [...fallback.columns];
   const rows = rowsRaw.length
     ? rowsRaw
@@ -328,7 +329,7 @@ function normalizeSpecsConfig(raw: unknown, fallback: ProductSpecsConfig): Produ
         )
     : fallback.rows.map((row) => [...row]);
   const captionRaw = (raw as Record<string, unknown>).caption;
-  const caption = captionRaw !== undefined ? readLocalized(captionRaw, "").trim() : fallback.caption;
+  const caption = captionRaw !== undefined ? readLocalized(captionRaw, "", locale).trim() : fallback.caption;
   return {
     columns: columns.length ? columns : [...fallback.columns],
     rows,
@@ -336,7 +337,7 @@ function normalizeSpecsConfig(raw: unknown, fallback: ProductSpecsConfig): Produ
   };
 }
 
-function normalizeAccessoriesConfig(raw: unknown, fallback: ProductAccessoriesConfig): ProductAccessoriesConfig {
+function normalizeAccessoriesConfig(raw: unknown, fallback: ProductAccessoriesConfig, locale?: LocaleKey): ProductAccessoriesConfig {
   if (!isRecord(raw)) {
     return cloneAccessoriesConfig(fallback);
   }
@@ -351,8 +352,8 @@ function normalizeAccessoriesConfig(raw: unknown, fallback: ProductAccessoriesCo
     if (!isRecord(entry)) return;
     const fallbackItem = fallback.items[index];
     const id = toStringValue(entry.id, `accessory-${index + 1}`).trim() || `accessory-${index + 1}`;
-    const title = readLocalized(entry.title, fallbackItem?.title ?? "");
-    const description = readLocalized(entry.description, fallbackItem?.description ?? "");
+    const title = readLocalized(entry.title, fallbackItem?.title ?? "", locale);
+    const description = readLocalized(entry.description, fallbackItem?.description ?? "", locale);
     const image = resolveImageSrc(toStringValue(entry.image, ""), "") || undefined;
     items.push({ id, title: title.trim(), description: description.trim(), image });
   });
@@ -448,7 +449,11 @@ function buildDefaultSections(seed?: ProductDetailSeed): DetailSectionConfig[] {
   ];
 }
 
-function buildFallbackDetail(slug: string, seed?: ProductDetailSeed): ProductDetailConfig {
+function buildFallbackDetail(
+  slug: string,
+  seed?: ProductDetailSeed,
+  locale?: LocaleKey
+): ResolvedProductDetailConfig {
   const fallbackRaw = product_details[slug as keyof typeof product_details];
   const media = PRODUCT_MEDIA[slug] ?? DEFAULT_MEDIA;
   if (!fallbackRaw || !isRecord(fallbackRaw)) {
@@ -491,32 +496,32 @@ function buildFallbackDetail(slug: string, seed?: ProductDetailSeed): ProductDet
   const heroRaw = asRecord(fallbackRaw.hero);
   const sectionsRaw = Array.isArray(fallbackRaw.sections) ? [...fallbackRaw.sections] : [];
   const baseSections = sectionsRaw.length
-    ? sectionsRaw.map((section, index) => normalizeDetailSection(section, index))
+    ? sectionsRaw.map((section, index) => normalizeDetailSection(section, index, locale))
     : buildDefaultSections(seed);
   const gallery = media.gallery.map((item) => ({ ...item }));
   const tabsFallback = createFallbackTabs();
   const introFallback = createFallbackIntro(baseSections, media.hero, seed, slug);
   const specsFallback = createFallbackSpecs(baseSections);
   const accessoriesFallback = createFallbackAccessories(gallery, media.hero);
-  const tabs = normalizeTabsConfig((fallbackRaw as Record<string, unknown>).tabs, tabsFallback);
-  const intro = normalizeIntroConfig((fallbackRaw as Record<string, unknown>).intro, introFallback);
-  const specs = normalizeSpecsConfig((fallbackRaw as Record<string, unknown>).specs, specsFallback);
-  const accessories = normalizeAccessoriesConfig((fallbackRaw as Record<string, unknown>).accessories, accessoriesFallback);
+  const tabs = normalizeTabsConfig((fallbackRaw as Record<string, unknown>).tabs, tabsFallback, locale);
+  const intro = normalizeIntroConfig((fallbackRaw as Record<string, unknown>).intro, introFallback, locale);
+  const specs = normalizeSpecsConfig((fallbackRaw as Record<string, unknown>).specs, specsFallback, locale);
+  const accessories = normalizeAccessoriesConfig((fallbackRaw as Record<string, unknown>).accessories, accessoriesFallback, locale);
 
   return {
-    title: readLocalized(fallbackRaw.title, slug),
+    title: readLocalized(fallbackRaw.title, slug, locale),
     hero: {
-      heading: readLocalized(heroRaw.heading, seed?.title ?? readLocalized(fallbackRaw.title, slug)),
-      badge: toStringValue(heroRaw.badge),
-      description: toStringValue(heroRaw.description),
-      scenarios: toStringValue(heroRaw.scenarios),
+      heading: readLocalized(heroRaw.heading, seed?.title ?? readLocalized(fallbackRaw.title, slug, locale), locale),
+      badge: readLocalized(heroRaw.badge, "", locale),
+      description: readLocalized(heroRaw.description, "", locale),
+      scenarios: readLocalized(heroRaw.scenarios, "", locale),
       image: toStringValue(heroRaw.image, media.hero),
       overlayEnabled: typeof heroRaw.overlayEnabled === "boolean" ? heroRaw.overlayEnabled : true,
     },
     breadcrumb:
       Array.isArray(fallbackRaw.breadcrumb) && fallbackRaw.breadcrumb.length
-        ? fallbackRaw.breadcrumb.map((item) => readLocalized(item, slug) || slug)
-        : ["首页", "产品", readLocalized(fallbackRaw.title, slug) || slug],
+        ? fallbackRaw.breadcrumb.map((item) => readLocalized(item, slug, locale) || slug)
+        : ["首页", "产品", readLocalized(fallbackRaw.title, slug, locale) || slug],
     sections: baseSections,
     gallery,
     tabs,
@@ -535,7 +540,7 @@ function buildFallbackDetail(slug: string, seed?: ProductDetailSeed): ProductDet
   };
 }
 
-function normalizeDetailSection(section: unknown, index: number): DetailSectionConfig {
+function normalizeDetailSection(section: unknown, index: number, locale?: LocaleKey): DetailSectionConfig {
   if (!isRecord(section)) {
     return {
       heading: `内容模块 ${index + 1}`,
@@ -544,10 +549,10 @@ function normalizeDetailSection(section: unknown, index: number): DetailSectionC
       pairs: [],
     };
   }
-  const heading = readLocalized(section.heading, `内容模块 ${index + 1}`).trim();
-  const paragraphs = asStringArray(section.paragraphs ?? section.description ?? []);
-  const lists = asStringMatrix(section.lists ?? []);
-  const pairs = asPairMatrix(section.pairs ?? []);
+  const heading = readLocalized(section.heading, `内容模块 ${index + 1}`, locale).trim();
+  const paragraphs = asStringArray(section.paragraphs ?? section.description ?? [], [], locale);
+  const lists = asStringMatrix(section.lists ?? [], [], locale);
+  const pairs = asPairMatrix(section.pairs ?? [], [], locale);
   return {
     heading: heading || `内容模块 ${index + 1}`,
     paragraphs,
@@ -556,8 +561,8 @@ function normalizeDetailSection(section: unknown, index: number): DetailSectionC
   };
 }
 
-export function normalizeProductDetail(raw: unknown, slug: string, seed?: ProductDetailSeed): ProductDetailConfig {
-  const fallback = buildFallbackDetail(slug, seed);
+export function normalizeProductDetail(raw: unknown, slug: string, seed?: ProductDetailSeed, locale?: LocaleKey): ProductDetailConfig {
+  const fallback = buildFallbackDetail(slug, seed, locale);
   if (!isRecord(raw)) {
     return cloneDetail(fallback);
   }
@@ -567,10 +572,10 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
 
   const fallbackHeroImage = fallback.hero.image ?? DEFAULT_MEDIA.hero;
   const hero: DetailHeroConfig = {
-    heading: toStringValue(heroRaw.heading, fallback.hero.heading ?? fallback.title),
-    badge: readLocalized(heroRaw.badge, fallback.hero.badge ?? ""),
-    description: readLocalized(heroRaw.description, fallback.hero.description ?? ""),
-    scenarios: readLocalized(heroRaw.scenarios, fallback.hero.scenarios ?? ""),
+    heading: readLocalized(heroRaw.heading, fallback.hero.heading ?? fallback.title, locale),
+    badge: readLocalized(heroRaw.badge, fallback.hero.badge ?? "", locale),
+    description: readLocalized(heroRaw.description, fallback.hero.description ?? "", locale),
+    scenarios: readLocalized(heroRaw.scenarios, fallback.hero.scenarios ?? "", locale),
     image: resolveImageSrc(toStringValue(heroRaw.image), fallbackHeroImage),
     overlayEnabled:
       typeof heroRaw.overlayEnabled === "boolean"
@@ -579,15 +584,15 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
   };
 
   const breadcrumb = Array.isArray(raw.breadcrumb)
-    ? raw.breadcrumb.map((item, index) => readLocalized(item, fallback.breadcrumb[index] ?? "")).filter((item) => item.trim())
+    ? raw.breadcrumb.map((item, index) => readLocalized(item, fallback.breadcrumb[index] ?? "", locale)).filter((item) => item.trim())
     : [...fallback.breadcrumb];
 
   const sections = sectionsRaw.map((section, index) => {
     const fallbackSection = fallback.sections[index];
     if (!fallbackSection) {
-      return normalizeDetailSection(section, index);
+      return normalizeDetailSection(section, index, locale);
     }
-    const normalized = normalizeDetailSection(section, index);
+    const normalized = normalizeDetailSection(section, index, locale);
     return {
       heading: normalized.heading || fallbackSection.heading,
       paragraphs: normalized.paragraphs.length ? normalized.paragraphs : [...fallbackSection.paragraphs],
@@ -599,7 +604,7 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
   });
 
   if (!sections.length) {
-    sections.push(...fallback.sections.map((section, index) => normalizeDetailSection(section, index)));
+    sections.push(...fallback.sections.map((section, index) => normalizeDetailSection(section, index, locale)));
   }
 
   const gallery = Array.isArray(raw.gallery)
@@ -607,16 +612,16 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
         .map((item) => {
           if (!isRecord(item)) return null;
           const src = sanitizeImageSrc(toStringValue(item.src));
-          const alt = readLocalized(item.alt, fallback.title).trim();
+          const alt = readLocalized(item.alt, fallback.title, locale).trim();
           if (!src) return null;
           return { src, alt: alt || fallback.title };
         })
         .filter(Boolean) as DetailGalleryItem[])
     : fallback.gallery.map((item) => ({ ...item }));
-  const tabs = normalizeTabsConfig((raw as Record<string, unknown>).tabs, fallback.tabs);
-  const intro = normalizeIntroConfig((raw as Record<string, unknown>).intro, fallback.intro);
-  const specs = normalizeSpecsConfig((raw as Record<string, unknown>).specs, fallback.specs);
-  const accessories = normalizeAccessoriesConfig((raw as Record<string, unknown>).accessories, fallback.accessories);
+  const tabs = normalizeTabsConfig((raw as Record<string, unknown>).tabs, fallback.tabs, locale);
+  const intro = normalizeIntroConfig((raw as Record<string, unknown>).intro, fallback.intro, locale);
+  const specs = normalizeSpecsConfig((raw as Record<string, unknown>).specs, fallback.specs, locale);
+  const accessories = normalizeAccessoriesConfig((raw as Record<string, unknown>).accessories, fallback.accessories, locale);
 
   const ctaRaw = asRecord(raw.cta);
   const fallbackCta = fallback.cta ?? {
@@ -629,16 +634,16 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
     phoneNumber: "400-800-1234",
   };
   const cta: DetailCtaConfig = {
-    title: readLocalized(ctaRaw.title, fallbackCta.title),
-    description: readLocalized(ctaRaw.description, fallbackCta.description ?? ""),
-    primaryLabel: readLocalized(ctaRaw.primaryLabel, fallbackCta.primaryLabel),
+    title: readLocalized(ctaRaw.title, fallbackCta.title, locale),
+    description: readLocalized(ctaRaw.description, fallbackCta.description ?? "", locale),
+    primaryLabel: readLocalized(ctaRaw.primaryLabel, fallbackCta.primaryLabel, locale),
     primaryHref: toStringValue(ctaRaw.primaryHref, fallbackCta.primaryHref ?? ""),
-    phoneLabel: readLocalized(ctaRaw.phoneLabel, fallbackCta.phoneLabel ?? ""),
+    phoneLabel: readLocalized(ctaRaw.phoneLabel, fallbackCta.phoneLabel ?? "", locale),
     phoneNumber: toStringValue(ctaRaw.phoneNumber, fallbackCta.phoneNumber ?? ""),
   };
 
   return {
-    title: readLocalized(raw.title, fallback.title),
+    title: readLocalized(raw.title, fallback.title, locale),
     hero,
     breadcrumb: breadcrumb.length ? breadcrumb : [...fallback.breadcrumb],
     sections,
@@ -651,16 +656,40 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
   };
 }
 
-export function normalizeProductDetailMap(value: unknown, seeds?: Record<string, ProductDetailSeed>): ProductDetailConfigMap {
-  const input = isRecord(value) ? value : {};
+export interface ResolvedDetailHeroConfig {
+  heading?: string;
+  badge?: string;
+  description?: string;
+  scenarios?: string;
+  image?: string;
+  overlayEnabled?: boolean;
+}
+
+export interface ResolvedProductDetailConfig {
+  slug?: string;
+  title: string;
+  hero: ResolvedDetailHeroConfig;
+  breadcrumb: string[];
+  sections: DetailSectionConfig[];
+  metadata?: Record<string, any>;
+}
+
+export type ResolvedProductDetailMap = Record<string, ResolvedProductDetailConfig>;
+
+export function normalizeProductDetailMap(
+  config: ProductDetailConfigMap,
+  seeds: Record<string, ProductDetailSeed>,
+  locale?: LocaleKey
+): ResolvedProductDetailMap {
+  const input = config || {};
   const reservedKeys = new Set<string>(["_meta"]);
   const inputSlugs = Object.keys(input).filter((key) => !reservedKeys.has(key));
   const seedSlugs = Object.keys(seeds ?? {});
   const baseSlugs = Object.keys(product_details);
   const slugs = new Set<string>([...seedSlugs, ...inputSlugs, ...baseSlugs]);
-  const result: ProductDetailConfigMap = {};
+  const result: ResolvedProductDetailMap = {};
   slugs.forEach((slug) => {
-    result[slug] = normalizeProductDetail(input[slug], slug, (seeds ?? {})[slug]);
+    result[slug] = normalizeProductDetail(input[slug], slug, (seeds ?? {})[slug], locale);
   });
   return result;
 }
@@ -807,6 +836,6 @@ export function listAvailableProductDetailSlugs(): string[] {
   return Object.keys(product_details);
 }
 
-export function createProductDetailFallback(slug: string, seed?: ProductDetailSeed): ProductDetailConfig {
-  return cloneDetail(buildFallbackDetail(slug, seed));
+export function createProductDetailFallback(slug: string, seed?: ProductDetailSeed, locale?: LocaleKey): ProductDetailConfig {
+  return cloneDetail(buildFallbackDetail(slug, seed, locale));
 }

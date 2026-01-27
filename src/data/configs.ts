@@ -3250,11 +3250,20 @@ export const products_cards = [
 
 export const product_details = {
   "gable-tent": {
-    "title": "人字形篷房",
+    "title": {
+      "zh-CN": "人字形篷房",
+      "en": "Gable Tent"
+    },
     "hero": {
       "badge": "product",
-      "description": "经典大跨度结构，适用于赛事运营、仓储及展览活动。",
-      "scenarios": "体育赛事 · 工业仓储 · 展览活动"
+      "description": {
+        "zh-CN": "经典大跨度结构，适用于赛事运营、仓储及展览活动。",
+        "en": "Classic clear-span structure for events, warehousing, and exhibitions."
+      },
+      "scenarios": {
+        "zh-CN": "体育赛事 · 工业仓储 · 展览活动",
+        "en": "Sports · Industrial · Exhibitions"
+      }
     },
     "breadcrumb": [
       "首页",
@@ -3313,11 +3322,20 @@ export const product_details = {
     ]
   },
   "arch-tent": {
-    "title": "弧形篷房",
+    "title": {
+      "zh-CN": "弧形篷房",
+      "en": "Arch Tent"
+    },
     "hero": {
       "badge": "product",
-      "description": "流线型外观提升视觉辨识度，常用于文旅和品牌活动。",
-      "scenarios": "酒店文旅 · 展览活动"
+      "description": {
+        "zh-CN": "流线型外观提升视觉辨识度，常用于文旅和品牌活动。",
+        "en": "Streamlined design for high visual impact in hospitality and brand events."
+      },
+      "scenarios": {
+        "zh-CN": "酒店文旅 · 展览活动",
+        "en": "Hospitality · Exhibitions"
+      }
     },
     "breadcrumb": [
       "首页",
@@ -3439,11 +3457,20 @@ export const product_details = {
     ]
   },
   "cone-tent": {
-    "title": "锥顶篷房",
+    "title": {
+      "zh-CN": "锥顶篷房",
+      "en": "Cone Tent"
+    },
     "hero": {
       "badge": "product",
-      "description": "模块化组合，适配市集、展销与临时票务等应用。",
-      "scenarios": "展览活动 · 文旅集市"
+      "description": {
+        "zh-CN": "模块化组合，适配市集、展销与临时票务等应用。",
+        "en": "Modular combination for markets, sales, and temporary ticketing."
+      },
+      "scenarios": {
+        "zh-CN": "展览活动 · 文旅集市",
+        "en": "Exhibitions · Pop-up Markets"
+      }
     },
     "breadcrumb": [
       "首页",
@@ -3502,11 +3529,20 @@ export const product_details = {
     ]
   },
   "double-deck-tent": {
-    "title": "双层篷房",
+    "title": {
+      "zh-CN": "双层篷房",
+      "en": "Double Decker Tent"
+    },
     "hero": {
       "badge": "product",
-      "description": "纵向拓展空间，实现 VIP 接待、观赛看台等高端体验。",
-      "scenarios": "体育赛事 · 高端活动"
+      "description": {
+        "zh-CN": "纵向拓展空间，实现 VIP 接待、观赛看台等高端体验。",
+        "en": "Vertical space expansion for VIP hospitality and viewing decks."
+      },
+      "scenarios": {
+        "zh-CN": "体育赛事 · 高端活动",
+        "en": "Sports Events · Premium Events"
+      }
     },
     "breadcrumb": [
       "首页",

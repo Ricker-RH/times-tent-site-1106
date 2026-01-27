@@ -546,7 +546,7 @@ export async function getProductDetails(): Promise<ProductDetailMap> {
     return acc;
   }, {});
 
-  return normalizeProductDetailMap(config ?? {}, seeds);
+  return normalizeProductDetailMap(config ?? {}, seeds, locale);
 }
 
 function normalizePolicySections(sections: PolicySection[]): PolicySection[] {

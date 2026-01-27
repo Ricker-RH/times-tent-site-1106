@@ -5,7 +5,7 @@ import { EditConfigForm } from "./EditConfigForm";
 import { getConfigEditorComponent } from "./configEditorRegistry";
 import { getCurrentAdmin } from "@/server/auth";
 import { getSiteConfigRaw } from "@/server/siteConfigs";
-import { getProductCenterConfig } from "@/server/pageConfigs";
+import { getProductCenterConfig, getCasesConfig } from "@/server/pageConfigs";
 import { listSiteConfigHistory } from "@/server/siteConfigHistory";
 import { VISIBILITY_CONFIG_KEY } from "@/constants/visibility";
 import { PreviewLocaleSwitch } from "./PreviewLocaleSwitch";
@@ -65,8 +65,11 @@ export default async function AdminConfigDetailPage({
 
   let relatedData: Record<string, unknown> | undefined;
   if (configKey === "首页") {
-    const productCenterConfig = await getProductCenterConfig();
-    relatedData = { productCenterConfig, visibilityConfig, isSuperAdmin };
+    const [productCenterConfig, casesConfig] = await Promise.all([
+      getProductCenterConfig(),
+      getCasesConfig(),
+    ]);
+    relatedData = { productCenterConfig, casesConfig, visibilityConfig, isSuperAdmin };
   }
 
   if (configKey === VISIBILITY_CONFIG_KEY && !isSuperAdmin) {
