@@ -453,7 +453,7 @@ function buildFallbackDetail(
   slug: string,
   seed?: ProductDetailSeed,
   locale?: LocaleKey
-): ResolvedProductDetailConfig {
+): ProductDetailConfig {
   const fallbackRaw = product_details[slug as keyof typeof product_details];
   const media = PRODUCT_MEDIA[slug] ?? DEFAULT_MEDIA;
   if (!fallbackRaw || !isRecord(fallbackRaw)) {
@@ -656,38 +656,24 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
   };
 }
 
-export interface ResolvedDetailHeroConfig {
-  heading?: string;
-  badge?: string;
-  description?: string;
-  scenarios?: string;
-  image?: string;
-  overlayEnabled?: boolean;
-}
+export type ResolvedDetailHeroConfig = DetailHeroConfig;
 
-export interface ResolvedProductDetailConfig {
-  slug?: string;
-  title: string;
-  hero: ResolvedDetailHeroConfig;
-  breadcrumb: string[];
-  sections: DetailSectionConfig[];
-  metadata?: Record<string, any>;
-}
+export type ResolvedProductDetailConfig = ProductDetailConfig;
 
-export type ResolvedProductDetailMap = Record<string, ResolvedProductDetailConfig>;
+export type ResolvedProductDetailMap = ProductDetailConfigMap;
 
 export function normalizeProductDetailMap(
-  config: ProductDetailConfigMap,
+  config: unknown,
   seeds: Record<string, ProductDetailSeed>,
   locale?: LocaleKey
-): ResolvedProductDetailMap {
-  const input = config || {};
+): ProductDetailConfigMap {
+  const input = (isRecord(config) ? config : {}) as Record<string, unknown>;
   const reservedKeys = new Set<string>(["_meta"]);
   const inputSlugs = Object.keys(input).filter((key) => !reservedKeys.has(key));
   const seedSlugs = Object.keys(seeds ?? {});
   const baseSlugs = Object.keys(product_details);
   const slugs = new Set<string>([...seedSlugs, ...inputSlugs, ...baseSlugs]);
-  const result: ResolvedProductDetailMap = {};
+  const result: ProductDetailConfigMap = {};
   slugs.forEach((slug) => {
     result[slug] = normalizeProductDetail(input[slug], slug, (seeds ?? {})[slug], locale);
   });
