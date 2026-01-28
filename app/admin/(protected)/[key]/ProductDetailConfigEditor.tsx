@@ -266,7 +266,7 @@ type LocalizedOverridesMap = Record<
   string,
   {
     title?: LocalizedValue;
-    hero?: { heading?: LocalizedValue; badge?: LocalizedValue; scenarios?: LocalizedValue; description?: LocalizedValue };
+    hero?: { heading?: LocalizedValue; badge?: LocalizedValue; scenarios?: LocalizedValue; description?: LocalizedValue; viewGalleryLabel?: LocalizedValue };
     sections?: Array<{
       heading?: LocalizedValue;
       paragraphs?: LocalizedValue[];
@@ -302,12 +302,14 @@ function extractLocalizedOverrides(rawMap: Record<string, unknown>, slugs: strin
     const heroBadge = cleanLocalized(heroRaw.badge);
     const heroScenarios = cleanLocalized(heroRaw.scenarios);
     const heroDescription = cleanLocalized(heroRaw.description);
-    if (hasAnyLv(heroHeading) || hasAnyLv(heroBadge) || hasAnyLv(heroScenarios) || hasAnyLv(heroDescription)) {
+    const heroViewGalleryLabel = cleanLocalized(heroRaw.viewGalleryLabel);
+    if (hasAnyLv(heroHeading) || hasAnyLv(heroBadge) || hasAnyLv(heroScenarios) || hasAnyLv(heroDescription) || hasAnyLv(heroViewGalleryLabel)) {
       entry.hero = {};
       if (hasAnyLv(heroHeading)) entry.hero.heading = heroHeading;
       if (hasAnyLv(heroBadge)) entry.hero.badge = heroBadge;
       if (hasAnyLv(heroScenarios)) entry.hero.scenarios = heroScenarios;
       if (hasAnyLv(heroDescription)) entry.hero.description = heroDescription;
+      if (hasAnyLv(heroViewGalleryLabel)) entry.hero.viewGalleryLabel = heroViewGalleryLabel;
     }
 
     // sections
@@ -478,6 +480,9 @@ function mergeSerializedWithOverrides(
     }
     if (override.hero?.description && hasAnyLv(override.hero.description)) {
       heroRaw.description = mergeLocalized(heroRaw.description, override.hero.description);
+    }
+    if (override.hero?.viewGalleryLabel && hasAnyLv(override.hero.viewGalleryLabel)) {
+      heroRaw.viewGalleryLabel = mergeLocalized(heroRaw.viewGalleryLabel, override.hero.viewGalleryLabel);
     }
     if (Object.keys(heroRaw).length) {
       detailRaw.hero = heroRaw;
@@ -902,6 +907,7 @@ function ProductDetailPreview({
           badge={heroBadge}
           eyebrow={heroEyebrow}
           overlayEnabled={heroOverlayEnabled}
+          viewGalleryLabel={detail.hero.viewGalleryLabel}
         />
               <div className="absolute right-4 top-4 z-10 flex flex-wrap gap-2">
                 <button
@@ -1038,7 +1044,7 @@ interface HeroDialogProps {
     next: ProductDetailConfig,
     localized: {
       title: LocalizedValue;
-      hero: { heading: LocalizedValue; badge: LocalizedValue; scenarios: LocalizedValue; description: LocalizedValue };
+      hero: { heading: LocalizedValue; badge: LocalizedValue; scenarios: LocalizedValue; description: LocalizedValue; viewGalleryLabel: LocalizedValue };
     },
   ) => void;
   onCancel: () => void;
@@ -1049,6 +1055,7 @@ interface HeroDialogProps {
       badge?: LocalizedValue;
       scenarios?: LocalizedValue;
       description?: LocalizedValue;
+      viewGalleryLabel?: LocalizedValue;
     };
   };
 }
@@ -1072,6 +1079,7 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
   const [badgeRecord, setBadgeRecord] = useState<LocalizedValue>(() => createInitialLocalized(value.hero.badge ?? "", initialLocalized?.hero?.badge));
   const [scenariosRecord, setScenariosRecord] = useState<LocalizedValue>(() => createInitialLocalized(value.hero.scenarios ?? "", initialLocalized?.hero?.scenarios));
   const [descriptionRecord, setDescriptionRecord] = useState<LocalizedValue>(() => createInitialLocalized(value.hero.description ?? "", initialLocalized?.hero?.description));
+  const [viewGalleryLabelRecord, setViewGalleryLabelRecord] = useState<LocalizedValue>(() => createInitialLocalized(value.hero.viewGalleryLabel ?? "查看大图", initialLocalized?.hero?.viewGalleryLabel));
   const [overlayEnabled, setOverlayEnabled] = useState<boolean>(() => value.hero.overlayEnabled !== false);
 
   useEffect(() => {
@@ -1080,6 +1088,7 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
     setBadgeRecord(createInitialLocalized(value.hero.badge ?? "", initialLocalized?.hero?.badge));
     setScenariosRecord(createInitialLocalized(value.hero.scenarios ?? "", initialLocalized?.hero?.scenarios));
     setDescriptionRecord(createInitialLocalized(value.hero.description ?? "", initialLocalized?.hero?.description));
+    setViewGalleryLabelRecord(createInitialLocalized(value.hero.viewGalleryLabel ?? "查看大图", initialLocalized?.hero?.viewGalleryLabel));
     setOverlayEnabled(value.hero.overlayEnabled !== false);
   }, [value, initialLocalized]);
 
@@ -1099,6 +1108,7 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
           badge: (badgeRecord[DEFAULT_LOCALE] ?? "").trim(),
           scenarios: (scenariosRecord[DEFAULT_LOCALE] ?? "").trim(),
           description: (descriptionRecord[DEFAULT_LOCALE] ?? "").trim(),
+          viewGalleryLabel: (viewGalleryLabelRecord[DEFAULT_LOCALE] ?? "").trim(),
           overlayEnabled,
         };
         onSave(next, {
@@ -1108,6 +1118,7 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
             badge: cleanLocalized(badgeRecord),
             scenarios: cleanLocalized(scenariosRecord),
             description: cleanLocalized(descriptionRecord),
+            viewGalleryLabel: cleanLocalized(viewGalleryLabelRecord),
           },
         });
       }}
@@ -1132,6 +1143,12 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
             translationContext={`${heroContextBase}适用场景`}
             value={scenariosRecord}
             onChange={setScenariosRecord}
+          />
+          <LocalizedTextField
+            label="查看大图按钮文案"
+            translationContext={`${heroContextBase}查看大图`}
+            value={viewGalleryLabelRecord}
+            onChange={setViewGalleryLabelRecord}
           />
         </div>
         <LocalizedTextField

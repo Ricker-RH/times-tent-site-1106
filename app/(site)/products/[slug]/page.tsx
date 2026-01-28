@@ -252,6 +252,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               badge={heroBadge}
               eyebrow={heroEyebrow}
               overlayEnabled={detail.hero.overlayEnabled !== false}
+              viewGalleryLabel={detail.hero.viewGalleryLabel}
             />
           )}
 

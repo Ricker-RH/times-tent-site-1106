@@ -15,9 +15,10 @@ interface ProductHeroCarouselProps {
   eyebrow?: string | null;
   badge?: string | null;
   overlayEnabled?: boolean;
+  viewGalleryLabel?: string;
 }
 
-export function ProductHeroCarousel({ slides, title, description, eyebrow, badge, overlayEnabled = true }: ProductHeroCarouselProps) {
+export function ProductHeroCarousel({ slides, title, description, eyebrow, badge, overlayEnabled = true, viewGalleryLabel }: ProductHeroCarouselProps) {
   const validSlides = useMemo(() => {
     const unique = new Map<string, ProductHeroCarouselSlide>();
     slides.forEach((slide) => {
@@ -154,7 +155,7 @@ export function ProductHeroCarousel({ slides, title, description, eyebrow, badge
           onClick={() => setIsLightboxOpen(true)}
           className="absolute right-4 top-4 rounded-full bg-black/60 px-4 py-2 text-xs font-semibold text-white shadow-lg transition hover:bg-black/80"
         >
-          查看大图
+          {viewGalleryLabel || "查看大图"}
         </button>
         {validSlides.length > 1 ? (
           <div className="absolute bottom-4 left-1/2 hidden -translate-x-1/2 items-center gap-2 sm:flex">

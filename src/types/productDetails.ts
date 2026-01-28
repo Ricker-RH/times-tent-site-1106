@@ -92,6 +92,7 @@ export interface DetailHeroConfig {
   scenarios?: string;
   image?: string;
   overlayEnabled?: boolean;
+  viewGalleryLabel?: string;
 }
 
 export interface DetailMetricItem {
@@ -517,6 +518,7 @@ function buildFallbackDetail(
       scenarios: readLocalized(heroRaw.scenarios, "", locale),
       image: toStringValue(heroRaw.image, media.hero),
       overlayEnabled: typeof heroRaw.overlayEnabled === "boolean" ? heroRaw.overlayEnabled : true,
+      viewGalleryLabel: readLocalized(heroRaw.viewGalleryLabel, "查看大图", locale),
     },
     breadcrumb:
       Array.isArray(fallbackRaw.breadcrumb) && fallbackRaw.breadcrumb.length
@@ -581,6 +583,7 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
       typeof heroRaw.overlayEnabled === "boolean"
         ? heroRaw.overlayEnabled
         : fallback.hero.overlayEnabled !== false,
+    viewGalleryLabel: readLocalized(heroRaw.viewGalleryLabel, fallback.hero.viewGalleryLabel ?? "查看大图", locale),
   };
 
   const breadcrumb = Array.isArray(raw.breadcrumb)
