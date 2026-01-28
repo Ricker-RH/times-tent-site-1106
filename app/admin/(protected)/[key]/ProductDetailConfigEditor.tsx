@@ -34,7 +34,7 @@ import {
 import { ProductHeroCarousel } from "@/components/products/ProductHeroCarousel";
 import { ProductTabsSection } from "@/components/products/ProductTabsSection";
 import { PRODUCT_MEDIA, DEFAULT_MEDIA } from "@/data/productMedia";
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureLocalizedRecord } from "./editorUtils";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureLocalizedRecord, getLocaleText } from "./editorUtils";
 import type { LocaleKey } from "@/i18n/locales";
 import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
@@ -63,6 +63,7 @@ interface PreviewProps {
   onEditIntro: () => void;
   onEditSpecs: () => void;
   onEditAccessories: () => void;
+  localizedBreadcrumb?: LocalizedValue[];
 }
 
 function toStringValue(value: unknown): string {
@@ -277,6 +278,7 @@ type LocalizedOverridesMap = Record<
     cta?: { title?: LocalizedValue; description?: LocalizedValue; primaryLabel?: LocalizedValue; phoneLabel?: LocalizedValue };
     tabs?: Array<{ label?: LocalizedValue }>;
     intro?: { blocks?: Array<{ title?: LocalizedValue; subtitle?: LocalizedValue }> };
+    breadcrumb?: LocalizedValue[];
     specs?: { columns?: Array<LocalizedValue | undefined>; rows?: Array<Array<LocalizedValue | undefined> | undefined>; caption?: LocalizedValue };
     accessories?: { items?: Array<{ title?: LocalizedValue; description?: LocalizedValue }> };
   }
@@ -295,6 +297,14 @@ function extractLocalizedOverrides(rawMap: Record<string, unknown>, slugs: strin
     // title
     const titleRec = cleanLocalized(raw.title);
     if (hasAnyLv(titleRec)) entry.title = titleRec;
+
+    // breadcrumb
+    const breadcrumbRaw = Array.isArray((raw as any).breadcrumb) ? ((raw as any).breadcrumb as any[]) : [];
+    const breadcrumbOv = breadcrumbRaw.map((item) => {
+      const rec = cleanLocalized(item);
+      return hasAnyLv(rec) ? rec : undefined;
+    }).filter((item): item is LocalizedValue => Boolean(item));
+    if (breadcrumbOv.length) entry.breadcrumb = breadcrumbOv;
 
     // hero
     const heroRaw = asRecord(raw.hero);
@@ -466,6 +476,20 @@ function mergeSerializedWithOverrides(
 
     if (override.title && hasAnyLv(override.title)) {
       detailRaw.title = mergeLocalized(detailRaw.title, override.title);
+    }
+
+    if (override.breadcrumb && Array.isArray(override.breadcrumb)) {
+      const breadcrumbRaw = Array.isArray((detailRaw as any).breadcrumb)
+        ? ([...(((detailRaw as any).breadcrumb as unknown[]) ?? [])])
+        : [];
+      override.breadcrumb.forEach((itemOverride, index) => {
+        if (!itemOverride) return;
+        const existing = breadcrumbRaw[index];
+        breadcrumbRaw[index] = mergeLocalized(existing, itemOverride);
+      });
+      if (breadcrumbRaw.length) {
+        (detailRaw as any).breadcrumb = breadcrumbRaw;
+      }
     }
 
     const heroRaw = asRecord(detailRaw.hero);
@@ -733,6 +757,7 @@ function ProductDetailPreview({
   onEditIntro,
   onEditSpecs,
   onEditAccessories,
+  localizedBreadcrumb,
 }: PreviewProps) {
   const media = PRODUCT_MEDIA[slug] ?? DEFAULT_MEDIA;
   const heroImage = resolveImageSrc(detail.hero.image, media.hero);
@@ -884,7 +909,9 @@ function ProductDetailPreview({
                   const isLast = index === detail.breadcrumb.length - 1;
                   return (
                     <span key={`${item}-${index}`} className="flex items-center gap-2">
-                      <span className={isLast ? "text-[var(--color-brand-secondary)]" : "hover:text-[var(--color-brand-primary)]"}>{item}</span>
+                      <span className={isLast ? "text-[var(--color-brand-secondary)]" : "hover:text-[var(--color-brand-primary)]"}>
+                        {getLocaleText(localizedBreadcrumb?.[index]) || (typeof item === "string" ? item : getLocaleText(item as unknown as LocalizedValue))}
+                      </span>
                       {!isLast ? <span className="text-[var(--color-text-tertiary,#8690a3)]">/</span> : null}
                     </span>
                   );
@@ -1181,19 +1208,44 @@ function HeroEditorDialog({ value, onSave, onCancel, initialLocalized }: HeroDia
 }
 
 interface BreadcrumbDialogProps {
-  value: string[];
-  onSave: (next: string[]) => void;
+  value: (string | LocalizedValue)[];
+  onSave: (next: string[], localized?: LocalizedValue[]) => void;
   onCancel: () => void;
+  initialLocalized?: LocalizedValue[];
 }
 
-function BreadcrumbEditorDialog({ value, onSave, onCancel }: BreadcrumbDialogProps) {
-  const [items, setItems] = useState<string[]>(() => [...value]);
+function BreadcrumbEditorDialog({ value, onSave, onCancel, initialLocalized }: BreadcrumbDialogProps) {
+  const createInitialLocalized = (val: string | LocalizedValue, preset?: LocalizedValue) => {
+    const record: LocalizedValue = {} as LocalizedValue;
+    const isObj = typeof val === "object" && val !== null;
+    SUPPORTED_LOCALES.forEach((code) => {
+      const key = code as LocaleKey;
+      if (preset?.[key]) {
+        record[key] = preset[key];
+      } else if (isObj) {
+        record[key] = (val as LocalizedValue)[key] ?? "";
+      } else {
+        record[key] = code === DEFAULT_LOCALE ? (val as string) : "";
+      }
+    });
+    return record;
+  };
+
+  const [items, setItems] = useState<LocalizedValue[]>(() => {
+    const count = Math.max(value.length, initialLocalized?.length ?? 0);
+    return Array.from({ length: count }, (_, i) => 
+      createInitialLocalized(value[i] ?? "", initialLocalized?.[i])
+    );
+  });
 
   useEffect(() => {
-    setItems([...value]);
-  }, [value]);
+    const count = Math.max(value.length, initialLocalized?.length ?? 0);
+    setItems(Array.from({ length: count }, (_, i) => 
+      createInitialLocalized(value[i] ?? "", initialLocalized?.[i])
+    ));
+  }, [value, initialLocalized]);
 
-  const handleChange = (index: number, next: string) => {
+  const handleChange = (index: number, next: LocalizedValue) => {
     setItems((prev) => {
       const copy = [...prev];
       copy[index] = next;
@@ -1202,7 +1254,7 @@ function BreadcrumbEditorDialog({ value, onSave, onCancel }: BreadcrumbDialogPro
   };
 
   const handleAdd = () => {
-    setItems((prev) => [...prev, ""]);
+    setItems((prev) => [...prev, createInitialLocalized("")]);
   };
 
   const handleRemove = (index: number) => {
@@ -1213,17 +1265,29 @@ function BreadcrumbEditorDialog({ value, onSave, onCancel }: BreadcrumbDialogPro
     <EditorDialog
       title="编辑面包屑"
       subtitle="调整详情页顶部的导航路径"
-      onSave={() => onSave(items.map((item) => item.trim()).filter((item) => item))}
+      onSave={() => {
+        const validIndices = items
+          .map((item, index) => ({ item, index }))
+          .filter(({ item }) => (item[DEFAULT_LOCALE] ?? "").trim().length > 0)
+          .map(({ index }) => index);
+
+        const nextBase = validIndices.map((index) => (items[index][DEFAULT_LOCALE] ?? "").trim());
+        const nextLocalized = validIndices.map((index) => cleanLocalized(items[index]));
+        
+        onSave(nextBase, nextLocalized);
+      }}
       onCancel={onCancel}
     >
       <div className="space-y-4 text-sm">
         {items.map((item, index) => (
           <div key={index} className="flex items-center gap-2">
-            <input
-              value={item}
-              onChange={(event) => handleChange(index, event.target.value)}
-              className="flex-1 rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-            />
+            <div className="flex-1">
+              <LocalizedTextField
+                label={`节点 ${index + 1}`}
+                value={item}
+                onChange={(val) => handleChange(index, val)}
+              />
+            </div>
             {items.length > 1 ? (
               <button
                 type="button"
@@ -2630,12 +2694,21 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
       dialog = (
         <BreadcrumbEditorDialog
           value={detail.breadcrumb}
-          onSave={(next) => {
+          initialLocalized={localizedOverrides[selectedSlug]?.breadcrumb}
+          onSave={(next, localized) => {
             const nextDetails = {
               ...details,
               [selectedSlug]: { ...details[selectedSlug], breadcrumb: next },
             };
+            const nextOverrides = {
+              ...localizedOverrides,
+              [selectedSlug]: {
+                ...(localizedOverrides[selectedSlug] ?? {}),
+                breadcrumb: localized,
+              },
+            };
             setDetails(nextDetails);
+            setLocalizedOverrides(nextOverrides);
             const fd = new FormData();
             fd.set("key", configKey);
             fd.set(
@@ -2643,7 +2716,7 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
               JSON.stringify(
                 mergeSerializedWithOverrides(
                   serializeProductDetailMap(nextDetails),
-                  localizedOverrides,
+                  nextOverrides,
                 ),
               ),
             );
@@ -3014,6 +3087,7 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
           onDeleteSlug={handleDeleteSlug}
           onEditHero={() => setEditing({ type: "hero" })}
           onEditBreadcrumb={() => setEditing({ type: "breadcrumb" })}
+          localizedBreadcrumb={localizedOverrides[selectedSlug]?.breadcrumb}
           onEditSection={(index) => setEditing({ type: "section", index })}
           onRemoveSection={handleRemoveSection}
           onEditGallery={() => setEditing({ type: "gallery" })}

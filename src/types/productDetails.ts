@@ -164,7 +164,7 @@ export interface ProductDetailConfig {
   slug?: string;
   title: string;
   hero: DetailHeroConfig;
-  breadcrumb: string[];
+  breadcrumb: (string | Record<string, string>)[];
   sections: DetailSectionConfig[];
   gallery: DetailGalleryItem[];
   tabs: ProductDetailTabConfig[];
@@ -187,7 +187,7 @@ function cloneDetail(detail: ProductDetailConfig): ProductDetailConfig {
     slug: detail.slug,
     title: detail.title,
     hero: { ...detail.hero },
-    breadcrumb: [...detail.breadcrumb],
+    breadcrumb: detail.breadcrumb.map((item) => (typeof item === "string" ? item : { ...(item as Record<string, string>) })),
     sections: detail.sections.map((section) => ({
       heading: section.heading,
       paragraphs: [...section.paragraphs],
@@ -587,7 +587,14 @@ export function normalizeProductDetail(raw: unknown, slug: string, seed?: Produc
   };
 
   const breadcrumb = Array.isArray(raw.breadcrumb)
-    ? raw.breadcrumb.map((item, index) => readLocalized(item, fallback.breadcrumb[index] ?? "", locale)).filter((item) => item.trim())
+    ? raw.breadcrumb.map((item, index) => {
+        if (isRecord(item)) {
+          return item as Record<string, string>;
+        }
+        const fallbackItem = fallback.breadcrumb[index];
+        const fallbackStr = typeof fallbackItem === "string" ? fallbackItem : readLocalized(fallbackItem, "", locale);
+        return readLocalized(item, fallbackStr, locale);
+      }).filter((item) => typeof item === "string" ? item.trim() : Object.keys(item).length)
     : [...fallback.breadcrumb];
 
   const sections = sectionsRaw.map((section, index) => {
@@ -718,7 +725,18 @@ export function serializeProductDetail(detail: ProductDetailConfig): Record<stri
     result.hero = hero;
   }
 
-  const breadcrumb = serializeStringArray(detail.breadcrumb);
+  const breadcrumb = detail.breadcrumb.map((item) => {
+    if (typeof item === "string") return item.trim();
+    if (isRecord(item)) {
+      const rec = item as Record<string, string>;
+      const cleaned: Record<string, string> = {};
+      Object.entries(rec).forEach(([k, v]) => {
+        if (typeof v === "string" && v.trim()) cleaned[k] = v.trim();
+      });
+      return Object.keys(cleaned).length ? cleaned : null;
+    }
+    return null;
+  }).filter(Boolean) as (string | Record<string, string>)[];
   if (breadcrumb.length) {
     result.breadcrumb = breadcrumb;
   }

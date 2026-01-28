@@ -53,7 +53,7 @@ interface HeroConfig {
 
 interface BreadcrumbItem {
   href: string;
-  label: string;
+  label: LocalizedValue;
 }
 
 interface ProductCenterConfig {
@@ -180,10 +180,9 @@ function normalizeConfig(raw: Record<string, unknown>): ProductCenterConfig {
       .map((item) => {
         if (!item || typeof item !== "object" || Array.isArray(item)) return null;
         const record = item as Record<string, unknown>;
-        const label = toStringValue(record.label);
         const href = toStringValue(record.href);
-        if (!label && !href) return null;
-        return { label: label || href || "链接", href: href || "#" };
+        const label = cleanLocalized(record.label, href || "链接");
+        return { label, href: href || "#" };
       })
       .filter(Boolean) as BreadcrumbItem[],
     _meta:
@@ -229,7 +228,7 @@ function serializeConfig(config: ProductCenterConfig): Record<string, unknown> {
 
   const breadcrumb = config.breadcrumb.map((item) => ({
     href: item.href || "#",
-    label: item.label || "链接",
+    label: cleanLocalized(item.label),
   }));
 
   const products = config.products.map(serializeProduct);
@@ -387,14 +386,14 @@ function ImageInput({
 }
 
 function BreadcrumbPreview({ breadcrumb }: { breadcrumb: BreadcrumbItem[] }) {
-  const items = breadcrumb.length ? breadcrumb : [{ href: "/", label: "首页" }, { href: "/products", label: "产品" }];
+  const items = breadcrumb.length ? breadcrumb : [{ href: "/", label: cleanLocalized("", "首页") }, { href: "/products", label: cleanLocalized("", "产品") }];
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-secondary)]">
       {items.map((item, index) => (
         <span key={`${item.href}-${index}`} className="flex items-center gap-2">
           {index > 0 ? <span className="text-[var(--color-text-tertiary,#8690a3)]">/</span> : null}
           <span className={index === items.length - 1 ? "text-[var(--color-brand-secondary)]" : "hover:text-[var(--color-brand-primary)]"}>
-            {item.label || "链接"}
+            {getLocaleText(item.label) || "链接"}
           </span>
         </span>
       ))}
@@ -707,20 +706,20 @@ function HeroEditorDialog({ value, onSave, onCancel }: HeroEditorProps) {
           <LocalizedTextField
             label="眉头（可选）"
             value={draft.eyebrow}
-            onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: cleanLocalized(next) }))}
+            onChange={(next) => setDraft((prev) => ({ ...prev, eyebrow: next }))}
             placeholder="如：TIMES TENT"
           />
         </div>
         <LocalizedTextField
           label="主标题"
           value={draft.title}
-          onChange={(next) => setDraft((prev) => ({ ...prev, title: cleanLocalized(next) }))}
+          onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))}
           placeholder="模块化产品矩阵"
         />
         <LocalizedTextField
           label="描述"
           value={draft.description}
-          onChange={(next) => setDraft((prev) => ({ ...prev, description: cleanLocalized(next) }))}
+          onChange={(next) => setDraft((prev) => ({ ...prev, description: next }))}
           multiline
           rows={4}
           placeholder="补充一句话介绍产品中心的核心价值。"
@@ -771,16 +770,20 @@ function GeneralEditorDialog({ value, onSave, onCancel }: GeneralEditorProps) {
     setItems(value.breadcrumb.map((item) => ({ ...item })));
   }, [value]);
 
-  const handleItemChange = (index: number, field: keyof BreadcrumbItem, next: string) => {
+  const handleItemChange = (index: number, field: keyof BreadcrumbItem, next: any) => {
     setItems((prev) => {
       const draft = [...prev];
-      draft[index] = { ...draft[index], [field]: next };
+      if (field === "label") {
+        draft[index] = { ...draft[index], label: next };
+      } else {
+        draft[index] = { ...draft[index], [field]: next };
+      }
       return draft;
     });
   };
 
   const handleAddItem = () => {
-    setItems((prev) => [...prev, { label: "", href: "" }]);
+    setItems((prev) => [...prev, { label: cleanLocalized(""), href: "" }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -798,12 +801,12 @@ function GeneralEditorDialog({ value, onSave, onCancel }: GeneralEditorProps) {
         <LocalizedTextField
           label="侧栏标题"
           value={sidebarTitle}
-          onChange={(next) => setSidebarTitle(cleanLocalized(next))}
+          onChange={(next) => setSidebarTitle(next)}
         />
         <LocalizedTextField
           label="卡片 CTA 文案"
           value={ctaLabel}
-          onChange={(next) => setCtaLabel(cleanLocalized(next))}
+          onChange={(next) => setCtaLabel(next)}
         />
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -831,11 +834,10 @@ function GeneralEditorDialog({ value, onSave, onCancel }: GeneralEditorProps) {
                 </div>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   <div className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--color-text-tertiary,#8690a3)]">展示文案</span>
-                    <input
+                    <LocalizedTextField
+                      label="展示文案"
                       value={item.label}
-                      onChange={(event) => handleItemChange(index, "label", event.target.value)}
-                      className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                      onChange={(next) => handleItemChange(index, "label", next)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -891,7 +893,7 @@ function ProductEditorDialog({ value, index, total, onSave, onRemove, onCancel }
             <LocalizedTextField
               label="产品名称"
               value={draft.name}
-              onChange={(next) => setDraft((prev) => ({ ...prev, name: cleanLocalized(next) }))}
+              onChange={(next) => setDraft((prev) => ({ ...prev, name: next }))}
               placeholder="人字形篷房"
             />
           </div>
@@ -910,7 +912,7 @@ function ProductEditorDialog({ value, index, total, onSave, onRemove, onCancel }
             label="副标题 / 标签（可选）"
             value={draft.tagline}
             onChange={(next) =>
-              setDraft((prev) => ({ ...prev, tagline: cleanLocalized(next), taglineConfigured: true }))}
+              setDraft((prev) => ({ ...prev, tagline: next, taglineConfigured: true }))}
             placeholder="旗舰爆款"
           />
         </div>
@@ -919,7 +921,7 @@ function ProductEditorDialog({ value, index, total, onSave, onRemove, onCancel }
             label="摘要"
             value={draft.summary}
             onChange={(next) =>
-              setDraft((prev) => ({ ...prev, summary: cleanLocalized(next), summaryConfigured: true }))}
+              setDraft((prev) => ({ ...prev, summary: next, summaryConfigured: true }))}
             multiline
             rows={4}
             placeholder="简要说明产品亮点、适用场景或核心参数。"
@@ -945,7 +947,7 @@ function ProductEditorDialog({ value, index, total, onSave, onRemove, onCancel }
           <LocalizedTextField
             label="详情页摘要（可选）"
             value={draft.description}
-            onChange={(next) => setDraft((prev) => ({ ...prev, description: cleanLocalized(next) }))}
+            onChange={(next) => setDraft((prev) => ({ ...prev, description: next }))}
             multiline
             rows={4}
             placeholder="详细描述将用于产品详情页顶部介绍。"
@@ -1119,10 +1121,13 @@ export function ProductCenterConfigEditor({ configKey, initialConfig }: ProductC
         onSave={(next) => {
           const breadcrumbFixed = next.breadcrumb
             .map((item) => ({
-              label: item.label.trim(),
+              label: cleanLocalized(item.label),
               href: item.href.trim() || "#",
             }))
-            .filter((item) => item.label || item.href !== "#");
+            .filter((item) => {
+              const hasLabel = SUPPORTED_LOCALES.some((l) => item.label[l]?.trim());
+              return hasLabel || item.href !== "#";
+            });
           const nextConfig = {
             ...config,
             sidebarTitle: next.sidebarTitle,

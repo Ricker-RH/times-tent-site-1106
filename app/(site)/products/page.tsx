@@ -111,7 +111,7 @@ export default async function ProductsPage(): Promise<JSX.Element> {
           )}
 
           <div className="flex-1 space-y-8">
-            <Breadcrumb />
+            <Breadcrumb items={config.breadcrumb} />
             {hideHero ? null : <HeroCard hero={hero} />}
             {hideProductList ? null : (
               <div className="grid gap-6 lg:grid-cols-2">
@@ -127,17 +127,29 @@ export default async function ProductsPage(): Promise<JSX.Element> {
   );
 }
 
-function Breadcrumb() {
+function Breadcrumb({ items }: { items?: { href?: string; label: unknown }[] }) {
+  if (!items || items.length === 0) return null;
+
   return (
     <nav aria-label="面包屑导航">
       <ol className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-        <li className="flex items-center gap-2">
-          <Link href="/" className="transition hover:text-[var(--color-brand-primary)]">
-            首页
-          </Link>
-          <ChevronIcon className="h-3.5 w-3.5" />
-        </li>
-        <li className="text-[var(--color-brand-secondary)]">产品</li>
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+          const label = resolveText(item.label);
+
+          return (
+            <li key={index} className={`flex items-center gap-2 ${isLast ? "text-[var(--color-brand-secondary)]" : ""}`}>
+              {!isLast && item.href ? (
+                <Link href={item.href} className="transition hover:text-[var(--color-brand-primary)]">
+                  {label}
+                </Link>
+              ) : (
+                <span>{label}</span>
+              )}
+              {!isLast && <ChevronIcon className="h-3.5 w-3.5" />}
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );

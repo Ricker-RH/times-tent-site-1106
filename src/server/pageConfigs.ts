@@ -76,7 +76,7 @@ export interface ProductCenterConfig {
   };
 
   products: ProductCenterProduct[];
-  breadcrumb?: Array<{ href?: string; label: string }>;
+  breadcrumb?: Array<{ href?: string; label: string | LocalizedField }>;
   sidebarTitle?: string | LocalizedField;
   productCardCtaLabel?: string | LocalizedField;
   _meta?: Record<string, unknown>;

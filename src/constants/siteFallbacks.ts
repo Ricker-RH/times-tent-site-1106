@@ -465,8 +465,8 @@ export const FALLBACK_PRODUCT_CENTER_CONFIG: ProductCenterConfig = {
     tagline: product.tagline,
   })),
   breadcrumb: [
-    { href: "/", label: "首页" },
-    { href: "/products", label: "产品" },
+    { href: "/", label: { "zh-CN": "首页", "en": "Home", "zh-TW": "首頁" } },
+    { href: "/products", label: { "zh-CN": "产品", "en": "Products", "zh-TW": "產品" } },
   ],
   sidebarTitle: "产品",
   productCardCtaLabel: "查看详情",

@@ -228,13 +228,14 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               {breadcrumbItems.map((item, index) => {
                 const isLast = index === breadcrumbItems.length - 1;
                 const href = index === 0 ? "/" : index === 1 ? "/products" : undefined;
+                const text = resolveLocalizedText(item);
                 return (
-                  <li key={`${item}-${index}`} className="flex items-center gap-2">
+                  <li key={`${index}`} className="flex items-center gap-2">
                     {isLast || !href ? (
-                      <span className="text-[var(--color-brand-secondary)]">{item}</span>
+                      <span className="text-[var(--color-brand-secondary)]">{text}</span>
                     ) : (
                       <Link href={href} className="transition hover:text-[var(--color-brand-primary)]">
-                        {item}
+                        {text}
                       </Link>
                     )}
                     {!isLast ? <IconChevronRight className="h-3.5 w-3.5" /> : null}
