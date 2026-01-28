@@ -667,6 +667,7 @@ export function normalizeProductDetailMap(
   seeds: Record<string, ProductDetailSeed>,
   locale?: LocaleKey
 ): ProductDetailConfigMap {
+  // Normalize input config to ensure it's a valid record
   const input = (isRecord(config) ? config : {}) as Record<string, unknown>;
   const reservedKeys = new Set<string>(["_meta"]);
   const inputSlugs = Object.keys(input).filter((key) => !reservedKeys.has(key));
