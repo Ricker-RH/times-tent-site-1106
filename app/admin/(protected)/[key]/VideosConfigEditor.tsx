@@ -15,7 +15,7 @@ import { updateSiteConfigAction } from "../actions";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
 import { useToast } from "@/providers/ToastProvider";
-import { LocalizedTextField as SharedLocalizedTextField } from "./LocalizedTextField";
+import { LocalizedTextField as SharedLocalizedTextField, type LocalizedValue } from "./LocalizedTextField";
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
@@ -28,8 +28,6 @@ import {
 } from "./editorUtils";
 import type { LocaleKey } from "@/i18n/locales";
 import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
-
-type LocalizedValue = Record<LocaleKey, string>;
 
 interface HeroState {
   backgroundImage: string;

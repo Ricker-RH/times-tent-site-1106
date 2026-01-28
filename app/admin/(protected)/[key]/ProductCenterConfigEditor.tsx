@@ -22,8 +22,6 @@ import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTran
 
 const DEFAULT_PRODUCT_IMAGE = "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&w=1600&q=80";
 
-type LocalizedValue = Record<LocaleKey, string>;
-
 const normalizeCtaLabel = (value: string): string => {
   const withoutArrows = value.replace(/→+/g, "").trim();
   return withoutArrows || value.trim();

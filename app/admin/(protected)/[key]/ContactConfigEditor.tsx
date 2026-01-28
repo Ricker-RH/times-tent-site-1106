@@ -16,7 +16,7 @@ import { updateSiteConfigAction } from "../actions";
 import { useToast } from "@/providers/ToastProvider";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
-import { LocalizedTextField } from "./LocalizedTextField";
+import { LocalizedTextField, type LocalizedValue } from "./LocalizedTextField";
 import {
   DEFAULT_LOCALE,
   ensureArray,
@@ -28,8 +28,6 @@ import {
   serializeLocalizedAllowEmpty,
 } from "./editorUtils";
 import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
-
-interface LocalizedValue extends Record<string, string> {}
 
 interface MetricState {
   value: string;

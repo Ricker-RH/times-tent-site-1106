@@ -20,12 +20,10 @@ import {
   getLocaleText,
   mergeMeta,
 } from "./editorUtils";
-import { LocalizedTextField as SharedLocalizedTextField } from "./LocalizedTextField";
+import { LocalizedTextField as SharedLocalizedTextField, type LocalizedValue } from "./LocalizedTextField";
 import type { LocaleKey } from "@/i18n/locales";
 import { sanitizeImageSrc } from "@/utils/image";
 import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
-
-type LocalizedValue = Record<LocaleKey, string>;
 
 interface HeroBadgeState {
   label: LocalizedValue;

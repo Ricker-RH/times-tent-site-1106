@@ -11,6 +11,7 @@ import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
 import { SaveBar } from "./SaveBar";
 import { LocalizedTextField as SharedLocalizedTextField } from "./LocalizedTextField";
+import type { LocalizedValue } from "./LocalizedTextField";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
 import { useToast } from "@/providers/ToastProvider";
@@ -215,8 +216,6 @@ function ImageInput({
 }
 
 // 本地化字段类型与输入控件
-
-type LocalizedValue = Record<LocaleKey, string>;
 
 function cleanLocalized(record: unknown): LocalizedValue {
   const r = ensureLocalizedRecord(record) as LocalizedValue;

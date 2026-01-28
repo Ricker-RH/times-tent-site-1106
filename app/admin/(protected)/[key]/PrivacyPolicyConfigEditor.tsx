@@ -7,14 +7,13 @@ import { FALLBACK_PRIVACY_POLICY_CONFIG } from "@/constants/siteFallbacks";
 import type { PolicySection } from "@/server/pageConfigs";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
-import { LocalizedTextField as SharedLocalizedTextField } from "./LocalizedTextField";
+import { LocalizedTextField as SharedLocalizedTextField, type LocalizedValue } from "./LocalizedTextField";
 import { ensureArray, ensureString, ensureLocalizedRecord, getLocaleText, mergeMeta, ensureLocalizedNoFallback, serializeLocalizedAllowEmpty } from "./editorUtils";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
 import { useFormState, useFormStatus } from "react-dom";
 import { useToast } from "@/providers/ToastProvider";
 import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
-type LocalizedValue = Record<string, string>;
 
 interface PolicySectionItemState {
   id: string;

@@ -7,7 +7,7 @@ import { FALLBACK_TERMS_CONFIG } from "@/constants/siteFallbacks";
 import type { TermsSection } from "@/server/pageConfigs";
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
-import { LocalizedTextField } from "./LocalizedTextField";
+import { LocalizedTextField, type LocalizedValue } from "./LocalizedTextField";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureArray, ensureString, ensureLocalizedRecord, getLocaleText, mergeMeta, setLocaleText, ensureLocalizedNoFallback, serializeLocalizedAllowEmpty } from "./editorUtils";
 import type { LocaleKey } from "@/i18n/locales";
 import type { UpdateSiteConfigActionState } from "../actions";
@@ -16,7 +16,6 @@ import { useFormState, useFormStatus } from "react-dom";
 import { useToast } from "@/providers/ToastProvider";
 import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 
-type LocalizedValue = Record<string, string>;
 interface TermsSectionState {
   id: string;
   heading: string;
