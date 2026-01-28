@@ -2606,6 +2606,7 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
                   badge: localized.hero.badge,
                   scenarios: localized.hero.scenarios,
                   description: localized.hero.description,
+                  viewGalleryLabel: localized.hero.viewGalleryLabel,
                 },
               },
             };
