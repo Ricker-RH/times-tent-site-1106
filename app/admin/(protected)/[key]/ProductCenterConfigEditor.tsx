@@ -10,7 +10,7 @@ import { resolveImageSrc, sanitizeImageSrc } from "@/utils/image";
 
 import { ConfigPreviewFrame } from "./ConfigPreviewFrame";
 import { EditorDialog } from "./EditorDialog";
-import { LocalizedTextField } from "./LocalizedTextField";
+import { LocalizedTextField, type LocalizedValue } from "./LocalizedTextField";
 import { SaveBar } from "./SaveBar";
 import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
