@@ -325,7 +325,7 @@ function normalizeSpecsConfig(raw: unknown, fallback: ProductSpecsConfig, locale
     ? rowsRaw
         .map((row) => (Array.isArray(row) ? row : []))
         .map((row, rowIndex) =>
-          row.map((cell, cellIndex) => toStringValue(cell, fallback.rows[rowIndex]?.[cellIndex] ?? "").trim()),
+          row.map((cell, cellIndex) => readLocalized(cell, fallback.rows[rowIndex]?.[cellIndex] ?? "", locale).trim()),
         )
     : fallback.rows.map((row) => [...row]);
   const captionRaw = (raw as Record<string, unknown>).caption;

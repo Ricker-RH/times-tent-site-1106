@@ -277,7 +277,7 @@ type LocalizedOverridesMap = Record<
     cta?: { title?: LocalizedValue; description?: LocalizedValue; primaryLabel?: LocalizedValue; phoneLabel?: LocalizedValue };
     tabs?: Array<{ label?: LocalizedValue }>;
     intro?: { blocks?: Array<{ title?: LocalizedValue; subtitle?: LocalizedValue }> };
-    specs?: { columns?: Array<LocalizedValue | undefined>; caption?: LocalizedValue };
+    specs?: { columns?: Array<LocalizedValue | undefined>; rows?: Array<Array<LocalizedValue | undefined> | undefined>; caption?: LocalizedValue };
     accessories?: { items?: Array<{ title?: LocalizedValue; description?: LocalizedValue }> };
   }
 >;
@@ -414,10 +414,20 @@ function extractLocalizedOverrides(rawMap: Record<string, unknown>, slugs: strin
       const record = cleanLocalized(col);
       return hasAnyLv(record) ? record : undefined;
     });
+    const rowsRaw = Array.isArray(specsRaw.rows) ? ((specsRaw.rows as unknown[]) ?? []) : [];
+    const rowsOv = rowsRaw.map((row) => {
+      if (!Array.isArray(row)) return undefined;
+      const rowClean = row.map((cell) => {
+        const record = cleanLocalized(cell);
+        return hasAnyLv(record) ? record : undefined;
+      });
+      return rowClean.some(Boolean) ? rowClean : undefined;
+    });
     const captionOv = cleanLocalized(specsRaw.caption);
-    if (columnsOv.some(Boolean) || hasAnyLv(captionOv)) {
+    if (columnsOv.some(Boolean) || rowsOv.some(Boolean) || hasAnyLv(captionOv)) {
       entry.specs = {};
       if (columnsOv.some(Boolean)) entry.specs.columns = columnsOv;
+      if (rowsOv.some(Boolean)) entry.specs.rows = rowsOv;
       if (hasAnyLv(captionOv)) entry.specs.caption = captionOv;
     }
 
@@ -592,6 +602,21 @@ function mergeSerializedWithOverrides(
       });
       if (columnsRaw.length) {
         specsRaw.columns = columnsRaw;
+      }
+      if (override.specs.rows && Array.isArray(override.specs.rows)) {
+        const rowsRaw = Array.isArray(specsRaw.rows) ? ([...((specsRaw.rows as unknown[]) ?? [])]) : [];
+        override.specs.rows.forEach((rowOverride, rowIndex) => {
+          if (!rowOverride || !Array.isArray(rowOverride)) return;
+          const rowRaw = Array.isArray(rowsRaw[rowIndex]) ? [...(rowsRaw[rowIndex] as unknown[])] : [];
+          rowOverride.forEach((cellOverride, cellIndex) => {
+            if (!cellOverride) return;
+            rowRaw[cellIndex] = mergeLocalized(rowRaw[cellIndex], cellOverride);
+          });
+          rowsRaw[rowIndex] = rowRaw;
+        });
+        if (rowsRaw.length) {
+          specsRaw.rows = rowsRaw;
+        }
       }
       if (override.specs.caption && hasAnyLv(override.specs.caption)) {
         specsRaw.caption = mergeLocalized(specsRaw.caption, override.specs.caption);
@@ -1954,17 +1979,27 @@ function IntroBlocksEditorDialog({ value, onSave, onCancel, initialLocalized }: 
 
 interface SpecsEditorDialogProps {
   value: ProductSpecsConfig;
-  onSave: (next: ProductSpecsConfig, localized?: { columns?: Array<LocalizedValue | undefined>; caption?: LocalizedValue }) => void;
+  onSave: (next: ProductSpecsConfig, localized?: { columns?: Array<LocalizedValue | undefined>; rows?: Array<Array<LocalizedValue | undefined> | undefined>; caption?: LocalizedValue }) => void;
   onCancel: () => void;
-  initialLocalized?: { columns?: Array<LocalizedValue | undefined>; caption?: LocalizedValue };
+  initialLocalized?: { columns?: Array<LocalizedValue | undefined>; rows?: Array<Array<LocalizedValue | undefined> | undefined>; caption?: LocalizedValue };
+  slug: string;
 }
 
-function SpecsEditorDialog({ value, onSave, onCancel, initialLocalized }: SpecsEditorDialogProps) {
+function SpecsEditorDialog({ value, onSave, onCancel, initialLocalized, slug }: SpecsEditorDialogProps) {
+  const specsContextBase = `产品详情(${slug || "未命名产品"})参数`;
   const [columns, setColumns] = useState<string[]>(() => (value.columns.length ? [...value.columns] : ["参数项", "参数值"]));
   const [rows, setRows] = useState<string[][]>(() => (value.rows.length ? value.rows.map((row) => [...row]) : [["", ""]]));
+  
   const [columnLocalized, setColumnLocalized] = useState<Array<LocalizedValue | undefined>>(() =>
     columns.map((col, index) => createLocalizedRecord(col, initialLocalized?.columns?.[index])),
   );
+  
+  const [rowsLocalized, setRowsLocalized] = useState<Array<Array<LocalizedValue | undefined>>>(() =>
+    rows.map((row, rowIndex) => 
+      row.map((cell, cellIndex) => createLocalizedRecord(cell, initialLocalized?.rows?.[rowIndex]?.[cellIndex]))
+    )
+  );
+
   const [captionRecord, setCaptionRecord] = useState<LocalizedValue>(() => createLocalizedRecord(value.caption ?? "", initialLocalized?.caption));
 
   useEffect(() => {
@@ -1978,12 +2013,24 @@ function SpecsEditorDialog({ value, onSave, onCancel, initialLocalized }: SpecsE
       }
       return next;
     }));
+    
+    setRowsLocalized((prev) => prev.map((row) => {
+      const next = [...row];
+      if (next.length < columns.length) {
+        return [...next, ...Array(columns.length - next.length).fill(undefined)];
+      }
+      if (next.length > columns.length) {
+        return next.slice(0, columns.length);
+      }
+      return next;
+    }));
   }, [columns.length]);
 
   const handleAddColumn = () => {
     setColumns((prev) => [...prev, `列 ${prev.length + 1}`]);
     setRows((prev) => prev.map((row) => [...row, ""]));
     setColumnLocalized((prev) => [...prev, createLocalizedRecord("")]);
+    setRowsLocalized((prev) => prev.map((row) => [...row, undefined]));
   };
 
   const handleRemoveColumn = (index: number) => {
@@ -1991,15 +2038,18 @@ function SpecsEditorDialog({ value, onSave, onCancel, initialLocalized }: SpecsE
     setColumns((prev) => prev.filter((_, idx) => idx !== index));
     setRows((prev) => prev.map((row) => row.filter((_, idx) => idx !== index)));
     setColumnLocalized((prev) => prev.filter((_, idx) => idx !== index));
+    setRowsLocalized((prev) => prev.map((row) => row.filter((_, idx) => idx !== index)));
   };
 
   const handleAddRow = () => {
     setRows((prev) => [...prev, Array(columns.length).fill("")]);
+    setRowsLocalized((prev) => [...prev, Array(columns.length).fill(undefined)]);
   };
 
   const handleRemoveRow = (index: number) => {
     if (rows.length <= 1) return;
     setRows((prev) => prev.filter((_, idx) => idx !== index));
+    setRowsLocalized((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleSave = () => {
@@ -2012,6 +2062,7 @@ function SpecsEditorDialog({ value, onSave, onCancel, initialLocalized }: SpecsE
     };
     const localized = {
       columns: columnLocalized.map((record) => (record ? cleanLocalized(record) : undefined)),
+      rows: rowsLocalized.map((row) => row.map((cell) => (cell ? cleanLocalized(cell) : undefined))),
       caption: cleanLocalized(captionRecord),
     };
     onSave(nextSpecs, localized);
@@ -2048,6 +2099,7 @@ function SpecsEditorDialog({ value, onSave, onCancel, initialLocalized }: SpecsE
                 </div>
                 <LocalizedTextField
                   label="列标题"
+                  translationContext={`${specsContextBase}列${index + 1}`}
                   value={columnLocalized[index] ?? createLocalizedRecord(column)}
                   onChange={(next) => {
                     setColumnLocalized((prev) => {
@@ -2091,18 +2143,25 @@ function SpecsEditorDialog({ value, onSave, onCancel, initialLocalized }: SpecsE
                 </div>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   {row.map((cell, cellIndex) => (
-                    <input
+                    <LocalizedTextField
                       key={`cell-${rowIndex}-${cellIndex}`}
-                      value={cell}
-                      onChange={(event) =>
+                      label={`列 ${cellIndex + 1}`}
+                      translationContext={`${specsContextBase}行${rowIndex + 1}列${cellIndex + 1}`}
+                      value={rowsLocalized[rowIndex]?.[cellIndex] ?? createLocalizedRecord(cell)}
+                      onChange={(next) => {
+                        setRowsLocalized((prev) => {
+                          const copy = [...prev];
+                          if (!copy[rowIndex]) copy[rowIndex] = [];
+                          copy[rowIndex] = [...(copy[rowIndex] || [])];
+                          copy[rowIndex][cellIndex] = cleanLocalized(next);
+                          return copy;
+                        });
                         setRows((prev) =>
                           prev.map((r, idx) =>
-                            idx === rowIndex ? r.map((c, cIdx) => (cIdx === cellIndex ? event.target.value : c)) : r,
+                            idx === rowIndex ? r.map((c, cIdx) => (cIdx === cellIndex ? (next[DEFAULT_LOCALE] ?? c) : c)) : r,
                           ),
-                        )
-                      }
-                      className="w-full rounded-xl border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-                      placeholder={`列 ${cellIndex + 1}`}
+                        );
+                      }}
                     />
                   ))}
                 </div>
@@ -2113,6 +2172,7 @@ function SpecsEditorDialog({ value, onSave, onCancel, initialLocalized }: SpecsE
 
         <LocalizedTextField
           label="表格说明（可选）"
+          translationContext={`${specsContextBase}说明`}
           value={captionRecord}
           onChange={(next) => setCaptionRecord(cleanLocalized(next))}
           multiline
@@ -2782,6 +2842,7 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
         <SpecsEditorDialog
           value={detail.specs}
           initialLocalized={localizedOverrides[selectedSlug]?.specs}
+          slug={selectedSlug}
           onSave={(next, localized) => {
             const current = cloneDetail(details[selectedSlug]);
             current.specs = next;
