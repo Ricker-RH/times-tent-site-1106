@@ -2585,6 +2585,7 @@ export function ProductDetailConfigEditor({ configKey, initialConfig, productSee
                 title: localized.title,
                 hero: {
                   ...(localizedOverrides[selectedSlug]?.hero ?? {}),
+                  heading: localized.hero.heading,
                   badge: localized.hero.badge,
                   scenarios: localized.hero.scenarios,
                   description: localized.hero.description,
