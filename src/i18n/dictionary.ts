@@ -8,7 +8,9 @@ export type UiKey =
   | "breadcrumb.home"
   | "breadcrumb.news"
   | "breadcrumb.cases"
+  | "breadcrumb.products"
   | "breadcrumb.more"
+  | "products.title"
   | "news.moreToRead.heading"
   | "news.moreToRead.description"
   | "news.moreToRead.viewAll"
@@ -103,6 +105,7 @@ const dictionary: Record<LocaleKey, Record<UiKey, string>> = {
     "breadcrumb.home": "首页",
     "breadcrumb.news": "新闻中心",
     "breadcrumb.cases": "案例展示",
+    "breadcrumb.products": "产品",
     "breadcrumb.more": "了解更多",
     "news.moreToRead.heading": "更多阅读",
     "news.moreToRead.description": "精选相关报道与行业观察，继续探索模块化空间的最新动态。",
@@ -116,6 +119,7 @@ const dictionary: Record<LocaleKey, Record<UiKey, string>> = {
     "news.category.company": "公司新闻",
     "news.hero.return": "返回新闻中心",
     "cases.sidebar.title": "案例展示",
+    "products.title": "产品",
     "cases.gallery.empty": "图像内容整理中。",
     "cases.cta.report.heading": "获取定制化案例报告",
     "cases.cta.report.description": "联系我们获取更多案例资料与项目对接方案。",
@@ -197,6 +201,7 @@ const dictionary: Record<LocaleKey, Record<UiKey, string>> = {
     "breadcrumb.home": "首頁",
     "breadcrumb.news": "新聞中心",
     "breadcrumb.cases": "案例展示",
+    "breadcrumb.products": "產品",
     "breadcrumb.more": "了解更多",
     "news.moreToRead.heading": "更多閱讀",
     "news.moreToRead.description": "精選相關報導與產業觀察，持續探索模組化空間的最新動態。",
@@ -210,6 +215,7 @@ const dictionary: Record<LocaleKey, Record<UiKey, string>> = {
     "news.category.company": "公司新聞",
     "news.hero.return": "返回新聞中心",
     "cases.sidebar.title": "案例展示",
+    "products.title": "產品",
     "cases.gallery.empty": "影像內容整理中。",
     "cases.cta.report.heading": "取得客製化案例報告",
     "cases.cta.report.description": "聯絡我們索取更多案例資料與專案對接方案。",
@@ -291,6 +297,7 @@ const dictionary: Record<LocaleKey, Record<UiKey, string>> = {
     "breadcrumb.home": "Home",
     "breadcrumb.news": "Newsroom",
     "breadcrumb.cases": "Case Studies",
+    "breadcrumb.products": "Products",
     "breadcrumb.more": "Learn more",
     "news.moreToRead.heading": "More to read",
     "news.moreToRead.description": "Curated stories and insights to keep up with the latest in modular spaces.",
@@ -304,6 +311,7 @@ const dictionary: Record<LocaleKey, Record<UiKey, string>> = {
     "news.category.company": "Company",
     "news.hero.return": "Back to news",
     "cases.sidebar.title": "Case Studies",
+    "products.title": "Products",
     "cases.gallery.empty": "Gallery coming soon.",
     "cases.cta.report.heading": "Get a tailored case report",
     "cases.cta.report.description": "Contact us for additional case files and project onboarding kits.",

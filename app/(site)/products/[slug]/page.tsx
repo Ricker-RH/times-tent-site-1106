@@ -93,14 +93,14 @@ export async function generateMetadata({ params }: ProductPageProps) {
     const title = detail.title;
     const description = detail.hero.description ?? detail.sections[0]?.paragraphs?.[0] ?? "";
     return {
-      title: `${title} | 产品中心`,
+      title: `${title} | ${t("breadcrumb.products")}`,
       description,
     };
   }
   const config = await getProductCenterConfig();
   const product = config.products.find((item) => item.slug === params.slug);
   if (!product) {
-    return { title: "产品详情" };
+    return { title: t("breadcrumb.products") };
   }
   const productTitle = typeof product.name === "string" ? product.name : t(product.name) || params.slug;
   const summarySource: unknown = product.summary;
@@ -121,7 +121,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
     }
   }
   return {
-    title: `${productTitle} | 产品中心`,
+    title: `${productTitle} | ${translateUi(locale, "breadcrumb.products")}`,
     description,
   };
 }
@@ -199,7 +199,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 sm:px-6 lg:px-8 md:flex-row">
         <div className="md:w-[260px] md:shrink-0">
           <aside className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-sm md:sticky md:top-24">
-            <h2 className="px-3 text-sm font-semibold text-[var(--color-brand-secondary)]">产品</h2>
+            <h2 className="px-3 text-sm font-semibold text-[var(--color-brand-secondary)]">{translateUi(locale, "products.title")}</h2>
             <div className="mt-3 space-y-2">
               {products.map((product) => {
                 const isActive = product.slug === params.slug;
@@ -225,23 +225,23 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         <div className="flex-1 space-y-8">
           <nav aria-label="面包屑导航">
             <ol className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-              {breadcrumbItems.map((item, index) => {
-                const isLast = index === breadcrumbItems.length - 1;
-                const href = index === 0 ? "/" : index === 1 ? "/products" : undefined;
-                const text = resolveLocalizedText(item);
-                return (
-                  <li key={`${index}`} className="flex items-center gap-2">
-                    {isLast || !href ? (
-                      <span className="text-[var(--color-brand-secondary)]">{text}</span>
-                    ) : (
-                      <Link href={href} className="transition hover:text-[var(--color-brand-primary)]">
-                        {text}
-                      </Link>
-                    )}
-                    {!isLast ? <IconChevronRight className="h-3.5 w-3.5" /> : null}
-                  </li>
-                );
-              })}
+              <li className="flex items-center gap-2">
+                <Link href="/" className="transition hover:text-[var(--color-brand-primary)]">
+                  {translateUi(locale, "breadcrumb.home")}
+                </Link>
+                <IconChevronRight className="h-3.5 w-3.5" />
+              </li>
+              <li className="flex items-center gap-2">
+                <Link href="/products" className="transition hover:text-[var(--color-brand-primary)]">
+                  {translateUi(locale, "breadcrumb.products")}
+                </Link>
+                <IconChevronRight className="h-3.5 w-3.5" />
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-[var(--color-brand-secondary)]">
+                  {heroHeading}
+                </span>
+              </li>
             </ol>
           </nav>
 

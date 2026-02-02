@@ -15,6 +15,7 @@ import {
 import { t, setCurrentLocale } from "@/data";
 import { getRequestLocale } from "@/server/locale";
 import { fetchCasesConfig } from "@/server/cases";
+import { translateUi } from "@/i18n/dictionary";
 
 function toTValue(value: unknown): string | Record<string, string | undefined> | undefined {
   if (typeof value === "string") return value;
@@ -45,12 +46,14 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: CaseDetailProps) {
+  const locale = getRequestLocale();
+  setCurrentLocale(locale);
   const data = await fetchCaseStudyBySlug(params.slug);
   if (!data) {
-    return { title: "案例详情" };
+    return { title: t("breadcrumb.cases") };
   }
   return {
-    title: `${t(data.study.title)} | 案例展示`,
+    title: `${t(data.study.title)} | ${t("breadcrumb.cases")}`,
     description: t(data.study.summary),
   };
 }
@@ -173,10 +176,10 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
   const baseCrumbs: ReadonlyArray<{ href?: string; label?: string | Record<string, string | undefined> | undefined }> = (
     Array.isArray((config as any).breadcrumbI18n) && (config as any).breadcrumbI18n.length
       ? ((config as any).breadcrumbI18n as ReadonlyArray<{ href?: string; label?: string | Record<string, string | undefined> | undefined }>)
-      : ((config.breadcrumb ?? [
-          { href: "/", label: "首页" },
-          { href: "/cases", label: "案例展示" },
-        ]) as ReadonlyArray<{ href?: string; label?: string | Record<string, string | undefined> | undefined }>)
+      : ([
+          { href: "/", label: translateUi(locale, "breadcrumb.home") },
+          { href: "/cases", label: translateUi(locale, "breadcrumb.cases") },
+        ] as ReadonlyArray<{ href?: string; label?: string | Record<string, string | undefined> | undefined }>)
   );
 
   return (
@@ -189,6 +192,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
                 categories={categories}
                 activeCategory={category.slug}
                 activeStudySlug={study.slug}
+                title={translateUi(locale, "cases.sidebar.title")}
               />
             </div>
           )}

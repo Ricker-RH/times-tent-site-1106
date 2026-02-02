@@ -5,13 +5,18 @@ import { ensurePageVisible, getHiddenSections } from "@/server/visibility";
 
 import { getProductCenterConfig } from "@/server/pageConfigs";
 import { t, setCurrentLocale } from "@/data";
+import { translateUi } from "@/i18n/dictionary";
 import { normalizeLocalizedField } from "@/i18n/locales";
 import { getRequestLocale } from "@/server/locale";
 
-export const metadata = {
-  title: "产品 | 时代篷房",
-  description: "了解人字形、弧形、弯柱、锥顶、双层等核心篷房产品，掌握结构亮点与应用场景。",
-};
+export async function generateMetadata() {
+  const locale = getRequestLocale();
+  setCurrentLocale(locale);
+  return {
+    title: "产品中心 | 时代篷房",
+    description: "了解人字形、弧形、弯柱、锥顶、双层等核心篷房产品，掌握结构亮点与应用场景。",
+  };
+}
 
 type ProductCenterData = Awaited<ReturnType<typeof getProductCenterConfig>>;
 
@@ -83,7 +88,7 @@ export default async function ProductsPage(): Promise<JSX.Element> {
     };
   });
   const hero = config.hero;
-  const sidebarTitle = resolveText(config.sidebarTitle, "产品");
+  const sidebarTitle = resolveText(config.sidebarTitle, translateUi(locale, "products.title"));
   const rawCardCtaLabel = resolveText(config.productCardCtaLabel, "查看详情");
   const cardCtaLabel = normalizeCtaLabel(rawCardCtaLabel);
 

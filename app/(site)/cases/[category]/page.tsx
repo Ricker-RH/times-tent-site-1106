@@ -11,6 +11,7 @@ import {
   fetchCasesConfig,
 } from "@/server/cases";
 import { t, setCurrentLocale } from "@/data";
+import { translateUi } from "@/i18n/dictionary";
 import { getRequestLocale } from "@/server/locale";
 
 interface CategoryPageProps {
@@ -25,12 +26,13 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps) {
+  const locale = getRequestLocale();
   const category = await fetchCaseCategoryBySlug(params.category);
   if (!category) {
-    return { title: "案例展示" };
+    return { title: translateUi(locale, "breadcrumb.cases") };
   }
   return {
-    title: `${t(category.name)} | 案例展示`,
+    title: `${t(category.name)} | ${translateUi(locale, "breadcrumb.cases")}`,
     description: t(category.intro),
   };
 }
@@ -57,10 +59,10 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
   const baseCrumbs: ReadonlyArray<{ href?: string; label?: unknown }> = (
     Array.isArray((config as any).breadcrumbI18n) && (config as any).breadcrumbI18n.length
       ? ((config as any).breadcrumbI18n as ReadonlyArray<{ href?: string; label?: unknown }>)
-      : ((config.breadcrumb ?? [
-          { href: "/", label: "首页" },
-          { href: "/cases", label: "案例展示" },
-        ]) as ReadonlyArray<{ href?: string; label?: unknown }>)
+      : ([
+          { href: "/", label: translateUi(locale, "breadcrumb.home") },
+          { href: "/cases", label: translateUi(locale, "breadcrumb.cases") },
+        ] as ReadonlyArray<{ href?: string; label?: unknown }>)
   );
 
   return (
@@ -72,7 +74,7 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
               <CaseSidebar
                 categories={categories}
                 activeCategory={category.slug}
-                title={config.sidebarTitle}
+                title={translateUi(locale, "cases.sidebar.title")}
               />
             </div>
           )}
