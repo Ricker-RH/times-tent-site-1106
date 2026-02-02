@@ -382,33 +382,54 @@ export default function HomeClient({
               </div>
               <article className="overflow-hidden rounded-lg border border-[var(--color-border)] shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
                 <div className="relative h-[420px] w-full md:h-[520px]">
-                  <Image
-                    src={applicationTab.image}
-                    alt={resolveText(applicationTab.name, applicationTab.slug)}
-                    fill
-                    className="object-cover"
-                  />
-                  {applicationOverlayEnabled ? (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/35 to-black/10" aria-hidden />
-                  ) : null}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center text-white md:px-12">
-                    {resolveText(applicationTab.highlight) ? (
-                      <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">{resolveText(applicationTab.highlight)}</span>
-                    ) : null}
-                    <h3 className="text-2xl font-semibold md:text-3xl">{resolveText(applicationTab.name, applicationTab.slug)}</h3>
-                    {resolveText(applicationTab.description) ? (
-                      <p className="max-w-2xl text-sm text-white/85 md:text-base">{resolveText(applicationTab.description)}</p>
-                    ) : null}
-                    {applicationActionLabel ? (
-                      <Link
-                        href={applicationTab.href}
-                        className={`${CTA_BUTTON_SECONDARY} gap-2`}
+                  {applicationTabs.map((tab, idx) => {
+                    const isActive = idx === tabIndex;
+                    return (
+                      <div
+                        key={tab.slug}
+                        className={`absolute inset-0 transition-opacity duration-500 ${
+                          isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+                        }`}
+                        aria-hidden={!isActive}
                       >
-                        {applicationActionLabel}
-                        <span aria-hidden> →</span>
-                      </Link>
-                    ) : null}
-                  </div>
+                        <Image
+                          src={tab.image}
+                          alt={resolveText(tab.name, tab.slug)}
+                          fill
+                          className="object-cover"
+                          priority={idx === 0}
+                        />
+                        {applicationOverlayEnabled ? (
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/35 to-black/10" aria-hidden />
+                        ) : null}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center text-white md:px-12">
+                          {resolveText(tab.highlight) ? (
+                            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-white/80">
+                              {resolveText(tab.highlight)}
+                            </span>
+                          ) : null}
+                          <h3 className="text-2xl font-semibold md:text-3xl">
+                            {resolveText(tab.name, tab.slug)}
+                          </h3>
+                          {resolveText(tab.description) ? (
+                            <p className="max-w-2xl text-sm text-white/85 md:text-base">
+                              {resolveText(tab.description)}
+                            </p>
+                          ) : null}
+                          {applicationActionLabel ? (
+                            <Link
+                              href={tab.href}
+                              className={`${CTA_BUTTON_SECONDARY} gap-2`}
+                              tabIndex={isActive ? 0 : -1}
+                            >
+                              {applicationActionLabel}
+                              <span aria-hidden> →</span>
+                            </Link>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </article>
             </div>

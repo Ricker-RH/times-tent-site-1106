@@ -77,7 +77,14 @@ interface SectionHeadingConfig {
   description: string;
 }
 
-// 新增：案例详情页底部咨询配置
+// 新增：同类案例配置
+interface RelatedCasesConfig {
+  title: LocalizedValue;
+  backLabel: LocalizedValue;
+  viewLabel: LocalizedValue;
+}
+
+// 新增：案例详情页底部咨询配置 (保留接口定义以防回滚，但不再在编辑器中显示)
 interface ConsultationConfig {
   title: LocalizedValue;
   description: LocalizedValue;
@@ -98,6 +105,7 @@ interface CasesConfig {
   sectionHeading: SectionHeadingConfig;
   categories: CaseCategoryConfig[];
   consultation?: ConsultationConfig;
+  relatedCases?: RelatedCasesConfig;
   sidebarTitle: string;
   categoryCaseCountSuffix: string;
   _meta?: Record<string, unknown>;
@@ -384,6 +392,7 @@ function normalizeConfig(raw: Record<string, unknown>): CasesConfig {
   const heroRaw = (raw.hero ?? {}) as Record<string, unknown>;
   const sectionHeadingRaw = (raw.sectionHeading ?? {}) as Record<string, unknown>;
   const consultationRaw = (raw.consultation ?? {}) as Record<string, unknown>;
+  const relatedCasesRaw = (raw.relatedCases ?? {}) as Record<string, unknown>;
   const categoriesRaw = Array.isArray(raw.categories) ? raw.categories : [];
   const breadcrumbRaw = Array.isArray(raw.breadcrumb) ? raw.breadcrumb : [];
 
@@ -436,6 +445,11 @@ function normalizeConfig(raw: Record<string, unknown>): CasesConfig {
       primaryHref: toStringValue(consultationRaw.primaryHref),
       phoneLabel: ensureLocalized(consultationRaw.phoneLabel, ""),
       phoneNumber: toStringValue(consultationRaw.phoneNumber),
+    },
+    relatedCases: {
+      title: ensureLocalized(relatedCasesRaw.title, "更多同类案例"),
+      backLabel: ensureLocalized(relatedCasesRaw.backLabel, "返回分类"),
+      viewLabel: ensureLocalized(relatedCasesRaw.viewLabel, "查看详情"),
     },
     sidebarTitle: toStringValue(raw.sidebarTitle),
     categoryCaseCountSuffix: toStringValue(raw.categoryCaseCountSuffix),
@@ -550,6 +564,18 @@ function serializeConfig(config: CasesConfig): Record<string, unknown> {
     if (toStringValue(c.phoneNumber).trim()) consultation.phoneNumber = toStringValue(c.phoneNumber).trim();
   }
 
+  // 新增：序列化相关案例配置
+  const relatedCases: Record<string, unknown> = {};
+  if (config.relatedCases) {
+    const rc = config.relatedCases;
+    const title = cleanLocalized(rc.title);
+    if (Object.keys(title).length) relatedCases.title = title;
+    const backLabel = cleanLocalized(rc.backLabel);
+    if (Object.keys(backLabel).length) relatedCases.backLabel = backLabel;
+    const viewLabel = cleanLocalized(rc.viewLabel);
+    if (Object.keys(viewLabel).length) relatedCases.viewLabel = viewLabel;
+  }
+
   const breadcrumb = config.breadcrumb
     .map((item) => ({ label: item.label.trim(), href: item.href.trim() }))
     .filter((item) => item.label || item.href);
@@ -564,6 +590,10 @@ function serializeConfig(config: CasesConfig): Record<string, unknown> {
 
   if (Object.keys(consultation).length) {
     result.consultation = consultation;
+  }
+
+  if (Object.keys(relatedCases).length) {
+    result.relatedCases = relatedCases;
   }
 
   if (breadcrumb.length) {
@@ -799,6 +829,7 @@ interface PreviewProps {
   onEditSectionHeading: () => void;
   onEditGeneral: () => void;
   onEditConsultation: () => void;
+  onEditRelatedCases: () => void;
   onEditTechnicalSection: (categoryIndex: number, studyIndex: number) => void;
   onEditCategory: (index: number) => void;
   onEditStudy: (categoryIndex: number, studyIndex: number, scope?: StudyScope) => void;
@@ -822,6 +853,7 @@ function CasesPreviewSurface({
   onEditSectionHeading,
   onEditGeneral,
   onEditConsultation,
+  onEditRelatedCases,
   onEditTechnicalSection,
   onEditCategory,
   onEditStudy,
@@ -1449,15 +1481,24 @@ function CasesPreviewSurface({
         ) : null}
 
         {featuredStudies.length ? (
-          <section className="rounded-2xl border border-[var(--color-border)] bg-white p-8">
+          <section className="relative rounded-2xl border border-[var(--color-border)] bg-white p-8">
+            <button
+              type="button"
+              onClick={onEditRelatedCases}
+              className="absolute right-4 top-4 rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/10"
+            >
+              编辑相关案例
+            </button>
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">更多同类案例</h2>
+              <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">
+                {getLocaleText(config.relatedCases?.title) || "更多同类案例"}
+              </h2>
               <button
                 type="button"
                 onClick={() => onNavigateCategory(previewPage.categoryIndex)}
                 className="text-sm font-semibold text-[var(--color-brand-primary)]"
               >
-                返回分类 →
+                {getLocaleText(config.relatedCases?.backLabel) || "返回分类"} →
               </button>
             </div>
             <div className="mt-6 grid gap-6 md:grid-cols-3">
@@ -1496,7 +1537,9 @@ function CasesPreviewSurface({
                       {item.summary ? (
                         <p className="text-xs text-[var(--color-text-secondary)] line-clamp-3">{getLocaleText(item.summary)}</p>
                       ) : null}
-                      <span className="inline-flex text-xs font-semibold text-[var(--color-brand-primary)]">查看详情</span>
+                      <span className="inline-flex text-xs font-semibold text-[var(--color-brand-primary)]">
+                        {getLocaleText(config.relatedCases?.viewLabel) || "查看详情"}
+                      </span>
                     </div>
                   </button>
                 );
@@ -1696,6 +1739,48 @@ interface HeroDialogProps {
   value: HeroConfig;
   onSave: (next: HeroConfig) => void;
   onCancel: () => void;
+}
+
+interface RelatedCasesEditorDialogProps {
+  value: RelatedCasesConfig;
+  onSave: (next: RelatedCasesConfig) => void;
+  onCancel: () => void;
+}
+
+function RelatedCasesEditorDialog({ value, onSave, onCancel }: RelatedCasesEditorDialogProps) {
+  const [draft, setDraft] = useState<RelatedCasesConfig>({ ...value });
+
+  return (
+    <EditorDialog
+      title="编辑相关案例板块"
+      subtitle="配置底部“更多同类案例”板块的标题与按钮文案"
+      onSave={() => onSave(draft)}
+      onCancel={onCancel}
+    >
+      <div className="space-y-6">
+        <LocalizedTextField
+          label="板块标题"
+          value={draft.title}
+          onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))}
+          placeholder="更多同类案例"
+        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <LocalizedTextField
+            label="返回分类按钮文案"
+            value={draft.backLabel}
+            onChange={(next) => setDraft((prev) => ({ ...prev, backLabel: next }))}
+            placeholder="返回分类"
+          />
+          <LocalizedTextField
+            label="查看详情按钮文案"
+            value={draft.viewLabel}
+            onChange={(next) => setDraft((prev) => ({ ...prev, viewLabel: next }))}
+            placeholder="查看详情"
+          />
+        </div>
+      </div>
+    </EditorDialog>
+  );
 }
 
 function HeroEditorDialog({ value, onSave, onCancel }: HeroDialogProps) {
@@ -2990,6 +3075,7 @@ type EditingTarget =
   | { type: "sectionHeading" }
   | { type: "general" }
   | { type: "consultation" }
+  | { type: "relatedCases" }
   | { type: "technicalSection"; categoryIndex: number; studyIndex: number }
   | { type: "category"; index: number }
   | { type: "study"; categoryIndex: number; studyIndex: number; scope?: StudyScope };
@@ -3371,6 +3457,26 @@ export function CasesConfigEditor({ configKey, initialConfig }: CasesConfigEdito
         onCancel={() => setEditing(null)}
       />
     );
+  } else if (editing?.type === "relatedCases") {
+    dialog = (
+      <RelatedCasesEditorDialog
+        value={config.relatedCases ?? {
+          title: ensureLocalizedRecord("更多同类案例") as LocalizedValue,
+          backLabel: ensureLocalizedRecord("返回分类") as LocalizedValue,
+          viewLabel: ensureLocalizedRecord("查看详情") as LocalizedValue,
+        }}
+        onSave={(next) => {
+          const nextConfig = { ...config, relatedCases: { ...next } };
+          setConfig(nextConfig);
+          const fd = new FormData();
+          fd.append("key", configKey);
+          fd.append("payload", JSON.stringify(serializeConfig(nextConfig)));
+          dispatch(fd);
+          setEditing(null);
+        }}
+        onCancel={() => setEditing(null)}
+      />
+    );
   } else if (editing?.type === "technicalSection") {
     const category = config.categories[editing.categoryIndex];
     const study = category?.studies?.[editing.studyIndex];
@@ -3506,6 +3612,7 @@ export function CasesConfigEditor({ configKey, initialConfig }: CasesConfigEdito
         onEditSectionHeading={() => setEditing({ type: "sectionHeading" })}
         onEditGeneral={() => setEditing({ type: "general" })}
         onEditConsultation={() => setEditing({ type: "consultation" })}
+        onEditRelatedCases={() => setEditing({ type: "relatedCases" })}
         onEditTechnicalSection={(categoryIndex, studyIndex) =>
           setEditing({ type: "technicalSection", categoryIndex, studyIndex })
         }

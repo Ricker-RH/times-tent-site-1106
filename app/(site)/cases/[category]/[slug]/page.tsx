@@ -295,9 +295,11 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
             {featuredStudies.length && !hideRelated ? (
               <section className="rounded-lg border border-[var(--color-border)] bg-white p-8">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">更多同类案例</h2>
+                  <h2 className="text-xl font-semibold text-[var(--color-brand-secondary)]">
+                    {t(toTValue(config.relatedCases?.title)) || "更多同类案例"}
+                  </h2>
                   <Link href={`/cases/${category.slug}`} className="text-sm font-semibold text-[var(--color-brand-primary)]">
-                    返回分类 →
+                    {t(toTValue(config.relatedCases?.backLabel)) || "返回分类 →"}
                   </Link>
                 </div>
                 <div className="mt-6 grid gap-6 md:grid-cols-3">
@@ -326,7 +328,9 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
                         {t(item.summary) ? (
                           <p className="text-xs text-[var(--color-text-secondary)] line-clamp-3">{t(item.summary)}</p>
                         ) : null}
-                        <span className="inline-flex text-xs font-semibold text-[var(--color-brand-primary)]">查看详情</span>
+                        <span className="inline-flex text-xs font-semibold text-[var(--color-brand-primary)]">
+                          {t(toTValue(config.relatedCases?.viewLabel)) || "查看详情"}
+                        </span>
                       </div>
                     </Link>
                   ))}
@@ -334,7 +338,7 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
               </section>
             ) : null}
 
-            {hideAdvisor ? null : <ConsultationCTA consultation={config.consultation} />}
+            {/* {hideAdvisor ? null : <ConsultationCTA consultation={config.consultation} />} */}
           </div>
         </div>
       </div>

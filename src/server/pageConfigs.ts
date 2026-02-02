@@ -25,6 +25,11 @@ import { getRequestLocale } from "@/server/locale";
 
 export type CasesConfig = (typeof cases_config) & {
   breadcrumbI18n?: Array<{ href?: string; label?: string | LocalizedField }>;
+  relatedCases?: {
+    title?: string | LocalizedField;
+    backLabel?: string | LocalizedField;
+    viewLabel?: string | LocalizedField;
+  };
 };
 export type InventoryConfig = typeof inventory_config;
 export type NewsConfig = typeof news_config;
