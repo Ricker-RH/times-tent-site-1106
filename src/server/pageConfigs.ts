@@ -30,6 +30,14 @@ export type CasesConfig = (typeof cases_config) & {
     backLabel?: string | LocalizedField;
     viewLabel?: string | LocalizedField;
   };
+  consultation?: {
+    title?: string | LocalizedField;
+    description?: string | LocalizedField;
+    primaryLabel?: string | LocalizedField;
+    primaryHref?: string;
+    phoneLabel?: string | LocalizedField;
+    phoneNumber?: string;
+  };
 };
 export type InventoryConfig = typeof inventory_config;
 export type NewsConfig = typeof news_config;

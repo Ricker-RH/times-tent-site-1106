@@ -1083,8 +1083,46 @@ function CasesPreviewSurface({
         ) : null}
       </div>
 
-      <section className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-8 text-center text-sm text-[var(--color-text-secondary)]">
-        页面底部 CTA 在下方“咨询 CTA”分区配置。
+      <section className="relative rounded-lg border border-[var(--color-border)] bg-white p-6 md:p-8">
+        <button
+          type="button"
+          onClick={onEditConsultation}
+          className="absolute right-4 top-4 rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/10"
+        >
+          编辑底部 CTA
+        </button>
+        <div className="space-y-4 text-left">
+          <div className="space-y-2">
+            {getLocaleText(config.consultation?.title) ? (
+              <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">
+                {getLocaleText(config.consultation?.title)}
+              </p>
+            ) : null}
+            {getLocaleText(config.consultation?.description) ? (
+              <p className="text-sm text-[var(--color-text-secondary)] md:text-base">
+                {getLocaleText(config.consultation?.description)}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-col items-start gap-3 text-sm">
+            {getLocaleText(config.consultation?.primaryLabel) && config.consultation?.primaryHref?.trim() ? (
+              <Link
+                href={config.consultation!.primaryHref.trim()}
+                className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full"
+              >
+                {getLocaleText(config.consultation!.primaryLabel)}
+              </Link>
+            ) : null}
+            {getLocaleText(config.consultation?.phoneLabel) && config.consultation?.phoneNumber?.trim() ? (
+              <Link
+                href={`tel:${config.consultation!.phoneNumber.trim()}`}
+                className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full"
+              >
+                {getLocaleText(config.consultation!.phoneLabel) + " " + config.consultation!.phoneNumber.trim()}
+              </Link>
+            ) : null}
+          </div>
+        </div>
       </section>
     </div>
   );
@@ -1173,6 +1211,48 @@ function CasesPreviewSurface({
             </div>
           )}
         </div>
+
+        <section className="relative rounded-lg border border-[var(--color-border)] bg-white p-6 md:p-8">
+          <button
+            type="button"
+            onClick={onEditConsultation}
+            className="absolute right-4 top-4 rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-brand-primary)] transition hover:border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary)]/10"
+          >
+            编辑底部 CTA
+          </button>
+          <div className="space-y-4 text-left">
+            <div className="space-y-2">
+              {getLocaleText(config.consultation?.title) ? (
+                <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">
+                  {getLocaleText(config.consultation?.title)}
+                </p>
+              ) : null}
+              {getLocaleText(config.consultation?.description) ? (
+                <p className="text-sm text-[var(--color-text-secondary)] md:text-base">
+                  {getLocaleText(config.consultation?.description)}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-col items-start gap-3 text-sm">
+              {getLocaleText(config.consultation?.primaryLabel) && config.consultation?.primaryHref?.trim() ? (
+                <Link
+                  href={config.consultation!.primaryHref.trim()}
+                  className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full"
+                >
+                  {getLocaleText(config.consultation!.primaryLabel)}
+                </Link>
+              ) : null}
+              {getLocaleText(config.consultation?.phoneLabel) && config.consultation?.phoneNumber?.trim() ? (
+                <Link
+                  href={`tel:${config.consultation!.phoneNumber.trim()}`}
+                  className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full"
+                >
+                  {getLocaleText(config.consultation!.phoneLabel) + " " + config.consultation!.phoneNumber.trim()}
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </section>
       </div>
     );
   };

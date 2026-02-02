@@ -118,20 +118,25 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
               <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-6">
                 <div className="space-y-4 text-left">
                   <div className="space-y-2">
-                    <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">需要定制方案？</p>
-                    <p className="text-sm leading-6 text-[var(--color-text-secondary)] [text-align:justify]">
-                      留下项目信息，24 小时内由行业顾问回电，为您提供方案设计、预算测算与现场勘查。
+                    <p className="text-sm font-semibold text-[var(--color-brand-secondary)]">
+                      {t(config.consultation?.title) || "需要定制方案？"}
+                    </p>
+                    <p className="text-sm leading-6 text-[var(--color-text-secondary)] [text-align:justify] md:text-base">
+                      {t(config.consultation?.description) || "留下项目信息，24 小时内由行业顾问回电，为您提供方案设计、预算测算与现场勘查。"}
                     </p>
                   </div>
                   <div className="flex flex-col gap-3 text-sm sm:flex-row">
-                    <Link href="/contact" className="rounded-[6px] bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full sm:flex-1">
-                      提交项目信息
+                    <Link
+                      href={config.consultation?.primaryHref || "/contact"}
+                      className="rounded-[6px] bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full sm:flex-1"
+                    >
+                      {t(config.consultation?.primaryLabel) || "提交项目信息"}
                     </Link>
                     <Link
-                      href="tel:400-800-1234"
+                      href={`tel:${config.consultation?.phoneNumber || "400-800-1234"}`}
                       className="rounded-full bg-[var(--color-brand-primary)] px-6 py-3 text-center font-semibold text-white transition hover:bg-red-600 w-full sm:flex-1"
                     >
-                      致电 400-800-1234
+                      {`${t(config.consultation?.phoneLabel) || "致电"} ${config.consultation?.phoneNumber || "400-800-1234"}`}
                     </Link>
                   </div>
                 </div>
