@@ -98,9 +98,9 @@ export default async function ProductsPage(): Promise<JSX.Element> {
         <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 sm:px-6 md:flex-row lg:px-8">
           {hideSidebar ? null : (
             <div className="md:w-[260px] md:shrink-0">
-              <aside className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-sm md:sticky md:top-24">
+              <aside className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-sm md:sticky md:top-24 md:max-h-[560px] md:overflow-hidden">
                 <h2 className="px-3 text-sm font-semibold text-[var(--color-brand-secondary)]">{sidebarTitle}</h2>
-                <div className="mt-3 space-y-2">
+                <div className="mt-3 space-y-2 md:max-h-[496px] md:overflow-y-auto md:pr-1 md:overscroll-contain">
                   {cards.map((product) => (
                     <Link
                       key={product.href}
@@ -170,7 +170,14 @@ function HeroCard({ hero }: { hero: ProductCenterData["hero"] }) {
   const overlayEnabled = hero.overlayEnabled ?? true;
   return (
     <section className="relative mt-1 overflow-hidden rounded-lg border border-[var(--color-border)] bg-black text-white md:mt-0">
-      <Image src={hero.image ?? DEFAULT_PRODUCT_IMAGE} alt={title || "产品中心"} fill className="object-cover" priority sizes="100vw" />
+      <Image
+        src={hero.image ?? DEFAULT_PRODUCT_IMAGE}
+        alt={title || "产品中心"}
+        fill
+        className="object-cover"
+        priority
+        sizes="(min-width: 1280px) 844px, (min-width: 768px) calc(100vw - 360px), 100vw"
+      />
       {overlayEnabled ? <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-black/60 to-black/35" /> : null}
       <div className="relative space-y-5 p-8 md:p-12 lg:max-w-2xl">
         {eyebrow ? (
@@ -205,7 +212,13 @@ function ProductCard({ product, ctaLabel }: { product: { slug: string; title: st
   return (
     <article className="relative flex h-full flex-col overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-muted)] transition hover:-translate-y-1 hover:shadow-xl">
       <div className="relative h-72 w-full">
-        <Image src={product.image} alt={product.title} fill className="object-cover" sizes="100vw" />
+        <Image
+          src={product.image}
+          alt={product.title}
+          fill
+          className="object-cover"
+          sizes="(min-width: 1280px) 408px, (min-width: 1024px) calc((100vw - 420px) / 2), (min-width: 768px) calc(100vw - 360px), 100vw"
+        />
       </div>
       <div className="flex flex-1 flex-col space-y-4 p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">

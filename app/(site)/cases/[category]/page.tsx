@@ -101,7 +101,7 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
                         alt={t(study.title)}
                         fill
                         className="object-cover"
-                        sizes="100vw"
+                        sizes="(min-width: 1280px) 844px, (min-width: 768px) calc(100vw - 360px), 100vw"
                       />
                       <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
                         <Link href={`/cases/${category.slug}/${study.slug}`} className="inline-block text-2xl font-extrabold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] md:text-3xl">

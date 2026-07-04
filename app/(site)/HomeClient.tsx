@@ -246,6 +246,7 @@ export default function HomeClient({
                     fill
                     className="object-cover"
                     priority={slidesCount > 1 ? idx === 1 : idx === 0}
+                    sizes="100vw"
                   />
                   {isPrimaryImage && heroOverlayEnabled ? (
                     <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/5" />
@@ -398,6 +399,7 @@ export default function HomeClient({
                           fill
                           className="object-cover"
                           priority={idx === 0}
+                          sizes="(min-width: 1280px) 1200px, 100vw"
                         />
                         {applicationOverlayEnabled ? (
                           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/35 to-black/10" aria-hidden />

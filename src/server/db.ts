@@ -19,47 +19,67 @@ function getConnectionString(): string {
 export function getPool(): Pool {
   if (!globalThis.__timesTentDbPool) {
     const connectionString = getConnectionString();
-    globalThis.__timesTentDbPool = new Pool({
+    const pool = new Pool({
       connectionString,
       ssl: { rejectUnauthorized: false },
       keepAlive: true,
       connectionTimeoutMillis: 5_000,
-      idleTimeoutMillis: 0,
-      allowExitOnIdle: true,
+      idleTimeoutMillis: 30_000,
+      max: 6,
     });
+    pool.on("error", (error) => {
+      if (isResettableDatabaseError(error) && globalThis.__timesTentDbPool === pool) {
+        globalThis.__timesTentDbPool = undefined;
+      }
+    });
+    globalThis.__timesTentDbPool = pool;
   }
 
   return globalThis.__timesTentDbPool;
 }
 
+async function prepareClient(client: PoolClient): Promise<PoolClient> {
+  // Ensure queries resolve tables in the public schema
+  try {
+    await client.query("SET search_path TO public");
+  } catch {
+    // ignore failures setting search_path; queries may still work
+  }
+  return client;
+}
+
 async function acquireClient(pool: Pool) {
   try {
     const client = await pool.connect();
-    // Ensure queries resolve tables in the public schema
-    try {
-      await client.query("SET search_path TO public");
-    } catch {
-      // ignore failures setting search_path; queries may still work
-    }
-    return client;
+    return prepareClient(client);
   } catch (error) {
-    if (isResettableError(error)) {
+    if (isResettableDatabaseError(error)) {
       await resetPool();
       const retryPool = getPool();
-      return retryPool.connect();
+      const client = await retryPool.connect();
+      return prepareClient(client);
     }
     throw error;
   }
 }
 
-function isResettableError(error: unknown): error is { code?: string; message?: string } {
+export function isResettableDatabaseError(error: unknown): error is { code?: string; message?: string } {
   if (!error || typeof error !== "object") {
     return false;
   }
   const record = error as Record<string, unknown>;
   const code = typeof record.code === "string" ? record.code : undefined;
   const message = typeof record.message === "string" ? record.message : undefined;
-  return code === "ECONNRESET" || code === "ECONNREFUSED" || (typeof message === "string" && message.includes("ECONNRESET"));
+  const resettableCodes = new Set(["08003", "08006", "57P01", "ECONNRESET", "ECONNREFUSED", "ETIMEDOUT"]);
+  return (
+    (typeof code === "string" && resettableCodes.has(code)) ||
+    (typeof message === "string" &&
+      (message.includes("ECONNRESET") ||
+        message.includes("Connection terminated unexpectedly") ||
+        message.includes("Connection terminated") ||
+        message.includes("not queryable") ||
+        message.includes("timeout expired")))
+  );
 }
 
 async function resetPool() {
@@ -78,13 +98,28 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
   params: unknown[] = [],
 ): Promise<QueryResult<T>> {
-  const pool = getPool();
-  const client = await acquireClient(pool);
-  try {
-    return await client.query<T>(text, params);
-  } finally {
-    client.release();
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const pool = getPool();
+    const client = await acquireClient(pool);
+    let released = false;
+    try {
+      return await client.query<T>(text, params);
+    } catch (error) {
+      if (attempt === 0 && isResettableDatabaseError(error)) {
+        released = true;
+        client.release(error instanceof Error ? error : new Error("Database connection reset"));
+        await resetPool();
+        continue;
+      }
+      throw error;
+    } finally {
+      if (!released) {
+        client.release();
+      }
+    }
   }
+
+  throw new Error("Database query failed after retry");
 }
 
 export async function withTransaction<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {

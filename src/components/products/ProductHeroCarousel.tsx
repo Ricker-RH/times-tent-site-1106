@@ -89,7 +89,7 @@ export function ProductHeroCarousel({ slides, title, description, eyebrow, badge
           fill
           priority
           className="object-cover"
-          sizes="(min-width: 1280px) 1200px, 100vw"
+          sizes="(min-width: 1280px) 872px, (min-width: 768px) calc(100vw - 360px), 100vw"
         />
         {showOverlayLayer ? (
           <>

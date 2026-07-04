@@ -4,6 +4,7 @@ import type { PoolClient } from "pg";
 import { query } from "./db";
 import { promises as fs } from "fs";
 import path from "path";
+import { readUploadDiskCacheRecord, writeUploadDiskCacheRecord } from "@/lib/uploadDiskCache";
 
 export interface SaveUploadInput {
   id: string;
@@ -22,6 +23,52 @@ export interface UploadRecord {
 }
 
 let hasEnsuredTable = false;
+const MAX_CACHE_BYTES = 80 * 1024 * 1024;
+const MAX_CACHE_ITEM_BYTES = 10 * 1024 * 1024;
+const uploadCache = new Map<string, { mimeType: string; data: Buffer; size: number }>();
+let uploadCacheBytes = 0;
+
+function readUploadCache(id: string): { mimeType: string; data: Buffer } | null {
+  const cached = uploadCache.get(id);
+  if (!cached) return null;
+  uploadCache.delete(id);
+  uploadCache.set(id, cached);
+  return { mimeType: cached.mimeType, data: cached.data };
+}
+
+function writeUploadCache(id: string, value: { mimeType: string; data: Buffer }): void {
+  const size = value.data.length;
+  if (size > MAX_CACHE_ITEM_BYTES) return;
+
+  const existing = uploadCache.get(id);
+  if (existing) {
+    uploadCacheBytes -= existing.size;
+    uploadCache.delete(id);
+  }
+
+  uploadCache.set(id, { ...value, size });
+  uploadCacheBytes += size;
+
+  while (uploadCacheBytes > MAX_CACHE_BYTES) {
+    const oldest = uploadCache.keys().next().value as string | undefined;
+    if (!oldest) break;
+    const removed = uploadCache.get(oldest);
+    if (removed) uploadCacheBytes -= removed.size;
+    uploadCache.delete(oldest);
+  }
+}
+
+async function writeUploadDiskCacheBestEffort(
+  id: string,
+  value: { fileName?: string; mimeType: string; data: Buffer },
+): Promise<void> {
+  try {
+    await writeUploadDiskCacheRecord(id, value);
+  } catch {
+    // Some production hosts expose an ephemeral or read-only filesystem.
+    // The disk cache is an accelerator, so image serving must not depend on it.
+  }
+}
 
 // --- Local fallback helpers (when DATABASE_URL is not configured) ---
 function hasDb(): boolean {
@@ -128,6 +175,12 @@ export async function saveUpload(input: SaveUploadInput, client?: PoolClient): P
       createdAt: new Date().toISOString(),
     };
     await writeLocalIndex(index);
+    writeUploadCache(input.id, { mimeType: input.mimeType, data: input.data });
+    await writeUploadDiskCacheBestEffort(input.id, {
+      fileName: input.fileName,
+      mimeType: input.mimeType,
+      data: input.data,
+    });
     return input.id;
   }
 
@@ -150,10 +203,25 @@ export async function saveUpload(input: SaveUploadInput, client?: PoolClient): P
     await query(sql, [input.id, input.fileName, input.mimeType, input.size, input.data]);
   }
 
+  writeUploadCache(input.id, { mimeType: input.mimeType, data: input.data });
+  await writeUploadDiskCacheBestEffort(input.id, {
+    fileName: input.fileName,
+    mimeType: input.mimeType,
+    data: input.data,
+  });
   return input.id;
 }
 
 export async function getUpload(id: string): Promise<{ mimeType: string; data: Buffer } | null> {
+  const cached = readUploadCache(id);
+  if (cached) return cached;
+
+  const diskCached = await readUploadDiskCacheRecord(id);
+  if (diskCached) {
+    writeUploadCache(id, diskCached);
+    return diskCached;
+  }
+
   // Local filesystem fallback when no database is available
   if (!hasDb()) {
     await ensureLocalStore();
@@ -163,7 +231,9 @@ export async function getUpload(id: string): Promise<{ mimeType: string; data: B
     const filePath = path.join(LOCAL_UPLOAD_DIR, record.fileName);
     try {
       const data = await fs.readFile(filePath);
-      return { mimeType: record.mimeType, data };
+      const result = { mimeType: record.mimeType, data };
+      writeUploadCache(id, result);
+      return result;
     } catch {
       return null;
     }
@@ -172,15 +242,22 @@ export async function getUpload(id: string): Promise<{ mimeType: string; data: B
   // Database storage
   await ensureUploadsTable();
   try {
-    const { rows } = await query<{ mime_type: string; data: Buffer }>(
-      `SELECT mime_type, data FROM uploads WHERE id = $1 LIMIT 1`,
+    const { rows } = await query<{ file_name: string; mime_type: string; data: Buffer }>(
+      `SELECT file_name, mime_type, data FROM uploads WHERE id = $1 LIMIT 1`,
       [id],
     );
 
     if (!rows.length) return null;
     const row = rows[0];
     // Node-postgres returns Buffer for BYTEA by default
-    return { mimeType: row.mime_type, data: row.data };
+    const result = { mimeType: row.mime_type, data: row.data };
+    writeUploadCache(id, result);
+    await writeUploadDiskCacheBestEffort(id, {
+      fileName: row.file_name,
+      mimeType: row.mime_type,
+      data: row.data,
+    });
+    return result;
   } catch {
     return null;
   }

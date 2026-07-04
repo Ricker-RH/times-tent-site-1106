@@ -239,7 +239,7 @@ export function ProductMatrixSection({
                   src={resolveImage(inventory.heroImage, FALLBACK_INVENTORY_IMAGE)}
                   alt={resolveText(inventory.heading, "现货库存")}
                   fill
-                  sizes="(min-width: 1280px) 100vw, 100vw"
+                  sizes="(min-width: 1280px) 1200px, 100vw"
                   className="object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-black/35" />
@@ -283,7 +283,7 @@ export function ProductMatrixSection({
                       src={resolveImage(overviewHero.image, FALLBACK_OVERVIEW_IMAGE)}
                       alt={resolveText(overviewHero.title, overviewTitle)}
                       fill
-                      sizes="(min-width: 1280px) 100vw, 100vw"
+                      sizes="(min-width: 1280px) 1200px, 100vw"
                       className="object-cover"
                     />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(208,40,39,0.45),transparent_45%),linear-gradient(120deg,rgba(11,17,32,0.9),rgba(17,24,46,0.7)60%,rgba(17,24,46,0.55))]" />
@@ -346,7 +346,7 @@ export function ProductMatrixSection({
                             src={resolveImage(item.image, FALLBACK_OVERVIEW_IMAGE)}
                             alt={resolveText(item.title, "实景")}
                             fill
-                            sizes="(min-width: 1280px) 40vw, 100vw"
+                            sizes="(min-width: 1280px) 520px, (min-width: 1024px) 40vw, 100vw"
                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                           />
                           <div className="absolute inset-0 bg-gradient-to-tr from-black/65 via-black/20 to-transparent" />

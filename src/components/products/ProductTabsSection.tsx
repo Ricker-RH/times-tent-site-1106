@@ -77,7 +77,13 @@ export function ProductTabsSection({ tabs = [], intro, specs, accessories, hidde
             ) : null}
             {block.image ? (
               <div className="relative mt-4 aspect-video overflow-hidden rounded-xl bg-[var(--color-surface-muted)]">
-                <Image src={block.image} alt={block.title || titleFallback(block.id)} fill className="object-cover" sizes="100vw" />
+                <Image
+                  src={block.image}
+                  alt={block.title || titleFallback(block.id)}
+                  fill
+                  className="object-cover"
+                  sizes="(min-width: 1280px) 760px, (min-width: 1024px) 70vw, 100vw"
+                />
               </div>
             ) : null}
           </article>

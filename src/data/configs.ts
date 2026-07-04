@@ -68,7 +68,7 @@ export const cases_config = {
               "value": "50,000㎡"
             }
           ],
-          "image": "/uploads/1760192412024-ccd43ee5-6767-4fa0-9fde-0ccbf553665a.jpg",
+          "image": "/uploads/1760714721147-220d3906-94c5-4be1-83f3-5bc968eb6a6f.jpg",
           "gallery": [
             "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&w=1600&q=80",
@@ -122,7 +122,7 @@ export const cases_config = {
               "value": "18,000㎡"
             }
           ],
-          "image": "/uploads/1760192454546-33529cd1-2b0d-42d5-93b8-6cf208be6f0d.jpg",
+          "image": "/uploads/1760720856634-9c6b4e7c-ae7c-44bc-87b5-b3c3a17156d5.jpg",
           "gallery": [
             "https://images.unsplash.com/photo-1508609349937-5ec4ae374ebf?auto=format&w=1600&q=80",
             "https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&w=1600&q=80",

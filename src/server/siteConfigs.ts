@@ -8,6 +8,7 @@ import type { VideosConfig } from "@/types/videos";
 import { navigation_config, products_cards, cases_config, inventory_config } from "@/data/configs";
 import { VISIBILITY_CONFIG_KEY } from "@/constants/visibility";
 import { createDefaultVisibilityConfig } from "@/lib/visibilityConfig";
+import { TimedSiteConfigCache } from "@/lib/siteConfigCache";
 import type { ProductCenterConfig, InventoryConfig } from "./pageConfigs";
 import type { JsonValue } from "./siteConfigHistory";
 import { diffJsonValues, recordSiteConfigHistory } from "./siteConfigHistory";
@@ -22,6 +23,9 @@ function hasDb(): boolean {
 }
 const LOCAL_STORE_DIR = path.join(process.cwd(), ".local");
 const LOCAL_STORE_FILE = path.join(LOCAL_STORE_DIR, "site-configs.json");
+const SITE_CONFIG_CACHE_TTL_MS = 30_000;
+const siteConfigCache = new TimedSiteConfigCache(SITE_CONFIG_CACHE_TTL_MS);
+const siteConfigInflight = new Map<string, Promise<unknown | null>>();
 
 async function ensureLocalStore(): Promise<void> {
   try {
@@ -62,20 +66,36 @@ export async function getSiteConfig<T = unknown>(key: string): Promise<T | null>
     const value = store[key];
     return typeof value === "undefined" ? null : (value as T);
   }
-  try {
-    const { rows } = await query<SiteConfigRow<T>>(
-      `SELECT value FROM site_configs WHERE key = $1 LIMIT 1`,
-      [key],
-    );
 
-    if (!rows.length) {
-      return null;
-    }
-
-    return rows[0].value;
-  } catch {
-    return null;
+  const cached = siteConfigCache.get<T>(key);
+  if (cached.hit) {
+    return cached.value;
   }
+
+  const pending = siteConfigInflight.get(key);
+  if (pending) {
+    return (await pending) as T | null;
+  }
+
+  const request = (async (): Promise<T | null> => {
+    try {
+      const { rows } = await query<SiteConfigRow<T>>(
+        `SELECT value FROM site_configs WHERE key = $1 LIMIT 1`,
+        [key],
+      );
+
+      const value = rows.length ? rows[0].value : null;
+      siteConfigCache.set(key, value);
+      return value;
+    } catch {
+      return null;
+    } finally {
+      siteConfigInflight.delete(key);
+    }
+  })();
+
+  siteConfigInflight.set(key, request as Promise<unknown | null>);
+  return request;
 }
 
 const VIDEOS_CONFIG_KEY = "视频库";
@@ -406,6 +426,8 @@ export async function saveSiteConfig(key: string, value: unknown, options?: Save
     const previousValue = (store[trimmedKey] ?? null) as JsonValue | null;
     store[trimmedKey] = nextValue;
     await writeLocalConfigs(store);
+    siteConfigCache.set(trimmedKey, nextValue);
+    siteConfigInflight.delete(trimmedKey);
     // 无数据库时不记录历史；直接返回成功
     return;
   }
@@ -451,10 +473,14 @@ export async function saveSiteConfig(key: string, value: unknown, options?: Save
         note: options?.note ?? null,
       });
     });
+    siteConfigCache.set(trimmedKey, nextValue);
+    siteConfigInflight.delete(trimmedKey);
   } catch {
     // 数据库保存失败（权限/连接/表缺失等），回退到本地文件以保证开发环境可用
     const store = await readLocalConfigs();
     store[trimmedKey] = nextValue;
     await writeLocalConfigs(store);
+    siteConfigCache.set(trimmedKey, nextValue);
+    siteConfigInflight.delete(trimmedKey);
   }
 }

@@ -266,7 +266,7 @@ function renderMarkdown(markdown: string, locale: LocaleKey, fallbackImage?: str
                 src={safeSrc}
                 alt={altText || caption || translateUi(locale, "news.hero.return", "Article image")}
                 fill
-                sizes="(min-width: 1280px) 60vw, (min-width: 768px) 70vw, 100vw"
+                sizes="(min-width: 1280px) 768px, (min-width: 768px) 70vw, 100vw"
                 className="object-cover"
               />
             </div>

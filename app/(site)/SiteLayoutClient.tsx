@@ -11,6 +11,7 @@ import { localeOptions } from "@/i18n/dictionary";
 import type { NavigationConfig, NavigationLink } from "@/types/navigation";
 import type { FooterConfig } from "@/types/footer";
 import type { RightRailConfig } from "@/server/pageConfigs";
+import { getDropdownColumnCount, getDropdownWidth, getFooterColumnCount } from "@/utils/navigationLayout";
 
 const cn = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(" ");
@@ -66,6 +67,7 @@ function useSafePathname(): string {
 type FooterLink = {
   href: string;
   label: string;
+  emphasis?: boolean;
 };
 
 type FooterLinkGroup = {
@@ -73,6 +75,49 @@ type FooterLinkGroup = {
   links: FooterLink[];
   slug?: string;
 };
+
+const FOOTER_PRODUCT_PREVIEW_COUNT = 5;
+const FOOTER_MORE_LABEL = {
+  "zh-CN": "更多",
+  "zh-TW": "更多",
+  en: "More",
+} as const;
+const FOOTER_FEATURED_PRODUCT_HREFS = [
+  "/products/gable-tent",
+  "/products/curved-beam-tent",
+  "/products/product-7",
+  "/products/product-10",
+  "/products/product-13",
+] as const;
+
+function isProductFooterGroup(group: FooterLinkGroup): boolean {
+  return group.slug === "products" || ["产品", "產品", "Products"].includes(group.title);
+}
+
+function getVisibleFooterLinks(group: FooterLinkGroup): FooterLink[] {
+  if (!isProductFooterGroup(group) || group.links.length <= FOOTER_PRODUCT_PREVIEW_COUNT) {
+    return group.links;
+  }
+
+  const selectedLinks: FooterLink[] = [];
+  FOOTER_FEATURED_PRODUCT_HREFS.forEach((href) => {
+    const link = group.links.find((item) => item.href === href);
+    if (link) {
+      selectedLinks.push(link);
+    }
+  });
+  group.links.forEach((link) => {
+    if (selectedLinks.length >= FOOTER_PRODUCT_PREVIEW_COUNT) return;
+    if (!selectedLinks.some((selected) => selected.href === link.href)) {
+      selectedLinks.push(link);
+    }
+  });
+
+  return [
+    ...selectedLinks.slice(0, FOOTER_PRODUCT_PREVIEW_COUNT),
+    { href: "/products", label: t(FOOTER_MORE_LABEL), emphasis: true },
+  ];
+}
 
 interface SiteLayoutClientProps {
   navigation: NavigationConfig;
@@ -170,7 +215,10 @@ function Header({ links, currentPath, mobileOpen, onToggleMobile, onCloseMobile 
 
 function DesktopNavItem({ link, isActive }: { link: NavigationLink; isActive?: boolean }) {
   const { locale } = useI18n();
-  const hasChildren = Boolean(link.children?.length);
+  const children = Array.isArray(link.children) ? link.children : [];
+  const hasChildren = children.length > 0;
+  const dropdownColumnCount = getDropdownColumnCount(children.length);
+  const dropdownWidth = getDropdownWidth(children.length);
   return (
     <div className="relative group">
       <Link
@@ -183,13 +231,21 @@ function DesktopNavItem({ link, isActive }: { link: NavigationLink; isActive?: b
         {t(link.label, locale as LocaleKey)}
       </Link>
       {hasChildren ? (
-        <div className="invisible absolute left-0 top-10 min-w-[200px] rounded-xl border border-[var(--color-border)] bg-white p-3  opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100">
-          <div className="flex flex-col gap-2">
-            {link.children?.map((child) => (
+        <div
+          className={cn(
+            "invisible absolute left-0 top-10 z-50 min-w-[200px] rounded-lg border border-[var(--color-border)] bg-white p-3 opacity-0 shadow-xl transition-all duration-150 group-hover:visible group-hover:opacity-100",
+          )}
+          style={dropdownWidth ? { width: dropdownWidth } : undefined}
+        >
+          <div
+            className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${dropdownColumnCount}, minmax(0, 1fr))` }}
+          >
+            {children.map((child) => (
               <Link
                 key={child.slug ?? child.href}
                 href={child.href}
-                className="rounded-lg px-3 py-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-brand-primary)]"
+                className="min-w-0 rounded-md px-3 py-2 text-sm leading-5 text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-brand-primary)]"
               >
                 {t(child.label, locale as LocaleKey)}
               </Link>
@@ -445,20 +501,40 @@ function Footer({ footer, navigation, mainLinks }: FooterProps) {
           </div>
           <nav className="ml-auto flex w-full flex-wrap items-start justify-end text-sm text-white/75">
             <div className="flex flex-wrap items-start justify-end gap-8 sm:gap-12 lg:gap-20">
-            {orderedColumns.map((group) => (
-              <div key={group.title} className="w-fit space-y-3 text-center">
-                <p className="text-base font-bold tracking-wide text-[var(--color-brand-primary)]">{group.title}</p>
-                <ul className="space-y-2 text-center">
-                  {group.links.map((item) => (
-                    <li key={item.href}>
-                      <Link href={item.href} className="transition hover:text-white">
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            {orderedColumns.map((group) => {
+              const visibleLinks = getVisibleFooterLinks(group);
+              const footerColumnCount = getFooterColumnCount(visibleLinks.length);
+
+              return (
+                <div
+                  key={group.title}
+                  className={cn("space-y-3 text-left", footerColumnCount > 1 ? "w-[27rem] max-w-full" : "w-fit")}
+                >
+                  <p className="text-base font-bold tracking-wide text-[var(--color-brand-primary)]">{group.title}</p>
+                  <ul
+                    className={cn(
+                      "text-left",
+                      footerColumnCount > 1 ? "grid gap-x-5 gap-y-2" : "space-y-2",
+                    )}
+                    style={{ gridTemplateColumns: `repeat(${footerColumnCount}, minmax(0, 1fr))` }}
+                  >
+                    {visibleLinks.map((item) => (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            "transition hover:text-white",
+                            item.emphasis && "font-semibold text-[var(--color-brand-primary)]",
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
             </div>
           </nav>
         </div>

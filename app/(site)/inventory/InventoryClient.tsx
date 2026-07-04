@@ -73,7 +73,7 @@ function HeroSection({ hero }: { hero: InventoryHero }) {
     <section className="relative overflow-hidden">
       <div className="absolute inset-0">
         {backgroundImage ? (
-          <Image src={backgroundImage} alt={title || "Inventory hero"} fill priority className="object-cover" />
+          <Image src={backgroundImage} alt={title || "Inventory hero"} fill priority sizes="100vw" className="object-cover" />
         ) : (
           <div className="flex h-full items-center justify-center bg-[var(--color-surface-muted)] text-xs text-[var(--color-text-tertiary)]">
             背景图待补充
@@ -154,7 +154,7 @@ function HeroSection({ hero }: { hero: InventoryHero }) {
                      alt={poster.title || title}
                      fill
                      priority={posterIndex === 0}
-                     sizes="(min-width: 1600px) 75vw, (min-width: 1024px) 90vw, 100vw"
+                     sizes="(min-width: 1280px) 896px, (min-width: 1024px) 70vw, 100vw"
                      className="object-cover"
                    />
                  ) : (

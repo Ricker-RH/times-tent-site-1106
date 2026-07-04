@@ -53,6 +53,7 @@ export function CaseHeroCarousel({ slides, title, year, location, summary, overl
           fill
           priority
           className="object-cover transition-opacity duration-300"
+          sizes="(min-width: 1280px) 1200px, 100vw"
         />
         {showOverlay ? <div className="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/35 to-transparent" /> : null}
         {showText ? (

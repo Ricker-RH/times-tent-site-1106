@@ -129,7 +129,11 @@ export async function generateMetadata({ params }: ProductPageProps) {
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const locale = getRequestLocale();
   setCurrentLocale(locale);
-  const visibility = await ensurePageVisible("productDetail");
+  const [visibility, productDetails, productsConfig] = await Promise.all([
+    ensurePageVisible("productDetail"),
+    getProductDetails(),
+    getProductCenterConfig(),
+  ]);
   const hiddenSections = getHiddenSections(visibility, "productDetail");
   const hideHero = hiddenSections.hero === true;
   const hideOverview = hiddenSections.overview === true;
@@ -137,9 +141,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const hideGallery = hiddenSections.gallery === true;
   const hideExtraSections = hiddenSections.extraSections === true;
   const hideAdvisor = hiddenSections.advisor === true;
-  const productDetails = await getProductDetails();
   const detail = productDetails[params.slug];
-  const productsConfig = await getProductCenterConfig();
   const listMeta = productsConfig.products.find((item) => item.slug === params.slug) ?? null;
   const listMetaTagline = listMeta?.tagline
     ? typeof listMeta.tagline === "string"

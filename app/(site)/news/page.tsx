@@ -77,6 +77,7 @@ export default async function NewsPage() {
               alt="News hero"
               fill
               className="object-cover"
+              sizes="100vw"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/50 to-black/30" />

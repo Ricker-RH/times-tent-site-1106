@@ -12,7 +12,10 @@
     "i18n:cases": "tsx scripts/check-cases-i18n.ts",
     "i18n:cases:fix": "tsx scripts/fix-cases-i18n.ts",
     "i18n:cases:retranslate": "tsx scripts/retranslate-cases.ts",
-    "i18n:cases:inspect": "tsx scripts/inspect-cases.ts"
+    "i18n:cases:inspect": "tsx scripts/inspect-cases.ts",
+    "uploads:optimize": "tsx scripts/optimize-uploads.ts",
+    "uploads:cache": "tsx scripts/cache-uploads.ts",
+    "public:optimize": "tsx scripts/optimize-public-images.ts"
   },
   "dependencies": {
     "autoprefixer": "^10.4.19",
@@ -23,6 +26,7 @@
     "postcss": "^8.4.47",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "server-only": "^0.0.1",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.14"
   },

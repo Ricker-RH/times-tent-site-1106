@@ -21,6 +21,7 @@ import {
 } from "./editorUtils";
 import { navigation_config } from "@/data/configs";
 import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
+import { getDropdownColumnCount, getDropdownWidth } from "@/utils/navigationLayout";
 
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value ?? null)) as T;
@@ -265,6 +266,8 @@ function NavigationHeader({
 function PreviewNavItem({ link }: { link: NavigationMainLinkState }) {
   const label = formatLocalized(link.label) || link.href || "导航";
   const hasChildren = link.children.length > 0;
+  const dropdownColumnCount = getDropdownColumnCount(link.children.length);
+  const dropdownWidth = getDropdownWidth(link.children.length);
   return (
     <div className="relative group">
       <Link
@@ -274,13 +277,19 @@ function PreviewNavItem({ link }: { link: NavigationMainLinkState }) {
         {label}
       </Link>
       {hasChildren ? (
-        <div className="invisible absolute left-0 top-10 min-w-[200px] rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-lg opacity-0 transition group-hover:visible group-hover:opacity-100">
-          <div className="flex flex-col gap-2">
+        <div
+          className="invisible absolute left-0 top-10 z-50 min-w-[200px] rounded-lg border border-[var(--color-border)] bg-white p-3 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100"
+          style={dropdownWidth ? { width: dropdownWidth } : undefined}
+        >
+          <div
+            className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${dropdownColumnCount}, minmax(0, 1fr))` }}
+          >
             {link.children.map((child) => (
               <Link
                 key={child.id}
                 href={child.href || "#"}
-                className="rounded-lg px-3 py-2 text-xs text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-brand-primary)]"
+                className="min-w-0 rounded-md px-3 py-2 text-xs leading-5 text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-brand-primary)]"
               >
                 {formatLocalized(child.label) || child.href || "子链接"}
               </Link>
