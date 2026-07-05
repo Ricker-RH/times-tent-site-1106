@@ -62,12 +62,12 @@ export async function generateMetadata({ params }: CaseDetailProps): Promise<Met
   const data = await fetchCaseStudyBySlug(params.slug);
   if (!data) {
     return buildMetadata({
-      title: `${t("breadcrumb.cases")} | 时代篷房`,
+      title: `${translateUi(locale, "breadcrumb.cases")} | 时代篷房`,
       path: "/cases",
     });
   }
   return buildMetadata({
-    title: `${t(data.study.title)} | ${t("breadcrumb.cases")} | 时代篷房`,
+    title: `${t(data.study.title)} | ${translateUi(locale, "breadcrumb.cases")} | 时代篷房`,
     description: t(data.study.summary),
     path: `/cases/${data.category.slug}/${data.study.slug}`,
     image: data.study.image,

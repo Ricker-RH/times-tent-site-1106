@@ -17,8 +17,10 @@ import {
   imageObjectJsonLd,
   jsonLdGraph,
   jsonLdScriptProps,
+  organizationJsonLd,
   productJsonLd,
   webPageJsonLd,
+  webSiteJsonLd,
 } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -105,7 +107,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     const description = detail.hero.description ?? detail.sections[0]?.paragraphs?.[0] ?? "";
     const media = PRODUCT_MEDIA[params.slug] ?? DEFAULT_MEDIA;
     return buildMetadata({
-      title: `${title} | ${t("breadcrumb.products")} | 时代篷房`,
+      title: `${title} | ${translateUi(locale, "breadcrumb.products")} | 时代篷房`,
       description,
       path: `/products/${params.slug}`,
       image: detail.hero.image || media.hero,
@@ -115,7 +117,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const product = config.products.find((item) => item.slug === params.slug);
   if (!product) {
     return buildMetadata({
-      title: `${t("breadcrumb.products")} | 时代篷房`,
+      title: `${translateUi(locale, "breadcrumb.products")} | 时代篷房`,
       path: "/products",
     });
   }
@@ -232,6 +234,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     `${absoluteUrl(productPath)}#breadcrumb`,
   );
   const productDetailJsonLd = jsonLdGraph([
+    organizationJsonLd(),
+    webSiteJsonLd(),
     productJsonLd({
       path: productPath,
       name: heroHeading,

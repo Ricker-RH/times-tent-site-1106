@@ -44,6 +44,9 @@ assert.match(productsPage, /ItemList/, "Products page should expose ItemList JSO
 const productDetailPage = read("app/(site)/products/[slug]/page.tsx");
 assert.match(productDetailPage, /Product/, "Product detail pages should expose Product JSON-LD");
 assert.match(productDetailPage, /BreadcrumbList/, "Product detail pages should expose BreadcrumbList JSON-LD");
+assert.match(productDetailPage, /webSiteJsonLd/, "Product detail pages should include WebSite JSON-LD like the Liri reference");
+assert.match(productDetailPage, /organizationJsonLd/, "Product detail pages should include Organization JSON-LD");
+assert.doesNotMatch(productDetailPage, /t\("breadcrumb\.products"\)/, "Product metadata should not output raw breadcrumb translation keys");
 
 const caseCategoryPage = read("app/(site)/cases/[category]/page.tsx");
 assert.match(caseCategoryPage, /CollectionPage/, "Case category pages should expose CollectionPage JSON-LD");
@@ -52,6 +55,7 @@ assert.match(caseCategoryPage, /ItemList/, "Case category pages should expose It
 const caseDetailPage = read("app/(site)/cases/[category]/[slug]/page.tsx");
 assert.match(caseDetailPage, /CreativeWork/, "Case detail pages should expose CreativeWork JSON-LD");
 assert.match(caseDetailPage, /BreadcrumbList/, "Case detail pages should expose BreadcrumbList JSON-LD");
+assert.doesNotMatch(caseDetailPage, /t\("breadcrumb\.cases"\)/, "Case metadata should not output raw breadcrumb translation keys");
 
 const newsDetailPage = read("app/(site)/news/[slug]/page.tsx");
 assert.match(newsDetailPage, /Article/, "News detail pages should expose Article JSON-LD");
