@@ -1,4 +1,5 @@
 import type { JSX, SVGProps } from "react";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ensurePageVisible, getHiddenSections } from "@/server/visibility";
@@ -8,14 +9,25 @@ import { t, setCurrentLocale } from "@/data";
 import { translateUi } from "@/i18n/dictionary";
 import { normalizeLocalizedField } from "@/i18n/locales";
 import { getRequestLocale } from "@/server/locale";
+import {
+  SITE_URL,
+  absoluteUrl,
+  breadcrumbJsonLd,
+  buildMetadata,
+  jsonLdGraph,
+  jsonLdScriptProps,
+} from "@/lib/seo";
 
-export async function generateMetadata() {
+const PRODUCTS_PAGE_DESCRIPTION = "了解人字形、弧形、弯柱、锥顶、双层等核心篷房产品，掌握结构亮点与应用场景。";
+
+export async function generateMetadata(): Promise<Metadata> {
   const locale = getRequestLocale();
   setCurrentLocale(locale);
-  return {
+  return buildMetadata({
     title: "产品中心 | 时代篷房",
-    description: "了解人字形、弧形、弯柱、锥顶、双层等核心篷房产品，掌握结构亮点与应用场景。",
-  };
+    description: PRODUCTS_PAGE_DESCRIPTION,
+    path: "/products",
+  });
 }
 
 type ProductCenterData = Awaited<ReturnType<typeof getProductCenterConfig>>;
@@ -91,9 +103,46 @@ export default async function ProductsPage(): Promise<JSX.Element> {
   const sidebarTitle = resolveText(config.sidebarTitle, translateUi(locale, "products.title"));
   const rawCardCtaLabel = resolveText(config.productCardCtaLabel, "查看详情");
   const cardCtaLabel = normalizeCtaLabel(rawCardCtaLabel);
+  const pageTitle = sidebarTitle || "产品中心";
+  const breadcrumbId = `${absoluteUrl("/products")}#breadcrumb`;
+  const productsJsonLd = jsonLdGraph([
+    {
+      "@type": "CollectionPage",
+      "@id": `${absoluteUrl("/products")}#collection`,
+      url: absoluteUrl("/products"),
+      name: pageTitle,
+      description: PRODUCTS_PAGE_DESCRIPTION,
+      inLanguage: "zh-CN",
+      isPartOf: {
+        "@id": `${SITE_URL}/#website`,
+      },
+      breadcrumb: {
+        "@id": breadcrumbId,
+      },
+    },
+    breadcrumbJsonLd(
+      [
+        { name: translateUi(locale, "breadcrumb.home"), url: "/" },
+        { name: pageTitle, url: "/products" },
+      ],
+      breadcrumbId,
+    ),
+    {
+      "@type": "ItemList",
+      "@id": `${absoluteUrl("/products")}#itemlist`,
+      name: pageTitle,
+      itemListElement: cards.map((product, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: product.title,
+        url: absoluteUrl(product.href),
+      })),
+    },
+  ]);
 
   return (
     <main className="flex-1">
+      <script {...jsonLdScriptProps(productsJsonLd)} />
       <div className="bg-white pb-16 pt-10">
         <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 sm:px-6 md:flex-row lg:px-8">
           {hideSidebar ? null : (

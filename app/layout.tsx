@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Sans_SC } from "next/font/google";
+import { DEFAULT_DESCRIPTION, DEFAULT_IMAGE, SITE_NAME, SITE_URL, defaultRobots } from "@/lib/seo";
 import "./globals.css";
 
 const inter = Inter({
@@ -17,8 +18,31 @@ const notoSansSc = Noto_Sans_SC({
 });
 
 export const metadata: Metadata = {
-  title: "时代篷房 TIMES TENT",
-  description: "模块化篷房解决方案 · 赛事、文旅、工业、品牌活动全场景覆盖",
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
+  title: SITE_NAME,
+  description: DEFAULT_DESCRIPTION,
+  robots: defaultRobots,
+  openGraph: {
+    title: SITE_NAME,
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    locale: "zh_CN",
+    type: "website",
+    images: [
+      {
+        url: DEFAULT_IMAGE,
+        alt: SITE_NAME,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_IMAGE],
+  },
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",

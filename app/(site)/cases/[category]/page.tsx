@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,6 +14,14 @@ import {
 import { t, setCurrentLocale } from "@/data";
 import { translateUi } from "@/i18n/dictionary";
 import { getRequestLocale } from "@/server/locale";
+import {
+  SITE_URL,
+  absoluteUrl,
+  breadcrumbJsonLd,
+  buildMetadata,
+  jsonLdGraph,
+  jsonLdScriptProps,
+} from "@/lib/seo";
 
 interface CategoryPageProps {
   params: { category: string };
@@ -25,16 +34,22 @@ export async function generateStaticParams() {
     .map((category) => ({ category: category.slug }));
 }
 
-export async function generateMetadata({ params }: CategoryPageProps) {
+export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const locale = getRequestLocale();
+  setCurrentLocale(locale);
   const category = await fetchCaseCategoryBySlug(params.category);
   if (!category) {
-    return { title: translateUi(locale, "breadcrumb.cases") };
+    return buildMetadata({
+      title: `${translateUi(locale, "breadcrumb.cases")} | 时代篷房`,
+      path: "/cases",
+    });
   }
-  return {
-    title: `${t(category.name)} | ${translateUi(locale, "breadcrumb.cases")}`,
+  return buildMetadata({
+    title: `${t(category.name)} | ${translateUi(locale, "breadcrumb.cases")} | 时代篷房`,
     description: t(category.intro),
-  };
+    path: `/cases/${params.category}`,
+    image: category.studies[0]?.image,
+  });
 }
 
 export default async function CaseCategoryPage({ params }: CategoryPageProps) {
@@ -64,9 +79,50 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
           { href: "/cases", label: translateUi(locale, "breadcrumb.cases") },
         ] as ReadonlyArray<{ href?: string; label?: unknown }>)
   );
+  const categoryTitle = t(category.name);
+  const categoryIntro = t(category.intro);
+  const categoryPath = `/cases/${category.slug}`;
+  const breadcrumbId = `${absoluteUrl(categoryPath)}#breadcrumb`;
+  const caseCategoryItemList = {
+    "@type": "ItemList",
+    "@id": `${absoluteUrl(categoryPath)}#itemlist`,
+    name: categoryTitle,
+    itemListElement: category.studies.map((study, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: t(study.title),
+      url: absoluteUrl(`/cases/${category.slug}/${study.slug}`),
+    })),
+  };
+  const caseCategoryJsonLd = jsonLdGraph([
+    {
+      "@type": "CollectionPage",
+      "@id": `${absoluteUrl(categoryPath)}#collection`,
+      url: absoluteUrl(categoryPath),
+      name: categoryTitle,
+      description: categoryIntro,
+      inLanguage: "zh-CN",
+      isPartOf: {
+        "@id": `${SITE_URL}/#website`,
+      },
+      breadcrumb: {
+        "@id": breadcrumbId,
+      },
+    },
+    breadcrumbJsonLd(
+      [
+        { name: translateUi(locale, "breadcrumb.home"), url: "/" },
+        { name: translateUi(locale, "breadcrumb.cases"), url: "/cases" },
+        { name: categoryTitle, url: categoryPath },
+      ],
+      breadcrumbId,
+    ),
+    caseCategoryItemList,
+  ]);
 
   return (
     <main className="flex-1">
+      <script {...jsonLdScriptProps(caseCategoryJsonLd)} />
       <div className="bg-white pb-20 pt-10">
         <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 sm:px-6 md:flex-row lg:px-8">
           {hideSidebar ? null : (
@@ -86,8 +142,8 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
             ]} />
             {hideHeader ? null : (
               <header className="space-y-3">
-                <h1 className="text-2xl font-semibold text-[var(--color-brand-secondary)] md:text-3xl">{t(category.name)}</h1>
-                <p className="text-sm leading-6 text-[var(--color-text-secondary)] md:text-base md:leading-7 [text-align:justify]">{t(category.intro)}</p>
+                <h1 className="text-2xl font-semibold text-[var(--color-brand-secondary)] md:text-3xl">{categoryTitle}</h1>
+                <p className="text-sm leading-6 text-[var(--color-text-secondary)] md:text-base md:leading-7 [text-align:justify]">{categoryIntro}</p>
               </header>
             )}
 

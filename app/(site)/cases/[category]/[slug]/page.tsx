@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -16,6 +17,16 @@ import { t, setCurrentLocale } from "@/data";
 import { getRequestLocale } from "@/server/locale";
 import { fetchCasesConfig } from "@/server/cases";
 import { translateUi } from "@/i18n/dictionary";
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  buildMetadata,
+  creativeWorkJsonLd,
+  imageObjectJsonLd,
+  jsonLdGraph,
+  jsonLdScriptProps,
+  webPageJsonLd,
+} from "@/lib/seo";
 
 function toTValue(value: unknown): string | Record<string, string | undefined> | undefined {
   if (typeof value === "string") return value;
@@ -45,17 +56,23 @@ export async function generateStaticParams() {
   return params;
 }
 
-export async function generateMetadata({ params }: CaseDetailProps) {
+export async function generateMetadata({ params }: CaseDetailProps): Promise<Metadata> {
   const locale = getRequestLocale();
   setCurrentLocale(locale);
   const data = await fetchCaseStudyBySlug(params.slug);
   if (!data) {
-    return { title: t("breadcrumb.cases") };
+    return buildMetadata({
+      title: `${t("breadcrumb.cases")} | 时代篷房`,
+      path: "/cases",
+    });
   }
-  return {
-    title: `${t(data.study.title)} | ${t("breadcrumb.cases")}`,
+  return buildMetadata({
+    title: `${t(data.study.title)} | ${t("breadcrumb.cases")} | 时代篷房`,
     description: t(data.study.summary),
-  };
+    path: `/cases/${data.category.slug}/${data.study.slug}`,
+    image: data.study.image,
+    type: "article",
+  });
 }
 
 export default async function CaseDetailPage({ params }: CaseDetailProps) {
@@ -181,9 +198,52 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
           { href: "/cases", label: translateUi(locale, "breadcrumb.cases") },
         ] as ReadonlyArray<{ href?: string; label?: string | Record<string, string | undefined> | undefined }>)
   );
+  const caseTitle = t(study.title);
+  const caseSummary = t(study.summary);
+  const caseLocation = t(study.location);
+  const casePath = `/cases/${category.slug}/${study.slug}`;
+  const primaryImage = heroSlides[0] || study.image;
+  const breadcrumbId = `${absoluteUrl(casePath)}#breadcrumb`;
+  const caseBreadcrumbList = breadcrumbJsonLd(
+    [
+      { name: translateUi(locale, "breadcrumb.home"), url: "/" },
+      { name: translateUi(locale, "breadcrumb.cases"), url: "/cases" },
+      { name: t(category.name), url: `/cases/${category.slug}` },
+      { name: caseTitle, url: casePath },
+    ],
+    breadcrumbId,
+  );
+  const caseCreativeWork = creativeWorkJsonLd({
+    path: casePath,
+    name: caseTitle,
+    description: caseSummary,
+    image: primaryImage,
+    datePublished: study.year,
+    location: caseLocation,
+  });
+  const caseImageObject = primaryImage
+    ? imageObjectJsonLd({
+        id: `${absoluteUrl(casePath)}#primaryimage`,
+        url: primaryImage,
+        caption: caseTitle,
+      })
+    : null;
+  const caseDetailJsonLd = jsonLdGraph([
+    caseCreativeWork,
+    webPageJsonLd({
+      path: casePath,
+      name: `${caseTitle} | ${translateUi(locale, "breadcrumb.cases")}`,
+      description: caseSummary,
+      image: primaryImage,
+      breadcrumbId,
+    }),
+    ...(caseImageObject ? [caseImageObject] : []),
+    caseBreadcrumbList,
+  ]);
 
   return (
     <main className="flex-1">
+      <script {...jsonLdScriptProps(caseDetailJsonLd)} />
       <div className="bg-white pb-20 pt-10">
         <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 sm:px-6 md:flex-row lg:px-8">
           {hideSidebar ? null : (
@@ -209,10 +269,10 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
             {hideHero ? null : (
               <CaseHeroCarousel
                 slides={heroSlides}
-                title={t(study.title)}
+                title={caseTitle}
                 year={study.year}
-                location={t(study.location)}
-                summary={t(study.summary)}
+                location={caseLocation}
+                summary={caseSummary}
                 overlayEnabled={study.heroOverlayEnabled !== false}
               />
             )}

@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ensurePageVisible, getHiddenSections } from "@/server/visibility";
@@ -9,6 +10,16 @@ import { translateUi } from "@/i18n/dictionary";
 import { ProductHeroCarousel } from "@/components/products/ProductHeroCarousel";
 import { ProductTabsSection } from "@/components/products/ProductTabsSection";
 import type { ProductDetailTabTarget } from "@/types/productDetails";
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  buildMetadata,
+  imageObjectJsonLd,
+  jsonLdGraph,
+  jsonLdScriptProps,
+  productJsonLd,
+  webPageJsonLd,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +93,7 @@ export async function generateStaticParams() {
   return config.products.map((item) => ({ slug: item.slug }));
 }
 
-export async function generateMetadata({ params }: ProductPageProps) {
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   // 确保 t() 使用当前请求语言
   const locale = getRequestLocale();
   setCurrentLocale(locale);
@@ -92,15 +103,21 @@ export async function generateMetadata({ params }: ProductPageProps) {
   if (detail) {
     const title = detail.title;
     const description = detail.hero.description ?? detail.sections[0]?.paragraphs?.[0] ?? "";
-    return {
-      title: `${title} | ${t("breadcrumb.products")}`,
+    const media = PRODUCT_MEDIA[params.slug] ?? DEFAULT_MEDIA;
+    return buildMetadata({
+      title: `${title} | ${t("breadcrumb.products")} | 时代篷房`,
       description,
-    };
+      path: `/products/${params.slug}`,
+      image: detail.hero.image || media.hero,
+    });
   }
   const config = await getProductCenterConfig();
   const product = config.products.find((item) => item.slug === params.slug);
   if (!product) {
-    return { title: t("breadcrumb.products") };
+    return buildMetadata({
+      title: `${t("breadcrumb.products")} | 时代篷房`,
+      path: "/products",
+    });
   }
   const productTitle = typeof product.name === "string" ? product.name : t(product.name) || params.slug;
   const summarySource: unknown = product.summary;
@@ -120,10 +137,12 @@ export async function generateMetadata({ params }: ProductPageProps) {
       description = resolveLocalizedText(taglineLegacy);
     }
   }
-  return {
-    title: `${productTitle} | ${translateUi(locale, "breadcrumb.products")}`,
+  return buildMetadata({
+    title: `${productTitle} | ${translateUi(locale, "breadcrumb.products")} | 时代篷房`,
     description,
-  };
+    path: `/products/${params.slug}`,
+    image: product.image,
+  });
 }
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
@@ -196,9 +215,48 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     accessories: hideGallery,
   };
   const hasVisibleTabs = detail.tabs.some((tab) => tab.visible !== false && !hiddenTabTargets[tab.target]);
+  const productPath = `/products/${params.slug}`;
+  const primaryImage = carouselSlides[0]?.src || heroImage;
+  const productDescription =
+    detail.hero.description ||
+    detail.intro.blocks.find((block) => block.subtitle.trim().length > 0)?.subtitle ||
+    detail.sections.flatMap((section) => section.paragraphs ?? []).find((paragraph) => paragraph.trim().length > 0) ||
+    listMetaTagline ||
+    "";
+  const productBreadcrumbList = breadcrumbJsonLd(
+    [
+      { name: translateUi(locale, "breadcrumb.home"), url: "/" },
+      { name: translateUi(locale, "breadcrumb.products"), url: "/products" },
+      { name: heroHeading, url: productPath },
+    ],
+    `${absoluteUrl(productPath)}#breadcrumb`,
+  );
+  const productDetailJsonLd = jsonLdGraph([
+    productJsonLd({
+      path: productPath,
+      name: heroHeading,
+      description: productDescription,
+      images: carouselSlides.map((slide) => slide.src),
+      category: translateUi(locale, "breadcrumb.products"),
+    }),
+    imageObjectJsonLd({
+      id: `${absoluteUrl(productPath)}#primaryimage`,
+      url: primaryImage,
+      caption: heroHeading,
+    }),
+    webPageJsonLd({
+      path: productPath,
+      name: `${heroHeading} | ${translateUi(locale, "breadcrumb.products")}`,
+      description: productDescription,
+      image: primaryImage,
+      breadcrumbId: `${absoluteUrl(productPath)}#breadcrumb`,
+    }),
+    productBreadcrumbList,
+  ]);
 
   return (
     <div className="bg-white pb-20 pt-10">
+      <script {...jsonLdScriptProps(productDetailJsonLd)} />
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 sm:px-6 lg:px-8 md:flex-row">
         <div className="md:w-[260px] md:shrink-0">
           <aside className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-sm md:sticky md:top-24 md:max-h-[560px] md:overflow-hidden">

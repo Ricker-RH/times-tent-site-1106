@@ -26,6 +26,14 @@ import { FALLBACK_HOME_CONFIG } from "@/constants/siteFallbacks";
 import { DEFAULT_LOCALE, normalizeLocalizedField } from "@/i18n/locales";
 import { getCurrentLocale, setCurrentLocale } from "@/data";
 import { getRequestLocale } from "@/server/locale";
+import {
+  SITE_NAME,
+  buildMetadata,
+  jsonLdGraph,
+  jsonLdScriptProps,
+  organizationJsonLd,
+  webSiteJsonLd,
+} from "@/lib/seo";
 
 type ProductShowcaseSection = NonNullable<HomeConfig["productShowcase"]>;
 type ProductShowcaseCard = NonNullable<ProductShowcaseSection["cards"]>[number];
@@ -123,8 +131,11 @@ function toDefaultLocaleStringArray(candidate: unknown): string[] {
 }
 
 export const metadata: Metadata = {
-  title: "时代篷房 TIMES TENT",
-  description: "时代篷房一站式模块化篷房解决方案，覆盖体育赛事、文旅酒店、工业仓储、展览活动等多元应用场景。",
+  ...buildMetadata({
+    title: SITE_NAME,
+    description: "时代篷房一站式模块化篷房解决方案，覆盖体育赛事、文旅酒店、工业仓储、展览活动等多元应用场景。",
+    path: "/",
+  }),
 };
 
 export const dynamic = "force-dynamic";
@@ -211,18 +222,23 @@ export default async function Page(): Promise<JSX.Element> {
     inventory: hiddenSections.inventory || shouldHideInventory,
     contactCta: hiddenSections.contactCta || shouldHideContactCta,
   };
+  const homeOrganization = organizationJsonLd();
+  const homeWebSite = webSiteJsonLd();
 
   return (
-    <HomeClient
-      hero={hero}
-      applicationTabs={applicationTabs}
-      applicationSection={applicationSection}
-      productShowcase={productShowcase}
-      companyOverview={companyOverview}
-      inventoryHighlight={inventoryHighlight}
-      contactCta={contactCta}
-      hiddenSections={mergedHidden}
-    />
+    <>
+      <script {...jsonLdScriptProps(jsonLdGraph([homeOrganization, homeWebSite]))} />
+      <HomeClient
+        hero={hero}
+        applicationTabs={applicationTabs}
+        applicationSection={applicationSection}
+        productShowcase={productShowcase}
+        companyOverview={companyOverview}
+        inventoryHighlight={inventoryHighlight}
+        contactCta={contactCta}
+        hiddenSections={mergedHidden}
+      />
+    </>
   );
 }
 
