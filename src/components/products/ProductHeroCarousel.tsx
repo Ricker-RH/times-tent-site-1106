@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { shouldEagerLoadCarouselSlide } from "@/utils/carouselPreload";
 
 export interface ProductHeroCarouselSlide {
   src: string;
@@ -66,8 +67,6 @@ export function ProductHeroCarousel({ slides, title, description, eyebrow, badge
     return null;
   }
 
-  const active = validSlides[index];
-
   const hasBadge = Boolean(badge?.trim());
   const hasEyebrow = Boolean(eyebrow?.trim());
   const hasTitle = Boolean(title?.trim());
@@ -82,15 +81,27 @@ export function ProductHeroCarousel({ slides, title, description, eyebrow, badge
         onMouseEnter={() => setAutoplay(false)}
         onMouseLeave={() => setAutoplay(true)}
       >
-        <Image
-          key={`${active.src}-${index}`}
-          src={active.src}
-          alt={active.alt}
-          fill
-          priority
-          className="object-cover"
-          sizes="(min-width: 1280px) 872px, (min-width: 768px) calc(100vw - 360px), 100vw"
-        />
+        {validSlides.map((slide, slideIndex) => {
+          const isActive = slideIndex === index;
+          const imageLoadProps = slideIndex === 0
+            ? { priority: true }
+            : { loading: shouldEagerLoadCarouselSlide(slideIndex, index, validSlides.length) ? "eager" as const : "lazy" as const };
+
+          return (
+            <Image
+              key={`${slide.src}-${slideIndex}`}
+              src={slide.src}
+              alt={slide.alt}
+              fill
+              className={`object-cover transition-opacity duration-300 ${
+                isActive ? "opacity-100" : "opacity-0"
+              }`}
+              sizes="(min-width: 1280px) 872px, (min-width: 768px) calc(100vw - 360px), 100vw"
+              aria-hidden={!isActive}
+              {...imageLoadProps}
+            />
+          );
+        })}
         {showOverlayLayer ? (
           <>
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
@@ -180,7 +191,23 @@ export function ProductHeroCarousel({ slides, title, description, eyebrow, badge
           onClick={() => setIsLightboxOpen(false)}
         >
           <div className="relative h-[85vh] w-full max-w-6xl" onClick={(event) => event.stopPropagation()}>
-            <Image src={active.src} alt={active.alt} fill className="object-contain" sizes="100vw" />
+            {validSlides.map((slide, slideIndex) => {
+              const isActive = slideIndex === index;
+              return (
+                <Image
+                  key={`${slide.src}-lightbox-${slideIndex}`}
+                  src={slide.src}
+                  alt={slide.alt}
+                  fill
+                  className={`object-contain transition-opacity duration-200 ${
+                    isActive ? "opacity-100" : "opacity-0"
+                  }`}
+                  sizes="100vw"
+                  aria-hidden={!isActive}
+                  loading={shouldEagerLoadCarouselSlide(slideIndex, index, validSlides.length) ? "eager" : "lazy"}
+                />
+              );
+            })}
             <button
               type="button"
               onClick={() => setIsLightboxOpen(false)}

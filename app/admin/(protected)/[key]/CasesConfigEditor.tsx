@@ -13,6 +13,7 @@ import type { UpdateSiteConfigActionState } from "../actions";
 import { updateSiteConfigAction } from "../actions";
 import { useToast } from "@/providers/ToastProvider";
 import { resolveImageSrc, sanitizeImageSrc } from "@/utils/image";
+import { shouldEagerLoadCarouselSlide } from "@/utils/carouselPreload";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, ensureLocalizedRecord, getLocaleText, setLocaleText, ensureLocalizedNoFallback, serializeLocalizedAllowEmpty } from "./editorUtils";
 import { useGlobalTranslationRegistrationForConfig } from "@/hooks/useGlobalTranslationManager";
 import type { LocaleKey } from "@/i18n/locales";
@@ -1329,6 +1330,9 @@ function CasesPreviewSurface({
     const heroOverlayEnabled = study.heroOverlayEnabled !== false;
     const showOverlay = showText && heroOverlayEnabled;
     const resolvedActiveSlide = resolveImageSrc(activeSlideSrc, DEFAULT_STUDY_IMAGE);
+    const resolvedPreviewSlides = heroSlides.length
+      ? heroSlides.map((slide) => resolveImageSrc(slide, DEFAULT_STUDY_IMAGE))
+      : (resolvedActiveSlide ? [resolvedActiveSlide] : []);
 
     const handlePrevSlide = () => {
       if (!heroSlides.length) return;
@@ -1369,15 +1373,32 @@ function CasesPreviewSurface({
 
         <section className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white">
           <div className="relative h-[420px] w-full bg-black sm:h-[520px]">
-            {resolvedActiveSlide ? (
-              <Image
-                src={resolvedActiveSlide}
-                alt={getLocaleText(study.title) || "案例主图"}
-                fill
-                className="object-cover"
-                sizes="100vw"
-                priority
-              />
+            {resolvedPreviewSlides.length ? (
+              resolvedPreviewSlides.map((slide, slideIndex) => {
+                const isActive = slideIndex === safeSlideIndex;
+                const imageLoadProps = slideIndex === 0
+                  ? { priority: true }
+                  : {
+                      loading: shouldEagerLoadCarouselSlide(slideIndex, safeSlideIndex, resolvedPreviewSlides.length)
+                        ? "eager" as const
+                        : "lazy" as const,
+                    };
+
+                return (
+                  <Image
+                    key={`${slide}-${slideIndex}`}
+                    src={slide}
+                    alt={getLocaleText(study.title) || "案例主图"}
+                    fill
+                    className={`object-cover transition-opacity duration-300 ${
+                      isActive ? "opacity-100" : "opacity-0"
+                    }`}
+                    sizes="100vw"
+                    aria-hidden={!isActive}
+                    {...imageLoadProps}
+                  />
+                );
+              })
             ) : (
               <div className="flex h-full items-center justify-center text-sm text-white/70">暂无主图</div>
             )}

@@ -13,6 +13,7 @@ import type {
 import { ProductMatrixSection } from "@/components/home/ProductMatrixSection";
 import { t } from "@/data";
 import type { LocalizedField } from "@/i18n/locales";
+import { shouldEagerLoadCarouselSlide } from "@/utils/carouselPreload";
 
 type LocalizedOrString = string | LocalizedField | Record<string, string | undefined> | null;
 
@@ -233,6 +234,14 @@ export default function HomeClient({
           >
             {carouselSlides.map((slide, idx) => {
               const isPrimaryImage = slides[0]?.slug === slide.slug;
+              const originalSlideIndex = slides.findIndex((item) => item.slug === slide.slug);
+              const shouldEagerLoad = originalSlideIndex >= 0
+                ? shouldEagerLoadCarouselSlide(originalSlideIndex, normalizedHeroIndex, slidesCount)
+                : false;
+              const isInitialHeroImage = slidesCount > 1 ? idx === 1 : idx === 0;
+              const imageLoadProps = isInitialHeroImage
+                ? { priority: true }
+                : { loading: shouldEagerLoad ? "eager" as const : "lazy" as const };
               return (
                 <Link
                   key={`${slide.slug}-${idx}`}
@@ -245,8 +254,8 @@ export default function HomeClient({
                     alt={slide.title}
                     fill
                     className="object-cover"
-                    priority={slidesCount > 1 ? idx === 1 : idx === 0}
                     sizes="100vw"
+                    {...imageLoadProps}
                   />
                   {isPrimaryImage && heroOverlayEnabled ? (
                     <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/15 to-black/5" />
@@ -385,6 +394,9 @@ export default function HomeClient({
                 <div className="relative h-[420px] w-full md:h-[520px]">
                   {applicationTabs.map((tab, idx) => {
                     const isActive = idx === tabIndex;
+                    const imageLoadProps = idx === 0
+                      ? { priority: true }
+                      : { loading: shouldEagerLoadCarouselSlide(idx, tabIndex, applicationTabs.length) ? "eager" as const : "lazy" as const };
                     return (
                       <div
                         key={tab.slug}
@@ -398,8 +410,8 @@ export default function HomeClient({
                           alt={resolveText(tab.name, tab.slug)}
                           fill
                           className="object-cover"
-                          priority={idx === 0}
                           sizes="(min-width: 1280px) 1200px, 100vw"
+                          {...imageLoadProps}
                         />
                         {applicationOverlayEnabled ? (
                           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/35 to-black/10" aria-hidden />

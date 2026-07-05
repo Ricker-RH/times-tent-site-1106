@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { shouldEagerLoadCarouselSlide } from "@/utils/carouselPreload";
 
 interface CaseGalleryProps {
   images: ReadonlyArray<string>;
@@ -71,15 +72,16 @@ export function CaseGallery({
     return () => window.removeEventListener("keydown", listener);
   }, [activeIndex, handleClose, handleNext, handlePrev]);
 
-  const activeImage = activeIndex !== null && hasImages ? images[activeIndex] : null;
+  const safeActiveIndex = activeIndex !== null && hasImages ? Math.min(activeIndex, total - 1) : 0;
+  const activeImage = activeIndex !== null && hasImages ? images[safeActiveIndex] : null;
 
   const counterText = useMemo(() => {
     if (activeIndex === null) return "";
     const pattern = counterPattern?.trim() || "图 {{current}} / {{total}}";
     return pattern
-      .replace(/{{\s*current\s*}}/gi, String(activeIndex + 1))
+      .replace(/{{\s*current\s*}}/gi, String(safeActiveIndex + 1))
       .replace(/{{\s*total\s*}}/gi, String(total));
-  }, [activeIndex, counterPattern, total]);
+  }, [activeIndex, counterPattern, safeActiveIndex, total]);
 
   if (!hasImages) {
     return null;
@@ -116,7 +118,7 @@ export function CaseGallery({
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 px-4 py-10"
           role="dialog"
           aria-modal="true"
-          aria-label={`${title} 图 ${activeIndex + 1}`}
+          aria-label={`${title} 图 ${safeActiveIndex + 1}`}
           onClick={handleClose}
         >
           <button
@@ -135,13 +137,23 @@ export function CaseGallery({
             onClick={(event) => event.stopPropagation()}
           >
             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl bg-black shadow-2xl">
-              <Image
-                src={activeImage}
-                alt={`${title} 图 ${activeIndex + 1}`}
-                fill
-                sizes="(min-width: 1280px) 60vw, 100vw"
-                className="object-contain"
-              />
+              {images.map((src, imageIndex) => {
+                const isActive = imageIndex === safeActiveIndex;
+                return (
+                  <Image
+                    key={`${src}-modal-${imageIndex}`}
+                    src={src}
+                    alt={`${title} 图 ${imageIndex + 1}`}
+                    fill
+                    sizes="(min-width: 1280px) 60vw, 100vw"
+                    className={`object-contain transition-opacity duration-200 ${
+                      isActive ? "opacity-100" : "opacity-0"
+                    }`}
+                    aria-hidden={!isActive}
+                    loading={shouldEagerLoadCarouselSlide(imageIndex, safeActiveIndex, total) ? "eager" : "lazy"}
+                  />
+                );
+              })}
               {hasMultiple ? (
                 <>
                   <button

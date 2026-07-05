@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { shouldEagerLoadCarouselSlide } from "@/utils/carouselPreload";
 
 interface CaseHeroCarouselProps {
   slides: ReadonlyArray<string>;
@@ -46,15 +47,27 @@ export function CaseHeroCarousel({ slides, title, year, location, summary, overl
         onMouseEnter={() => setAutoplay(false)}
         onMouseLeave={() => setAutoplay(true)}
       >
-        <Image
-          key={`${validSlides[index]}-${index}`}
-          src={validSlides[index]}
-          alt={title}
-          fill
-          priority
-          className="object-cover transition-opacity duration-300"
-          sizes="(min-width: 1280px) 1200px, 100vw"
-        />
+        {validSlides.map((slide, slideIndex) => {
+          const isActive = slideIndex === index;
+          const imageLoadProps = slideIndex === 0
+            ? { priority: true }
+            : { loading: shouldEagerLoadCarouselSlide(slideIndex, index, validSlides.length) ? "eager" as const : "lazy" as const };
+
+          return (
+            <Image
+              key={`${slide}-${slideIndex}`}
+              src={slide}
+              alt={title}
+              fill
+              className={`object-cover transition-opacity duration-300 ${
+                isActive ? "opacity-100" : "opacity-0"
+              }`}
+              sizes="(min-width: 1280px) 872px, (min-width: 768px) calc(100vw - 360px), 100vw"
+              aria-hidden={!isActive}
+              {...imageLoadProps}
+            />
+          );
+        })}
         {showOverlay ? <div className="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/35 to-transparent" /> : null}
         {showText ? (
           <div className="absolute inset-0 flex flex-col justify-end gap-4 px-4 py-10 text-white sm:px-6 lg:px-8">
@@ -133,7 +146,23 @@ export function CaseHeroCarousel({ slides, title, year, location, summary, overl
           onClick={() => setIsLightboxOpen(false)}
         >
           <div className="relative h-[80vh] w-full max-w-5xl" onClick={(event) => event.stopPropagation()}>
-            <Image src={validSlides[index]} alt={title} fill className="object-contain" sizes="100vw" />
+            {validSlides.map((slide, slideIndex) => {
+              const isActive = slideIndex === index;
+              return (
+                <Image
+                  key={`${slide}-lightbox-${slideIndex}`}
+                  src={slide}
+                  alt={title}
+                  fill
+                  className={`object-contain transition-opacity duration-200 ${
+                    isActive ? "opacity-100" : "opacity-0"
+                  }`}
+                  sizes="100vw"
+                  aria-hidden={!isActive}
+                  loading={shouldEagerLoadCarouselSlide(slideIndex, index, validSlides.length) ? "eager" : "lazy"}
+                />
+              );
+            })}
             <button
               type="button"
               onClick={() => setIsLightboxOpen(false)}
