@@ -25,11 +25,12 @@ export type UploadDiskCacheIndex = Record<string, UploadDiskCacheIndexEntry>;
 
 const CACHE_DIR = path.join(".local", "upload-cache");
 const INDEX_FILE = "index.json";
+const DEFAULT_CACHE_DIR = path.join(/*turbopackIgnore: true*/ process.cwd(), CACHE_DIR);
 
 let writeQueue: Promise<void> = Promise.resolve();
 
-export function getUploadDiskCachePaths(rootDir = process.cwd()) {
-  const dir = path.join(rootDir, CACHE_DIR);
+export function getUploadDiskCachePaths(rootDir?: string) {
+  const dir = rootDir ? path.join(/*turbopackIgnore: true*/ rootDir, CACHE_DIR) : DEFAULT_CACHE_DIR;
   return {
     dir,
     indexFile: path.join(dir, INDEX_FILE),
@@ -66,7 +67,7 @@ function cacheFileNameFor(id: string, mimeType: string): string {
   return `${sanitizeCacheId(id)}.${extensionFromMime(mimeType)}`;
 }
 
-async function ensureUploadDiskCache(rootDir = process.cwd()) {
+async function ensureUploadDiskCache(rootDir?: string) {
   const paths = getUploadDiskCachePaths(rootDir);
   await fs.mkdir(paths.dir, { recursive: true });
   try {
@@ -77,7 +78,7 @@ async function ensureUploadDiskCache(rootDir = process.cwd()) {
   return paths;
 }
 
-export async function readUploadDiskCacheIndex(rootDir = process.cwd()): Promise<UploadDiskCacheIndex> {
+export async function readUploadDiskCacheIndex(rootDir?: string): Promise<UploadDiskCacheIndex> {
   try {
     const paths = await ensureUploadDiskCache(rootDir);
     const raw = await fs.readFile(paths.indexFile, "utf8");
@@ -88,7 +89,7 @@ export async function readUploadDiskCacheIndex(rootDir = process.cwd()): Promise
   }
 }
 
-async function writeUploadDiskCacheIndex(index: UploadDiskCacheIndex, rootDir = process.cwd()): Promise<void> {
+async function writeUploadDiskCacheIndex(index: UploadDiskCacheIndex, rootDir?: string): Promise<void> {
   const paths = await ensureUploadDiskCache(rootDir);
   const tempFile = `${paths.indexFile}.${process.pid}.${Date.now()}.tmp`;
   await fs.writeFile(tempFile, JSON.stringify(index, null, 2), "utf8");
@@ -98,14 +99,14 @@ async function writeUploadDiskCacheIndex(index: UploadDiskCacheIndex, rootDir = 
 async function writeUploadDiskCacheRecordNow(
   id: string,
   input: UploadDiskCacheWriteInput,
-  rootDir = process.cwd(),
+  rootDir?: string,
 ): Promise<void> {
   const paths = await ensureUploadDiskCache(rootDir);
   const index = await readUploadDiskCacheIndex(rootDir);
   const previousFileName = index[id]?.fileName;
   const fileName = cacheFileNameFor(id, input.mimeType);
 
-  await fs.writeFile(path.join(paths.dir, fileName), input.data);
+  await fs.writeFile(path.join(/*turbopackIgnore: true*/ paths.dir, fileName), input.data);
 
   index[id] = {
     id,
@@ -118,14 +119,14 @@ async function writeUploadDiskCacheRecordNow(
   await writeUploadDiskCacheIndex(index, rootDir);
 
   if (previousFileName && previousFileName !== fileName) {
-    await fs.rm(path.join(paths.dir, path.basename(previousFileName)), { force: true });
+    await fs.rm(path.join(/*turbopackIgnore: true*/ paths.dir, path.basename(previousFileName)), { force: true });
   }
 }
 
 export async function writeUploadDiskCacheRecord(
   id: string,
   input: UploadDiskCacheWriteInput,
-  rootDir = process.cwd(),
+  rootDir?: string,
 ): Promise<void> {
   const nextWrite = writeQueue
     .catch(() => undefined)
@@ -136,7 +137,7 @@ export async function writeUploadDiskCacheRecord(
 
 export async function readUploadDiskCacheRecord(
   id: string,
-  rootDir = process.cwd(),
+  rootDir?: string,
 ): Promise<UploadDiskCacheRecord | null> {
   const index = await readUploadDiskCacheIndex(rootDir);
   const entry = index[id];
@@ -146,7 +147,7 @@ export async function readUploadDiskCacheRecord(
 
   try {
     const paths = getUploadDiskCachePaths(rootDir);
-    const data = await fs.readFile(path.join(paths.dir, path.basename(entry.fileName)));
+    const data = await fs.readFile(path.join(/*turbopackIgnore: true*/ paths.dir, path.basename(entry.fileName)));
     if (entry.size > 0 && data.length !== entry.size) {
       return null;
     }

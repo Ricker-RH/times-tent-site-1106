@@ -14,8 +14,9 @@ function resolveLogin(reason?: string, next?: string): string {
   return qs ? `/admin/login?${qs}` : "/admin/login";
 }
 
-export default function ConflictPage({ searchParams }: { searchParams?: { next?: string } }) {
-  const next = typeof searchParams?.next === "string" ? searchParams.next : "/admin";
+export default async function ConflictPage({ searchParams }: { searchParams?: Promise<{ next?: string }> }) {
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const next = typeof resolvedSearchParams?.next === "string" ? resolvedSearchParams.next : "/admin";
   const login = resolveLogin(undefined, next);
 
   return (

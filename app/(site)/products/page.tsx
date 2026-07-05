@@ -21,7 +21,7 @@ import {
 const PRODUCTS_PAGE_DESCRIPTION = "了解人字形、弧形、弯柱、锥顶、双层等核心篷房产品，掌握结构亮点与应用场景。";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
   return buildMetadata({
     title: "产品中心 | 时代篷房",
@@ -73,7 +73,7 @@ export default async function ProductsPage(): Promise<JSX.Element> {
   const hideSidebar = hiddenSections.sidebar === true;
   const hideProductList = hiddenSections.productList === true;
   // 设置当前请求语言，确保 t() 使用正确的 locale
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
   const config = await getProductCenterConfig();
   const cards = config.products.map((product) => {

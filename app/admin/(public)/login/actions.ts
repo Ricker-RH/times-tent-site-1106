@@ -29,7 +29,7 @@ export async function loginAction(_prevState: LoginActionState, formData: FormDa
   // Detect kick-out (conflict) context from Referer
   let isConflictContext = false;
   try {
-    const h = headers();
+    const h = await headers();
     const referer = h.get("referer") || "";
     const url = new URL(referer, "http://localhost");
     isConflictContext = url.searchParams.get("reason") === "conflict";
@@ -43,7 +43,7 @@ export async function loginAction(_prevState: LoginActionState, formData: FormDa
 
     await createAdminSession(session);
     try {
-      const h = headers();
+      const h = await headers();
       const ip = h.get("x-forwarded-for") || h.get("x-real-ip") || null;
       const ua = h.get("user-agent") || null;
       if (session.username) {

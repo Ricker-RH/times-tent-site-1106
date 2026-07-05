@@ -64,7 +64,7 @@ export default async function NewsPage() {
     .map((item, index) => normalizeArticle(item, index))
     .sort((a, b) => getTime(b.date) - getTime(a.date));
 
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
 
   return (

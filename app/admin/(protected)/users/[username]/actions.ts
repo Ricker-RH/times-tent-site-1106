@@ -21,7 +21,7 @@ export async function verifyHumanAction(formData: FormData) {
   try {
     const ok = await bcrypt.compare(provided, hashed);
     if (ok) {
-      const store = cookies();
+      const store = await cookies();
       store.set("tt_admin_detail_verified", "1", { httpOnly: true, maxAge: 600, path: `/admin/users/${encodeURIComponent(username)}` });
       redirect(`/admin/users/${encodeURIComponent(username)}?verified=1`);
     }

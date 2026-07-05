@@ -16,7 +16,8 @@ function buildQuery(searchParams: SearchParams = {}) {
   return s ? `?${s}` : "";
 }
 
-export default function LoginAliasPage({ searchParams }: { searchParams?: SearchParams }) {
-  const suffix = buildQuery(searchParams || {});
+export default async function LoginAliasPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const suffix = buildQuery(resolvedSearchParams);
   redirect("/admin/login" + suffix);
 }

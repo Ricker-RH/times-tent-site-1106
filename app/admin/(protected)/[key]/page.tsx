@@ -49,9 +49,10 @@ function formatDate(value?: string) {
 export default async function AdminConfigDetailPage({
   params,
 }: {
-  params: { key: string };
+  params: Promise<{ key: string }>;
 }) {
-  const rawKey = Array.isArray(params.key) ? params.key.join("/") : params.key;
+  const { key } = await params;
+  const rawKey = Array.isArray(key) ? key.join("/") : key;
   const configKey = decodeURIComponent(rawKey);
 
   const session = await getCurrentAdmin();

@@ -536,7 +536,7 @@ export async function getProductDetails(): Promise<ProductDetailMap> {
     getProductCenterConfig(),
   ]);
 
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
 
   const seeds = productCenter.products.reduce<Record<string, { title?: string; summary?: string; tagline?: string }>>((acc, product) => {
     if (!product.slug) return acc;

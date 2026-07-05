@@ -3,8 +3,8 @@ import { getUpload } from "@/server/uploads";
 
 export const runtime = "nodejs";
 
-export async function GET(_request: Request, context: { params: { id: string } }) {
-  const id = context?.params?.id;
+export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   if (!id || typeof id !== "string" || id.trim().length === 0) {
     return NextResponse.json({ error: "缺少图片ID" }, { status: 400 });
   }

@@ -23,10 +23,11 @@ function resolveRedirect(target?: string): string {
   return "/admin";
 }
 
-export default async function AdminLoginPage({ searchParams }: { searchParams?: { next?: string; reason?: string } }) {
+export default async function AdminLoginPage({ searchParams }: { searchParams?: Promise<{ next?: string; reason?: string }> }) {
   const current = await getCurrentAdmin();
-  const next = typeof searchParams?.next === "string" ? searchParams.next : undefined;
-  const reason = typeof searchParams?.reason === "string" ? searchParams.reason : undefined;
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const next = typeof resolvedSearchParams?.next === "string" ? resolvedSearchParams.next : undefined;
+  const reason = typeof resolvedSearchParams?.reason === "string" ? resolvedSearchParams.reason : undefined;
 
   let currentIsActive = false;
   try {

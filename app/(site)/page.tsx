@@ -142,7 +142,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Page(): Promise<JSX.Element> {
   const visibility = await ensurePageVisible("home");
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
 
   const [homeConfig, casesConfig, productConfig] = await Promise.all([

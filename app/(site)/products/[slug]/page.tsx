@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ensurePageVisible, getHiddenSections } from "@/server/visibility";
 import { t, setCurrentLocale } from "@/data";
 import { getRequestLocale } from "@/server/locale";
-import { normalizeLocalizedField } from "@/i18n/locales";
+import { normalizeLocalizedField, type LocaleKey } from "@/i18n/locales";
 import { translateUi } from "@/i18n/dictionary";
 import { ProductHeroCarousel } from "@/components/products/ProductHeroCarousel";
 import { ProductTabsSection } from "@/components/products/ProductTabsSection";
@@ -52,7 +52,7 @@ const GALLERY_KEYS = [
 ];
 
 interface ProductPageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
@@ -97,31 +97,32 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   // 确保 t() 使用当前请求语言
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
+  const { slug } = await params;
 
   const productDetails = await getProductDetails();
-  const detail = productDetails[params.slug];
+  const detail = productDetails[slug];
   if (detail) {
     const title = detail.title;
     const description = detail.hero.description ?? detail.sections[0]?.paragraphs?.[0] ?? "";
-    const media = PRODUCT_MEDIA[params.slug] ?? DEFAULT_MEDIA;
+    const media = PRODUCT_MEDIA[slug] ?? DEFAULT_MEDIA;
     return buildMetadata({
       title: `${title} | ${translateUi(locale, "breadcrumb.products")} | 时代篷房`,
       description,
-      path: `/products/${params.slug}`,
+      path: `/products/${slug}`,
       image: detail.hero.image || media.hero,
     });
   }
   const config = await getProductCenterConfig();
-  const product = config.products.find((item) => item.slug === params.slug);
+  const product = config.products.find((item) => item.slug === slug);
   if (!product) {
     return buildMetadata({
       title: `${translateUi(locale, "breadcrumb.products")} | 时代篷房`,
       path: "/products",
     });
   }
-  const productTitle = typeof product.name === "string" ? product.name : t(product.name) || params.slug;
+  const productTitle = typeof product.name === "string" ? product.name : t(product.name) || slug;
   const summarySource: unknown = product.summary;
   const summaryLegacy = getLegacyField(product, "summaryEn");
   const summaryHasOwn = typeof summarySource !== "undefined" || typeof summaryLegacy !== "undefined";
@@ -142,14 +143,15 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   return buildMetadata({
     title: `${productTitle} | ${translateUi(locale, "breadcrumb.products")} | 时代篷房`,
     description,
-    path: `/products/${params.slug}`,
+    path: `/products/${slug}`,
     image: product.image,
   });
 }
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
+  const { slug } = await params;
   const [visibility, productDetails, productsConfig] = await Promise.all([
     ensurePageVisible("productDetail"),
     getProductDetails(),
@@ -162,8 +164,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const hideGallery = hiddenSections.gallery === true;
   const hideExtraSections = hiddenSections.extraSections === true;
   const hideAdvisor = hiddenSections.advisor === true;
-  const detail = productDetails[params.slug];
-  const listMeta = productsConfig.products.find((item) => item.slug === params.slug) ?? null;
+  const detail = productDetails[slug];
+  const listMeta = productsConfig.products.find((item) => item.slug === slug) ?? null;
   const listMetaTagline = listMeta?.tagline
     ? typeof listMeta.tagline === "string"
       ? listMeta.tagline
@@ -180,7 +182,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const media = PRODUCT_MEDIA[params.slug] ?? DEFAULT_MEDIA;
+  const media = PRODUCT_MEDIA[slug] ?? DEFAULT_MEDIA;
   const heroImage = detail.hero.image || media.hero;
   const heroSlidesSources = [
     ...(heroImage ? [{ src: heroImage, alt: detail.title }] : []),
@@ -217,7 +219,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     accessories: hideGallery,
   };
   const hasVisibleTabs = detail.tabs.some((tab) => tab.visible !== false && !hiddenTabTargets[tab.target]);
-  const productPath = `/products/${params.slug}`;
+  const productPath = `/products/${slug}`;
   const primaryImage = carouselSlides[0]?.src || heroImage;
   const productDescription =
     detail.hero.description ||
@@ -267,7 +269,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             <h2 className="px-3 text-sm font-semibold text-[var(--color-brand-secondary)]">{sidebarTitle}</h2>
             <div className="mt-3 space-y-2 md:max-h-[496px] md:overflow-y-auto md:pr-1 md:overscroll-contain">
               {products.map((product) => {
-                const isActive = product.slug === params.slug;
+                const isActive = product.slug === slug;
                 return (
                   <Link
                     key={product.href}
@@ -345,7 +347,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               </section>
             ))}
 
-          {hideAdvisor ? null : <ProductAdvisorCTA cta={detail.cta} />}
+          {hideAdvisor ? null : <ProductAdvisorCTA cta={detail.cta} locale={locale} />}
         </div>
       </div>
     </div>
@@ -360,8 +362,7 @@ function IconChevronRight(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-function ProductAdvisorCTA({ cta }: { cta?: { title?: string; description?: string; primaryLabel?: string; primaryHref?: string; phoneLabel?: string; phoneNumber?: string } }) {
-  const locale = getRequestLocale();
+function ProductAdvisorCTA({ cta, locale }: { cta?: { title?: string; description?: string; primaryLabel?: string; primaryHref?: string; phoneLabel?: string; phoneNumber?: string }; locale: LocaleKey }) {
   const title = (cta?.title && cta.title.trim()) ? cta.title : translateUi(locale, "cases.cta.custom.heading");
   const description = (cta?.description && cta.description.trim()) ? cta.description : translateUi(locale, "cases.cta.custom.description");
   const primaryLabel = (cta?.primaryLabel && cta.primaryLabel.trim()) ? cta.primaryLabel : translateUi(locale, "cases.cta.custom.submit");

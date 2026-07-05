@@ -24,7 +24,7 @@ import {
 } from "@/lib/seo";
 
 interface CategoryPageProps {
-  params: { category: string };
+  params: Promise<{ category: string }>;
 }
 
 export async function generateStaticParams() {
@@ -35,9 +35,10 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
-  const category = await fetchCaseCategoryBySlug(params.category);
+  const { category: categorySlug } = await params;
+  const category = await fetchCaseCategoryBySlug(categorySlug);
   if (!category) {
     return buildMetadata({
       title: `${translateUi(locale, "breadcrumb.cases")} | 时代篷房`,
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   return buildMetadata({
     title: `${t(category.name)} | ${translateUi(locale, "breadcrumb.cases")} | 时代篷房`,
     description: t(category.intro),
-    path: `/cases/${params.category}`,
+    path: `/cases/${categorySlug}`,
     image: category.studies[0]?.image,
   });
 }
@@ -59,13 +60,14 @@ export default async function CaseCategoryPage({ params }: CategoryPageProps) {
   const hideHeader = hiddenSections.header === true;
   const hideCaseGrid = hiddenSections.caseGrid === true;
   const hideCta = hiddenSections.cta === true;
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
+  const { category: categorySlug } = await params;
   const [config, categories] = await Promise.all([
     fetchCasesConfig(),
     fetchCaseCategories(),
   ]);
-  const category = categories.find((item) => item.slug === params.category);
+  const category = categories.find((item) => item.slug === categorySlug);
 
   if (!category) {
     notFound();

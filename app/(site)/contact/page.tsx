@@ -21,7 +21,7 @@ export default async function Page(): Promise<JSX.Element> {
   const hideChannels = hiddenSections.channels === true;
   const hideForm = hiddenSections.form === true;
   const hideGuarantee = hiddenSections.guarantee === true;
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
   const [config, casesConfig] = await Promise.all([getContactConfig(), getCasesConfig()]);
   const hero = config.hero;

@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "admin:export": "tsx scripts/export-admin-users.ts",
     "i18n:check": "tsx scripts/check-i18n.ts",
     "i18n:cases": "tsx scripts/check-cases-i18n.ts",
@@ -21,9 +21,9 @@
     "autoprefixer": "^10.4.19",
     "bcryptjs": "^2.4.3",
     "jose": "^5.2.0",
-    "next": "14.2.4",
+    "next": "^16.2.10",
     "pg": "^8.16.3",
-    "postcss": "^8.4.47",
+    "postcss": "8.5.16",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "server-only": "^0.0.1",
@@ -35,9 +35,12 @@
     "@types/pg": "^8.15.5",
     "@types/react": "18.2.77",
     "@types/react-dom": "18.2.24",
-    "eslint": "8.57.0",
-    "eslint-config-next": "14.2.4",
-    "tsx": "^3.14.0",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.10",
+    "tsx": "^4.23.0",
     "typescript": "5.4.5"
+  },
+  "overrides": {
+    "postcss": "8.5.16"
   }
 }

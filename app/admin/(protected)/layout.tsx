@@ -62,7 +62,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  const cookieEnabled = cookies().get("ADMIN_WATERMARK_OVERRIDE")?.value === "true";
+  const cookieStore = await cookies();
+  const cookieEnabled = cookieStore.get("ADMIN_WATERMARK_OVERRIDE")?.value === "true";
   const shouldRenderWatermark =
     (watermarkEnabled && (allowedRoles.length === 0 || allowedRoles.includes(session.role))) ||
     (isSuperadmin && cookieEnabled);

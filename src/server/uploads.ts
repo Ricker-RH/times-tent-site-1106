@@ -75,7 +75,7 @@ function hasDb(): boolean {
   return typeof process.env.DATABASE_URL === "string" && process.env.DATABASE_URL.trim().length > 0;
 }
 
-const LOCAL_UPLOAD_DIR = path.join(process.cwd(), ".local", "uploads");
+const LOCAL_UPLOAD_DIR = path.join(/*turbopackIgnore: true*/ process.cwd(), ".local", "uploads");
 const LOCAL_INDEX_FILE = path.join(LOCAL_UPLOAD_DIR, "index.json");
 
 async function ensureLocalStore(): Promise<void> {
@@ -164,7 +164,7 @@ export async function saveUpload(input: SaveUploadInput, client?: PoolClient): P
   // Local filesystem fallback when no database is available
   if (!hasDb()) {
     await ensureLocalStore();
-    const filePath = path.join(LOCAL_UPLOAD_DIR, input.fileName);
+    const filePath = path.join(/*turbopackIgnore: true*/ LOCAL_UPLOAD_DIR, input.fileName);
     await fs.writeFile(filePath, input.data);
     const index = await readLocalIndex();
     index[input.id] = {
@@ -228,7 +228,7 @@ export async function getUpload(id: string): Promise<{ mimeType: string; data: B
     const index = await readLocalIndex();
     const record = index[id];
     if (!record) return null;
-    const filePath = path.join(LOCAL_UPLOAD_DIR, record.fileName);
+    const filePath = path.join(/*turbopackIgnore: true*/ LOCAL_UPLOAD_DIR, record.fileName);
     try {
       const data = await fs.readFile(filePath);
       const result = { mimeType: record.mimeType, data };

@@ -18,17 +18,18 @@ import {
 } from "@/lib/seo";
 
 interface NewsDetailProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export function generateStaticParams() {
   return getNewsList().map((article) => ({ slug: article.slug }));
 }
 
-export function generateMetadata({ params }: NewsDetailProps): Metadata {
-  const locale = getRequestLocale();
+export async function generateMetadata({ params }: NewsDetailProps): Promise<Metadata> {
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
-  const article = getNewsArticle(params.slug);
+  const { slug } = await params;
+  const article = getNewsArticle(slug);
   if (!article) {
     return buildMetadata({
       title: `${translateUi(locale, "breadcrumb.news")} | 时代篷房`,
@@ -45,11 +46,12 @@ export function generateMetadata({ params }: NewsDetailProps): Metadata {
 }
 
 export default async function NewsDetailPage({ params }: NewsDetailProps) {
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
+  const { slug } = await params;
   const visibility = await ensurePageVisible("newsDetail");
   const hiddenSections = getHiddenSections(visibility, "newsDetail");
-  const article = getNewsArticle(params.slug);
+  const article = getNewsArticle(slug);
   if (!article) {
     notFound();
   }

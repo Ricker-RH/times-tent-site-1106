@@ -42,7 +42,7 @@ function toPlainString(value: unknown): string {
 
 
 interface CaseDetailProps {
-  params: { category: string; slug: string };
+  params: Promise<{ category: string; slug: string }>;
 }
 
 export async function generateStaticParams() {
@@ -57,9 +57,10 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: CaseDetailProps): Promise<Metadata> {
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
-  const data = await fetchCaseStudyBySlug(params.slug);
+  const { slug } = await params;
+  const data = await fetchCaseStudyBySlug(slug);
   if (!data) {
     return buildMetadata({
       title: `${translateUi(locale, "breadcrumb.cases")} | 时代篷房`,
@@ -84,12 +85,13 @@ export default async function CaseDetailPage({ params }: CaseDetailProps) {
   const hideRelated = hiddenSections.related === true;
   const hideAdvisor = hiddenSections.advisor === true;
 
-  const locale = getRequestLocale();
+  const locale = await getRequestLocale();
   setCurrentLocale(locale);
+  const { category: categorySlug, slug } = await params;
 
   const [categories, data, config] = await Promise.all([
     fetchCaseCategories(),
-    fetchCaseStudy(params.category, params.slug),
+    fetchCaseStudy(categorySlug, slug),
     fetchCasesConfig(),
   ]);
 

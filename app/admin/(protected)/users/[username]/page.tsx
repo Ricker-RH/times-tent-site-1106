@@ -16,6 +16,8 @@ type AdminDetail = {
   created_at?: Date;
 };
 
+type AdminUserSearchParams = Record<string, string | string[] | undefined>;
+
 async function fetchAdminDetail(username: string): Promise<AdminDetail | null> {
   try {
     const { rows } = await query<AdminDetail>(
@@ -50,19 +52,21 @@ async function fetchEditCount(username: string): Promise<number> {
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminUserDetailPage({ params, searchParams }: { params: { username: string }, searchParams?: Record<string, string | string[] | undefined> }) {
+export default async function AdminUserDetailPage({ params, searchParams }: { params: Promise<{ username: string }>, searchParams?: Promise<AdminUserSearchParams> }) {
   await requireAdmin({ role: "superadmin" });
 
-  const username = Array.isArray(params.username) ? params.username[0] : params.username;
+  const { username: rawUsername } = await params;
+  const resolvedSearchParams: AdminUserSearchParams = searchParams ? await searchParams : {};
+  const username = Array.isArray(rawUsername) ? rawUsername[0] : rawUsername;
   if (!username) redirect("/admin/users");
 
-  const verifiedParam = (typeof searchParams?.verified === "string" ? searchParams?.verified : Array.isArray(searchParams?.verified) ? searchParams?.verified?.[0] : undefined) === "1";
-  const okParam = (typeof searchParams?.ok === "string" ? searchParams?.ok : Array.isArray(searchParams?.ok) ? searchParams?.ok?.[0] : undefined) === "1";
-  const errorParam = typeof searchParams?.error === "string" ? searchParams?.error : Array.isArray(searchParams?.error) ? searchParams?.error?.[0] : undefined;
-  const actionParam = typeof searchParams?.action === "string" ? searchParams?.action : Array.isArray(searchParams?.action) ? searchParams?.action?.[0] : undefined;
-  const activeParam = typeof searchParams?.active === "string" ? searchParams?.active : Array.isArray(searchParams?.active) ? searchParams?.active?.[0] : undefined;
-  const nextParam = typeof searchParams?.next === "string" ? searchParams?.next : Array.isArray(searchParams?.next) ? searchParams?.next?.[0] : undefined;
-  const cookieStore = cookies();
+  const verifiedParam = (typeof resolvedSearchParams?.verified === "string" ? resolvedSearchParams?.verified : Array.isArray(resolvedSearchParams?.verified) ? resolvedSearchParams?.verified?.[0] : undefined) === "1";
+  const okParam = (typeof resolvedSearchParams?.ok === "string" ? resolvedSearchParams?.ok : Array.isArray(resolvedSearchParams?.ok) ? resolvedSearchParams?.ok?.[0] : undefined) === "1";
+  const errorParam = typeof resolvedSearchParams?.error === "string" ? resolvedSearchParams?.error : Array.isArray(resolvedSearchParams?.error) ? resolvedSearchParams?.error?.[0] : undefined;
+  const actionParam = typeof resolvedSearchParams?.action === "string" ? resolvedSearchParams?.action : Array.isArray(resolvedSearchParams?.action) ? resolvedSearchParams?.action?.[0] : undefined;
+  const activeParam = typeof resolvedSearchParams?.active === "string" ? resolvedSearchParams?.active : Array.isArray(resolvedSearchParams?.active) ? resolvedSearchParams?.active?.[0] : undefined;
+  const nextParam = typeof resolvedSearchParams?.next === "string" ? resolvedSearchParams?.next : Array.isArray(resolvedSearchParams?.next) ? resolvedSearchParams?.next?.[0] : undefined;
+  const cookieStore = await cookies();
   const verifiedCookie = cookieStore.get("tt_admin_detail_verified")?.value === "1";
   const verified = verifiedParam || verifiedCookie;
 

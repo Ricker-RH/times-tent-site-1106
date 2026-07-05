@@ -140,8 +140,9 @@ export async function createAdminSession(user: AdminSession): Promise<void> {
     ...(SESSION_COOKIE_DOMAIN ? { domain: SESSION_COOKIE_DOMAIN } : {}),
   };
 
-  cookies().set(SESSION_COOKIE_NAME, token, cookieOptions);
-  cookies().set("tt_admin_jti", jti, { ...cookieOptions });
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE_NAME, token, cookieOptions);
+  cookieStore.set("tt_admin_jti", jti, { ...cookieOptions });
 
   try {
     await query(
@@ -165,7 +166,7 @@ export async function createAdminSession(user: AdminSession): Promise<void> {
   }
 }
 
-export function clearAdminSession(): void {
+export async function clearAdminSession(): Promise<void> {
   const baseOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -174,8 +175,9 @@ export function clearAdminSession(): void {
     expires: new Date(0),
   };
 
-  cookies().delete(SESSION_COOKIE_NAME);
-  cookies().delete("tt_admin_jti");
+  const cookieStore = await cookies();
+  cookieStore.delete(SESSION_COOKIE_NAME);
+  cookieStore.delete("tt_admin_jti");
 
   const paths = ["/", "/admin", "/admin/", "/admin/login"] as const;
   const domains: Array<string | undefined> = [undefined, "localhost", SESSION_COOKIE_DOMAIN].filter(
@@ -185,16 +187,17 @@ export function clearAdminSession(): void {
   paths.forEach((path) => {
     domains.forEach((domain) => {
       const options = domain ? { ...baseOptions, path, domain } : { ...baseOptions, path };
-      cookies().set(SESSION_COOKIE_NAME, "", options);
-      cookies().delete({ name: SESSION_COOKIE_NAME, path, ...(domain ? { domain } : {}) });
-      cookies().set("tt_admin_jti", "", options);
-      cookies().delete({ name: "tt_admin_jti", path, ...(domain ? { domain } : {}) });
+      cookieStore.set(SESSION_COOKIE_NAME, "", options);
+      cookieStore.delete({ name: SESSION_COOKIE_NAME, path, ...(domain ? { domain } : {}) });
+      cookieStore.set("tt_admin_jti", "", options);
+      cookieStore.delete({ name: "tt_admin_jti", path, ...(domain ? { domain } : {}) });
     });
   });
 }
 
 async function parseSessionFromCookie(): Promise<AdminSession | null> {
-  const cookie = cookies().get(SESSION_COOKIE_NAME);
+  const cookieStore = await cookies();
+  const cookie = cookieStore.get(SESSION_COOKIE_NAME);
   if (!cookie?.value) {
     return null;
   }
@@ -215,7 +218,7 @@ async function parseSessionFromCookie(): Promise<AdminSession | null> {
       role,
       username: typeof payload.username === "string" ? payload.username : null,
       email: typeof payload.email === "string" ? payload.email : null,
-      jti: typeof payload.jti === "string" ? payload.jti : (cookies().get("tt_admin_jti")?.value ?? null),
+      jti: typeof payload.jti === "string" ? payload.jti : (cookieStore.get("tt_admin_jti")?.value ?? null),
     };
   } catch (error) {
     console.error("Failed to verify admin session", error);
@@ -265,7 +268,8 @@ export async function requireAdmin(options?: {
   noStore();
   const session = await getCurrentAdmin();
   if (!session) {
-    const headerUrl = headers().get("x-invoke-path") ?? headers().get("x-forwarded-path") ?? options?.redirectTo;
+    const requestHeaders = await headers();
+    const headerUrl = requestHeaders.get("x-invoke-path") ?? requestHeaders.get("x-forwarded-path") ?? options?.redirectTo;
     const location = buildLoginRedirect(headerUrl);
     throw new AdminRedirectError(location);
   }
@@ -278,8 +282,9 @@ export async function requireAdmin(options?: {
       );
       const activeJti = rows[0]?.jti;
       if (!activeJti || !session.jti || activeJti !== session.jti) {
-        clearAdminSession();
-        const headerUrl = headers().get("x-invoke-path") ?? headers().get("x-forwarded-path") ?? options?.redirectTo;
+        await clearAdminSession();
+        const requestHeaders = await headers();
+        const headerUrl = requestHeaders.get("x-invoke-path") ?? requestHeaders.get("x-forwarded-path") ?? options?.redirectTo;
         const login = buildLoginRedirect(headerUrl);
         const conflict = `/admin/session/conflict?next=${encodeURIComponent(login)}`;
         throw new AdminRedirectError(conflict);
