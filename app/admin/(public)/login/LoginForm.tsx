@@ -14,23 +14,17 @@ export function LoginForm({ next }: { next?: string }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberIdentifier, setRememberIdentifier] = useState(false);
-  const [rememberPassword, setRememberPassword] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    localStorage.removeItem("timesTentRememberPassword");
+    localStorage.removeItem("timesTentAdminPassword");
     const storedRememberIdentifier = localStorage.getItem("timesTentRememberIdentifier");
-    const storedRememberPassword = localStorage.getItem("timesTentRememberPassword");
     const shouldRememberIdentifier = storedRememberIdentifier === "true";
-    const shouldRememberPassword = storedRememberPassword === "true";
     if (shouldRememberIdentifier) {
       const savedIdentifier = localStorage.getItem("timesTentAdminIdentifier") ?? "";
       setIdentifier(savedIdentifier);
       setRememberIdentifier(true);
-    }
-    if (shouldRememberPassword) {
-      const savedPassword = localStorage.getItem("timesTentAdminPassword") ?? "";
-      setPassword(savedPassword);
-      setRememberPassword(true);
     }
   }, []);
 
@@ -43,16 +37,6 @@ export function LoginForm({ next }: { next?: string }) {
       localStorage.removeItem("timesTentAdminIdentifier");
     }
   }, [identifier, rememberIdentifier]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("timesTentRememberPassword", rememberPassword ? "true" : "false");
-    if (rememberPassword) {
-      localStorage.setItem("timesTentAdminPassword", password);
-    } else {
-      localStorage.removeItem("timesTentAdminPassword");
-    }
-  }, [password, rememberPassword]);
 
   return (
     <form action={formAction} className="space-y-6">
@@ -132,16 +116,6 @@ export function LoginForm({ next }: { next?: string }) {
             className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
           />
           记住账号
-        </label>
-        <label className="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            name="rememberPassword"
-            checked={rememberPassword}
-            onChange={(event) => setRememberPassword(event.target.checked)}
-            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
-          />
-          记住密码
         </label>
       </div>
       {formState.status === "error" ? (
