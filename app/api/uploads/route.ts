@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import path from "path";
+import { ensureApiAdmin } from "@/server/apiAuth";
 import { saveUpload } from "@/server/uploads";
 import { optimizeUploadedImage } from "@/server/imageOptimization";
 
@@ -20,6 +21,9 @@ function ensureExtension(fileName: string, mimeType: string): string {
 }
 
 export async function POST(request: Request) {
+  const authError = await ensureApiAdmin();
+  if (authError) return authError;
+
   let formData: FormData;
   try {
     formData = await request.formData();

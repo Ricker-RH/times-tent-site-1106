@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { ensureApiAdmin } from "@/server/apiAuth";
 import {
   TranslationError,
   assertCanTranslate,
@@ -20,6 +21,9 @@ const MAX_TEXT_LENGTH = 5000; // per entry
 
 export async function POST(request: Request) {
   try {
+    const authError = await ensureApiAdmin();
+    if (authError) return authError;
+
     assertCanTranslate();
 
     const body = (await request.json().catch(() => ({}))) as ApiRequestBody;
