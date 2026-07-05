@@ -153,6 +153,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     href: `/products/${item.slug}`,
     slug: item.slug,
   }));
+  const sidebarTitle = resolveLocalizedText(productsConfig.sidebarTitle) || translateUi(locale, "products.title");
 
   if (!detail) {
     notFound();
@@ -200,9 +201,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     <div className="bg-white pb-20 pt-10">
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-4 sm:px-6 lg:px-8 md:flex-row">
         <div className="md:w-[260px] md:shrink-0">
-          <aside className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-sm md:sticky md:top-24">
-            <h2 className="px-3 text-sm font-semibold text-[var(--color-brand-secondary)]">{translateUi(locale, "products.title")}</h2>
-            <div className="mt-3 space-y-2">
+          <aside className="rounded-lg border border-[var(--color-border)] bg-white p-4 shadow-sm md:sticky md:top-24 md:max-h-[560px] md:overflow-hidden">
+            <h2 className="px-3 text-sm font-semibold text-[var(--color-brand-secondary)]">{sidebarTitle}</h2>
+            <div className="mt-3 space-y-2 md:max-h-[496px] md:overflow-y-auto md:pr-1 md:overscroll-contain">
               {products.map((product) => {
                 const isActive = product.slug === params.slug;
                 return (

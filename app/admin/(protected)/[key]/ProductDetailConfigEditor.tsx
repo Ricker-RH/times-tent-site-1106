@@ -861,9 +861,9 @@ function ProductDetailPreview({
       <div className="bg-white pb-16 pt-8">
         <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-6 lg:flex-row">
           <aside className="lg:w-[260px] lg:shrink-0">
-            <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-sm lg:max-h-[560px] lg:overflow-hidden">
               <div className="text-sm font-semibold text-[var(--color-brand-secondary)]">产品</div>
-              <div className="mt-4 space-y-2 text-sm text-[var(--color-brand-secondary)]">
+              <div className="mt-4 space-y-2 text-sm text-[var(--color-brand-secondary)] lg:max-h-[480px] lg:overflow-y-auto lg:pr-1 lg:overscroll-contain">
                 {availableSlugs.map((item) => {
                   const isActive = item === slug;
                   return (
